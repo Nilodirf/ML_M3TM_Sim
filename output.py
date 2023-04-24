@@ -10,7 +10,7 @@ from datetime import datetime
 from npy_append_array import NpyAppendArray
 import copy
 import diffusion
-from scipy import fftpack
+import itertools
 
 #import other files
 import writer
@@ -82,8 +82,14 @@ def output(pl):
 
     te_long=np.array([pl['initemp'] for _ in range(sum([pl['ss'][i]*pl['sam'][i].dz*1e10 for i in range(len(pl['sam']))]))])
     tp_long=te_long.copy()
+    hbN_coeffs=(0,pl['sst'][0]-1)
+    cgt_coeffs=(pl['sst'][0], pl['sst'][0]+pl['sst'][1]-1)
+    sio2_coeffs=(pl['sst'][0]+pl['sst'][1], pl['sst'][0]+pl['sst'][1]+pl['sst'][2]-1)
+    coeffs=[hbN_coeffs, cgt_coeffs, sio2_coeffs]
+    dqes_nested = [[0], [0], [0]]
 
-    freqs=2 * np.pi * fftpack.fftfreq(len(te_long), d=1e-10)
+    freqs=2 * np.pi * np.fft.fftfreq(len(te_long), d=1e-10)
+
 
     ## Start the dynamical simulation:
     for t in range(pl['simlen']):
@@ -131,10 +137,13 @@ def output(pl):
 
             if t > pl['pdel'] / pl['dt'] - 1e4:
                 # compute the mean field energy cost of spin-flip after pump pulse sets in (if not for the if-clause, electron temperature would rise in the initial equilibration process)
-                dqes[str(i)] = sam.dqes(mzs[str(i)], muss[str(i)], dmagz[str(i)], dmuss[str(i)], pl)
-                dqps[str(i)] = sam.dqps(mzs[str(i)], muss[str(i)], dmagz[str(i)], dmuss[str(i)], pl)
+                dqes_nested=[]
+                dqs_i=list(sam.dqes(mzs[str(i)], muss[str(i)], dmagz[str(i)], dmuss[str(i)], pl))
+                dqes_nested.append(dqs_i)
 
-    newte, newtp=diffusion.tempdyn(te_long, tp_long, freqs, pl)
+        dqes_long=np.array(itertools.chain.from_iterable(dqes_nested))
+
+        newte, newtp=diffusion.tempdyn(te_long, tp_long, freqs, pl, coeffs, t, dqes_long)
 
     datmagfile.close()
     return

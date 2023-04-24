@@ -19,7 +19,10 @@ pump_fluence=pump_fluence/np.sqrt(2*np.pi)/pump_sigma*10                        
 
 ### Here you prepare your sample!
 sam=[samplechoice('hBN'), samplechoice('CGT'), samplechoice('SiO2')]       #Choose what elements you want to stick together (N constituents):
-samplesize=[13, 73, 367]                                                           #Choose the layer thickness of each constituent (units of dz). hBN: 10-20 nm. dz=7.71 AA. Number of layers: 15e-9/7.71e-10=19.43. CGT_2 flake: 15 nm. dz=20.531 AA. Number of layers: 15e-9/20.531e-10=7
+samplesize=[13, 73, 367]
+samplesize_t=[samplesize[i]*int(sam[i].dz*1e10) for i in range(len(sam))]
+
+#Choose the layer thickness of each constituent (units of dz). hBN: 10-20 nm. dz=7.71 AA. Number of layers: 15e-9/7.71e-10=19.43. CGT_2 flake: 15 nm. dz=20.531 AA. Number of layers: 15e-9/20.531e-10=7
 pendep=['inf', 30e-9, 'inf']                                                       #penetration depth of pump pulse in each constituent                                                                
 nj=sum(samplesize)+0                                                                    #total film thickness
 
@@ -124,9 +127,9 @@ def pump(flu):
     pump_profile=[]
     for i, sample in enumerate(sam):
         if pendep[i]=='inf':
-            pump_profile.append(np.array([0 for j in range(samplesize[i])]))
+            pump_profile.append(np.array([0 for j in range(samplesize_t[i])]))
         else:
-            pump_profile.append(np.array([flu/pendep[i]*np.exp(-j*sample.dz/pendep[i]) for j in range(samplesize[i])]))
+            pump_profile.append(np.array([flu/pendep[i]*np.exp(-j*sample.dz/pendep[i]) for j in range(samplesize_t[i])]))
             flu=pump_profile[i][-1]
     return pump_profile
     
@@ -169,22 +172,14 @@ def get_kappa_arrays():
 
 kappae_arr, kappap_arr=get_kappa_arrays()
 
-def get_c_arrays():
-    ce_nested_list = [[sam[i].celfit for _ in range(samplesize[i])] for i in range(len(sam))]
-    ce_flat = []
-    for sublist in ce_nested_list:
-        for item in sublist:
-            ce_flat.append(item)
+def get_c_g_arrays():
+    ce_list = [mat.celfit for mat in sam]
+    cp_list = [mat.cphfit for mat in sam]
+    gep_list=[mat.gepfit for mat in sam]
 
-    cp_nested_list = [[sam[i].cphfit for _ in range(samplesize[i])] for i in range(len(sam))]
-    cp_flat = []
-    for sublist in cp_nested_list:
-        for item in sublist:
-            cp_flat.append(item)
+    return ce_list, cp_list, gep_list
 
-    return np.array(ce_flat), np.array(cp_flat)
-
-ce_arr, cp_arr=get_c_arrays()
+ce_arr, cp_arr, gep_arr =get_c_g_arrays()
 
 
 def get_spin_diff_coeff_map():
@@ -209,7 +204,7 @@ D_to_next, D_to_last=get_spin_diff_coeff_map()
     
 #### This is the list of parameters given to output.output() (after possible modification in main file). All sample parameters are stored in the list of class object 'sam'
 param={ 'filename':'AuNiTa', 'sam':sam,                 # file name and all parameters of all constituents stored in sam
-        'ss': samplesize,  'nj':nj,                     # tickness of all constituents [in layers] and the total sampledepth
+        'ss': samplesize,  'sst': samplesize_t, 'nj':nj,                     # tickness of all constituents [in layers] and the total sampledepth
         'dt':dt, 'simlen':simlen,                       # timestep and simulation length [in dt]
         'pdel':pump_delay, 'psig':pump_sigma, 'pp':pp, 'pendep':pendep, 'power_input':pump_fluence, #pump pulse parameters
         'hex':h_ext,  'initemp':initemp,                # external field in magnetization direction and initial temperatures
@@ -217,7 +212,7 @@ param={ 'filename':'AuNiTa', 'sam':sam,                 # file name and all para
         'Jhere':Jhere, 'Jlast': Jlast, 'Jnext':Jnext, 'Jlochere':Jlochere, 'Jloclast':Jloclast, 'Jlocnext':Jlocnext, # automized, do not change
         'ap':alexpump, 'qes':qes, 'qpas': qpas, 'qpos':qpos, 'fpflo':fpflo,
         'kappae_arr': kappae_arr, 'kappap_arr': kappap_arr, 'abs_flu':abs_flu, 'Dtn':D_to_next, 'Dtl':D_to_last, 'dz_arr':dz_arr,
-        'ce_arr': ce_arr, 'cp_arr':cp_arr}
+        'ce_arr': ce_arr, 'cp_arr':cp_arr, 'gep_arr': gep_arr}
 
 ### Warnings if the interface constants do not match the number of constituents
 

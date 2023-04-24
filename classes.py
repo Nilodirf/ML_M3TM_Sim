@@ -191,9 +191,7 @@ class m4tm(sample):
         dfs=(df+df2)/2
         dmagz=(dmz+dmz2)/2
         return dmagz, dfs, np.array([0])
-        
-    def dqps(self, mz, mus, dmz, dmus, pl):
-        return dmz/pl['dt'] * self.J * mz / self.dx / self.dy / self.dz * self.apc
+
         
 class m5tm(sample):
     ###This class defines additional parameters and call additional functions needed to compute magnetization dynamics in the picture of localized magnetic moments
