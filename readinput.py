@@ -66,8 +66,6 @@ qpas=0                                                                          
 
 
 
-
-
 ###The following is all automized and should not be changed
 alexpump=False
 fpflo=False
@@ -143,42 +141,51 @@ def get_abs_fluence(pump_profile):
     
 abs_flu=get_abs_fluence(pp)
 
-def get_diff_coeff_map():
-    
-    kappa_el_to_next=[]
-    kappa_el_to_last=[]
-    kappa_ph_to_next=[]
-    kappa_ph_to_last=[]
-    
-    for i, sample in enumerate(sam):
-    
-        if math.isclose(sample.kappa, 0., abs_tol=1e-4):
-            kappa_el_to_next.append(np.zeros(samplesize[i]))
-            kappa_el_to_last.append(np.zeros(samplesize[i]))
-            
-        else:
-            kappa_el_to_next.append(np.array([sample.kappa/sample.dz**2 for _ in range(samplesize[i])]))
-            kappa_el_to_last.append(np.array([sample.kappa/sample.dz**2 for _ in range(samplesize[i])]))    
-            if i<len(sam)-1:
-                kappa_el_to_next[i][-1]*=kint[i]/sample.kappa
-            if i>0:
-                kappa_el_to_last[i][0]*=kint[i-1]/sample.kappa*sample.dz**2/sam[i-1].dz**2
-                
-        if math.isclose(sample.kappaph, 0., abs_tol=1e-4):
-            kappa_ph_to_next.append(np.zeros(samplesize[i]))
-            kappa_ph_to_last.append(np.zeros(samplesize[i]))
-            
-        else:
-            kappa_ph_to_next.append(np.array([sample.kappaph/sample.dz**2 for _ in range(samplesize[i])]))
-            kappa_ph_to_last.append(np.array([sample.kappaph/sample.dz**2 for _ in range(samplesize[i])]))
-            if i<len(sam)-1:
-                kappa_ph_to_next[i][-1]*=kphint[i]/sample.kappaph
-            if i>0:
-                kappa_ph_to_last[i][0]*=kphint[i-1]/sample.kappaph*sample.dz**2/sam[i-1].dz**2
-                 
-    return kappa_el_to_next, kappa_el_to_last, kappa_ph_to_next, kappa_ph_to_last
+#set up a grid of grain sizes dz for the computation of diffusion:
+def get_dz_array():
+    dz_nested_list=[[sam[i].dz for _ in range(samplesize[i])] for i in range(len(sam))]
+    dz_flat = []
+    for sublist in dz_nested_list:
+        for item in sublist:
+            dz_flat.append(item)
+    return np.array(dz_flat)
 
-keln, kell, kphn, kphl=get_diff_coeff_map()
+dz_arr=get_dz_array()
+
+def get_kappa_arrays():
+    kappae_nested_list=[[sam[i].kappa for _ in range(samplesize[i])] for i in range(len(sam))]
+    kappae_flat = []
+    for sublist in kappae_nested_list:
+        for item in sublist:
+            kappae_flat.append(item)
+
+    kappap_nested_list = [[sam[i].kappaph for _ in range(samplesize[i])] for i in range(len(sam))]
+    kappap_flat = []
+    for sublist in kappap_nested_list:
+        for item in sublist:
+            kappap_flat.append(item)
+
+    return np.array(kappae_flat), np.array(kappap_flat)
+
+kappae_arr, kappap_arr=get_kappa_arrays()
+
+def get_c_arrays():
+    ce_nested_list = [[sam[i].celfit for _ in range(samplesize[i])] for i in range(len(sam))]
+    ce_flat = []
+    for sublist in ce_nested_list:
+        for item in sublist:
+            ce_flat.append(item)
+
+    cp_nested_list = [[sam[i].cphfit for _ in range(samplesize[i])] for i in range(len(sam))]
+    cp_flat = []
+    for sublist in cp_nested_list:
+        for item in sublist:
+            cp_flat.append(item)
+
+    return np.array(ce_flat), np.array(cp_flat)
+
+ce_arr, cp_arr=get_c_arrays()
+
 
 def get_spin_diff_coeff_map():
     D_to_next=[]
@@ -209,7 +216,8 @@ param={ 'filename':'AuNiTa', 'sam':sam,                 # file name and all para
         'jint':Jints, 'kint': kint, 'kphint': kphint, 'musint':musint,    # interface constants for exch. coupl., el. therm. diff., and spin diff. of length len(sam)-1
         'Jhere':Jhere, 'Jlast': Jlast, 'Jnext':Jnext, 'Jlochere':Jlochere, 'Jloclast':Jloclast, 'Jlocnext':Jlocnext, # automized, do not change
         'ap':alexpump, 'qes':qes, 'qpas': qpas, 'qpos':qpos, 'fpflo':fpflo,
-        'keln':keln, 'kell':kell, 'kphn':kphn, 'kphl':kphl, 'abs_flu':abs_flu, 'Dtn':D_to_next, 'Dtl':D_to_last}       # important is only qes, see description above
+        'kappae_arr': kappae_arr, 'kappap_arr': kappap_arr, 'abs_flu':abs_flu, 'Dtn':D_to_next, 'Dtl':D_to_last, 'dz_arr':dz_arr,
+        'ce_arr': ce_arr, 'cp_arr':cp_arr}
 
 ### Warnings if the interface constants do not match the number of constituents
 

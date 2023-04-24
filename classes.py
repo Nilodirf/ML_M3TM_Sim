@@ -606,7 +606,7 @@ def samplechoice(sam):
                           4., # muat (atomic magnetic moment) [in units of mu_B [J/T]]. Literature: approximatelly (local) 3*muB per Cr atom (https://www.sciencedirect.com/science/article/abs/pii/S0927025622004013), monolayer: 3.297*muB (https://pubs.rsc.org/en/content/articlelanding/2022/nr/d1nr05821e), and 1.9 or 2.2-2.9*muB per Cr atom (https://journals.aps.org/prresearch/pdf/10.1103/PhysRevResearch.4.013139)
                           6.826e-10, # dx (lattice constant along x-th direction) [m]. Literature: 6.826 AA (https://onlinelibrary.wiley.com/doi/full/10.1002/adma.202110583), 6.857 AA (https://www.sciencedirect.com/science/article/abs/pii/S0927025622004013), and 6.82 AA (https://pubs.rsc.org/en/content/articlelanding/2022/nr/d1nr05821e)
                           6.856e-10, # dy (lattice constant along y-th direction) [m]. Literature: 6.857 AA (https://www.sciencedirect.com/science/article/abs/pii/S0927025622004013)
-                          20.531e-10, # dz (lattice constant along z-th direction) [m]. Literature: 20.531 AA (https://onlinelibrary.wiley.com/doi/full/10.1002/adma.202110583)
+                          20e-10, # dz (lattice constant along z-th direction) [m]. Literature: 20.531 AA (https://onlinelibrary.wiley.com/doi/full/10.1002/adma.202110583)
                           10, # apc ((magnetic) atoms per unit cell). Literature: 2 Cr atoms per unit cell (https://onlinelibrary.wiley.com/doi/abs/10.1002/adfm.202108953)
                           0.1, # asf (spin flip probability). Value not found in the literature
                           1, # initial magnetization (in z-th direction). Literature: in principle, for bulk, "It exhibits a strong magnetic anisotropy with an out-of-plane easy axis..." (https://www.nature.com/articles/s41928-020-0427-7)
@@ -628,7 +628,7 @@ def samplechoice(sam):
                           0, # muat (atomic magnetic moment) [in units of mu_B [J/T]]. Non-magnetic material: 0
                           4.92e-10, # dx (lattice constant along x-th direction) [m]. (https://materialsproject.org/materials/mp-6930/)
                           4.92e-10, # dy (lattice constant along y-th direction) [m]. (https://materialsproject.org/materials/mp-6930/)
-                          5.43e-10, # dz (lattice constant along z-th direction) [m]. (https://materialsproject.org/materials/mp-6930/)
+                          5e-10, # dz (lattice constant along z-th direction) [m]. (https://materialsproject.org/materials/mp-6930/)
                           9, # apc (number of atoms per unit cell) (https://materialsproject.org/materials/mp-6930/)
                           0, # asf (spin flip probability). Value not found in the literature
                           0, # inimag (initial magnetization)
@@ -650,7 +650,7 @@ def samplechoice(sam):
                           0, # muat (atomic magnetic moment) [in units of mu_B [J/T]]. Non-magnetic material: 0
                           2.51e-10, # dx (lattice constant along x-th direction) [m]. (http://www.ioffe.ru/SVA/NSM/Semicond/BN/basic.html)
                           2.51e-10, # dy (lattice constant along y-th direction) [m]. (http://www.ioffe.ru/SVA/NSM/Semicond/BN/basic.html)
-                          7.71e-10, # dz (lattice constant along z-th direction) [m]. (http://www.ioffe.ru/SVA/NSM/Semicond/BN/basic.html)
+                          8e-10, # dz (lattice constant along z-th direction) [m]. (http://www.ioffe.ru/SVA/NSM/Semicond/BN/basic.html)
                           4, # apc (2 B atoms and 2 N atoms? All non-magnetic. Correct phase?). Literature: .cif file from Springer webpage (bulk case, because the layers in experiments are of 10-20 nm along the thickness of the unit cell) (https://materialsproject.org/materials/mp-984#summary)
                           0, # asf (spin flip probability). Value not found in the literature
                           0, # inimag (initial magnetization)                          

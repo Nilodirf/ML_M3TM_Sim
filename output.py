@@ -9,6 +9,8 @@ import sys
 from datetime import datetime
 from npy_append_array import NpyAppendArray
 import copy
+import diffusion
+from scipy import fftpack
 
 #import other files
 import writer
@@ -60,6 +62,7 @@ def output(pl):
     dfss={} # increments of change of occupation of spin-z levels. If not arbspin-/ or s-d- model is chosen, this will automatically always be [0]
     dmuss={} #increments of itinerant spin system. For s-d model this is spin accumulation, for m5tm, this is the magnetization of S=1/2 itinerant system. For other models this is always [0]
 
+
     ## Because different sample consituents may have different models to compute the dynamics, we call every consituent in pl['sam'] individually:
     for i, sam in enumerate(pl['sam']):
         ### Initiate the dictionaries that carry numpy arrays with relevant dynamical data for each time step. For each constituent i this creates something like dict['i'] starting with i=0
@@ -77,6 +80,10 @@ def output(pl):
         tp2files['{0}'.format(i)]=NpyAppendArray(simpath+'/tp2s' + str(sam.name) + '.npy')
         mfiles['{0}'.format(i)]=NpyAppendArray(simpath+'/ms' + str(sam.name) + '.npy')
 
+    te_long=np.array([pl['initemp'] for _ in range(sum([pl['ss'][i]*pl['sam'][i].dz*1e10 for i in range(len(pl['sam']))]))])
+    tp_long=te_long.copy()
+
+    freqs=2 * np.pi * fftpack.fftfreq(len(te_long), d=1e-10)
 
     ## Start the dynamical simulation:
     for t in range(pl['simlen']):
@@ -127,11 +134,7 @@ def output(pl):
                 dqes[str(i)] = sam.dqes(mzs[str(i)], muss[str(i)], dmagz[str(i)], dmuss[str(i)], pl)
                 dqps[str(i)] = sam.dqps(mzs[str(i)], muss[str(i)], dmagz[str(i)], dmuss[str(i)], pl)
 
-            #Call functions to compute temperature dynamics and add increments:
-            dtemps = sam.dtem(t, tes, tps, tpas, dqes, dqps, pl, i)
-            tes[str(i)]+=dtemps[0]
-            tps[str(i)]+=dtemps[1]
-            tpas[str(i)]+=dtemps[2]
+    newte, newtp=diffusion.tempdyn(te_long, tp_long, freqs, pl)
 
     datmagfile.close()
     return
