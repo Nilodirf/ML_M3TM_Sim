@@ -1,6 +1,6 @@
 import numpy as np
 
-class sim_sample:
+class SimSample:
     # Within this class the sample as a 1d-array of materials can be constructed and parameters and functions for
     # the whole sample can be defined and read out.
 
@@ -66,3 +66,19 @@ class sim_sample:
                 same_mat_counter = 1
         material_blocks.append(same_mat_counter)
         return material_blocks
+
+    def initialize_temperature(self, ini_temp):
+        # This method initializes the starting uniform temperature map.
+
+        # Input:
+        # self (object). The sample in use
+        # sample (object). Initial starting temperature
+
+        # Returns:
+        # te_arr (numpy array). 1d-array of the starting electron temperatures
+        # tp_arr (numpy array). 1d-array of the starting phonon temperatures
+
+        te_arr = np.ones_like(self.mat_arr)*ini_temp
+        tp_arr = te_arr.copy()
+
+        return te_arr, tp_arr

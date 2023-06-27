@@ -1,19 +1,11 @@
 import numpy as np
 
-class temperature_sim:
-    # This class holds all methods needed for temperature calculations.
 
-    def initialize(self, sample, initemp):
-        # This method initializes the starting uniform temperature map.
+def e_p_coupling(te, tp, gep_sam, cp_sam, ce_sam):
+    dcete_dt=gep_sam(tp-te)
+    dcptp_dt=-dcete_dt
 
-        # Input:
-        # self (object). The temperature class
-        # sample (object). The sample in use
-        # initemp (float). The starting temperature in K
+    dte_dt = 1/ce_sam*dcete_dt
+    dtp_dt = 1/cp_sam*dcptp_dt
 
-        # Output:
-        # te_arr (numpy array). 1d-array of the starting electron temperatures
-        # tp_arr (numpy array). 1d-array of the starting phonon temperatures
-
-        n_sam = sample.get_len()
-        te_arr = np.array()
+    return dte_dt, dtp_dt

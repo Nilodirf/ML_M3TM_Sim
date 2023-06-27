@@ -1,15 +1,21 @@
 import numpy as np
 
-class sim_pulse:
+class SimPulse:
     # This class lets us define te pulse for excitation of the sample
 
-    def __init__(self, pulse_width, fluence, delay):
+    def __init__(self, sample, pulse_width, fluence, delay):
+        # Input:
+        # sample (object). Sample in use
+        # pulse_width (float). Sigma of gaussian pulse shape in s
+        # fluence (float). Fluence of the laser pulse in mJ/cm**2
         self.pulse_width = pulse_width
         self.fluence = fluence
         self.delay = delay
         self.peak_power = self.fluence/np.sqrt(2*np.pi)/self.pulse_width*10
+        self.Sam = sample
+        self.pulse_map = self.create_pulse_map()
 
-    def create_pulse_map(self, sample):
+    def create_pulse_map(self):
         # This method creates a time grid and a spatially independent pulse excitation of gaussian shape
         # on this time grid.
         # The pulse is confined to nonzero values in the range of [start_pump_time, end_pump_time]
@@ -19,31 +25,29 @@ class sim_pulse:
 
         # Input:
         # self (object). The pulse defined by the parameters above
-        # sample (class object). The before constructed sample
 
         # Returns:
         # pump_time_grid (numpy array). 1d-array of the time grid on which the pulse is defined
         # pump_map (numpy array). 2d-array of the corresponding pump energies on the time grid (first dimension)
         # and for the whole sample (second dimension)
-
-        pdel = self.delay
+        p_del = self.delay
         sigma = self.pulse_width
-        start_pump_time = pdel-6*sigma
-        end_pump_time = pdel+6*sigma
+        start_pump_time = p_del-6*sigma
+        end_pump_time = p_del+6*sigma
 
         raw_pump_time_grid = np.arange(start_pump_time, end_pump_time, 1e-16)
         until_pump_start_time = np.arange(0, start_pump_time, 1e-14)
         pump_time_grid = np.append(until_pump_start_time, raw_pump_time_grid)
 
-        raw_pump_grid = self.peak_power*np.exp(-((raw_pump_time_grid-pdel)/sigma)**2/2)
+        raw_pump_grid = self.peak_power*np.exp(-((raw_pump_time_grid-p_del)/sigma)**2/2)
         pump_grid = np.append(np.zeros_like(until_pump_start_time), raw_pump_grid)
 
         pump_time_grid = np.append(pump_time_grid, end_pump_time+5e-15)
         pump_grid = np.append(pump_grid, 0.)
 
-        return pump_time_grid, self.depth_profile(sample, pump_grid)
+        return pump_time_grid, self.depth_profile(pump_grid)
 
-    def depth_profile(self, sample, pump_grid):
+    def depth_profile(self, pump_grid):
         # This method computes the depth dependence of the laser pulse and multiplies it with the time dependence.
 
         # Input:
@@ -54,10 +58,10 @@ class sim_pulse:
         # 2d-array of the corresponding pump energies on the time grid (first dimension)
         # and for the whole sample (second dimension)
 
-        n_sam = sample.get_len()
-        dz_sam = sample.get_params('dz')
-        pendep_sam = sample.get_params('pen_dep')
-        mat_blocks = sample.get_material_changes()
+        n_sam = self.Sam.get_len()
+        dz_sam = self.Sam.get_params('dz')
+        pendep_sam = self.Sam.get_params('pen_dep')
+        mat_blocks = self.Sam.get_material_changes()
 
         max_power = self.peak_power
         powers = np.array([])

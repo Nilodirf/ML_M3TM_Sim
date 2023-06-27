@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import constants as sp
 
-class sim_materials:
+
+class SimMaterials:
     # The material class holds mostly parameters of the materials in the sample to be constructed.
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
