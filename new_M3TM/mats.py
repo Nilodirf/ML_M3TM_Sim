@@ -22,15 +22,21 @@ class SimMaterials:
         self.ce_gamma = ce_gamma
         self.cp_max = cp_max
         self.tein = 0.75*tdeb
-        self.cp_T=self.create_cp_T()
+        self.cp_T_grid, self.cp_T = self.create_cp_T()
         if muat == 0:
             self.R = 0
             self.J = 0
             self.arbsc = 0
+            self.ms = None
+            self.s_up_eig_squared = None
+            self.s_dn_eig_squared = None
         else:
-            self.R = 8*self.asf*self.vat*self.tc**2/self.tdeb**2/sp.k/self.muat
-            self.J = 3*sp.k*self.tc*self.spin/(self.spin+1)
-            self.arbsc = self.R/self.tc**2/sp.k
+            self.R = 8 * self.asf * self.vat * self.tc**2 / self.tdeb**2 / sp.k / self.muat
+            self.J = 3 * sp.k * self.tc * self.spin / (self.spin+ 1 )
+            self.arbsc = self.R / self.tc**2 / sp.k * self.gep
+            self.ms = (np.arange(2 * self.spin + 1) + np.array([-self.spin for i in range(int(2 * self.spin) + 1)]))
+            self.s_up_eig_squared = -np.power(self.ms, 2) - self.ms + self.spin ** 2 + self.spin
+            self.s_dn_eig_squared = -np.power(self.ms, 2) + self.ms + self.spin ** 2 + self.spin
 
     def create_cp_T(self):
         # This method constructs a temperature grid (fine-grained until tdeb, course-grained until 3*tdeb).
@@ -41,8 +47,8 @@ class SimMaterials:
         # self (object). A pointer to the material in use
 
         # Returns:
-        # t_grid (numpy array). Temperature grid between 0 and 3*tdeb+1 K
-        # cp_t_grid (numpy array). Einstein lattice capacity on a 1d-array for the above temperature grid,
+        # t_grid (numpy array). 1d-array of temperature grid between 0 and 3*tdeb+1 K
+        # cp_t_grid (numpy array). 1d-array of Einstein lattice capacity for the above temperature grid,
         # the last value being cp_max for every temperature above 3*tdeb+1 K
 
         t_grid_fine = np.arange(1, self.tein, 0.1)

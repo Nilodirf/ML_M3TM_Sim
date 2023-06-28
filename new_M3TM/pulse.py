@@ -13,9 +13,8 @@ class SimPulse:
         self.delay = delay
         self.peak_power = self.fluence/np.sqrt(2*np.pi)/self.pulse_width*10
         self.Sam = sample
-        self.pulse_map = self.create_pulse_map()
 
-    def create_pulse_map(self):
+    def get_pulse_map(self):
         # This method creates a time grid and a spatially independent pulse excitation of gaussian shape
         # on this time grid.
         # The pulse is confined to nonzero values in the range of [start_pump_time, end_pump_time]
@@ -58,10 +57,9 @@ class SimPulse:
         # 2d-array of the corresponding pump energies on the time grid (first dimension)
         # and for the whole sample (second dimension)
 
-        n_sam = self.Sam.get_len()
         dz_sam = self.Sam.get_params('dz')
         pendep_sam = self.Sam.get_params('pen_dep')
-        mat_blocks = self.Sam.get_material_changes()
+        mat_blocks = self.Sam.mat_blocks
 
         max_power = self.peak_power
         powers = np.array([])

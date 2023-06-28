@@ -17,7 +17,7 @@ hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=7.7e-10, vat=1e-28, ce_ga
                     kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
 
 # Create a sample, then add desired layers of the materials you want to simulate.
-# The first material to be added will be closest to the laser pulse.
+# The first material to be added will be closest to the laser pulse adn so on.
 sample = SimSample()
 sample.add_layers(material=hbn, layers=10)
 sample.add_layers(material=cgt, layers=10)
