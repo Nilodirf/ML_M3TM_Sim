@@ -4,6 +4,7 @@ from finderb import finderb
 from scipy.integrate import solve_ivp
 import os
 from npy_append_array import NpyAppendArray
+import time
 
 
 class SimDynamics:
@@ -378,17 +379,42 @@ class SimDynamics:
         if not os.path.exists(sim_path):
             os.makedirs(sim_path)
         for file in os.listdir(sim_path):
-            if str(file).endswith('.npy'):
-                os.remove(os.path.join(sim_path, file))
+            os.remove(os.path.join(sim_path, file))
 
         te_file = NpyAppendArray(sim_path + '/tes.npy')
         tp_file = NpyAppendArray(sim_path + '/tps.npy')
         m_file = NpyAppendArray(sim_path + '/ms.npy')
         delay_file = NpyAppendArray(sim_path + '/delays.npy')
+        params_file = open(sim_path + '/params.dat', 'w+')
 
         te_file.append(sim_tes)
         tp_file.append(sim_tps)
         m_file.append(sim_mags)
         delay_file.append(sim_delay)
 
+        mats = self.Sam.mats
+
+        params_file.write('##Simulation parameters' + '\n')
+        params_file.write('initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
+        params_file.write('##Sample parameters' + '\n')
+        params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
+        params_file.write('Material positions in order: ' + str(self.Sam.mat_ind) + '\n')
+        params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
+        params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
+        params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
+        params_file.write('asf =' + str([mat.asf for mat in mats]) + '\n')
+        params_file.write('gep =' + str([mat.gep for mat in mats]) + '[W/m^3/K]' + '\n')
+        params_file.write('gamma_el =' + str([mat.ce_gamma for mat in mats]) + '[J/m^3/K^2]' + '\n')
+        params_file.write('cv_ph_max =' + str([mat.cp_max for mat in mats]) + '[J/m^3/K]' + '\n')
+        params_file.write('assumed constant cp:' + str(self.constant_cp) + '\n')
+        params_file.write('kappa_el =' + str([mat.kappae for mat in mats]) + '[W/mK]' + '\n')
+        params_file.write('kappa_ph =' + str([mat.kappap for mat in mats]) + '[W/mK]' + '\n')
+        params_file.write('Tc =' + str([mat.tc for mat in mats]) + '[K]' + '\n')
+        params_file.write('T_Deb =' + str([mat.tdeb for mat in mats]) + '[K]' + '\n')
+        params_file.write('### Pulse parameters' + '\n')
+        params_file.write('Estimated fleunce:' + str(self.Pulse.fluence) + '[mJ/cm^2]' + '\n')
+        params_file.write('Sigma =' + str(self.Pulse.pulse_width) + '[s]' + '\n')
+        params_file.write('Delay =' + str(self.Pulse.delay) + '[s]' + '\n')
+        params_file.write('Penetration depth = ' + str([mat.pen_dep for mat in mats]) + '[m]')
+        params_file.close()
         return
