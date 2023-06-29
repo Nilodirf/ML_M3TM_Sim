@@ -412,9 +412,10 @@ class SimDynamics:
         params_file.write('Tc =' + str([mat.tc for mat in mats]) + '[K]' + '\n')
         params_file.write('T_Deb =' + str([mat.tdeb for mat in mats]) + '[K]' + '\n')
         params_file.write('### Pulse parameters' + '\n')
-        params_file.write('Estimated fleunce:' + str(self.Pulse.fluence) + '[mJ/cm^2]' + '\n')
+        params_file.write('Estimated fluence:' + str(self.Pulse.fluence) + '[mJ/cm^2]' + '\n')
         params_file.write('Sigma =' + str(self.Pulse.pulse_width) + '[s]' + '\n')
         params_file.write('Delay =' + str(self.Pulse.delay) + '[s]' + '\n')
         params_file.write('Penetration depth = ' + str([mat.pen_dep for mat in mats]) + '[m]')
         params_file.close()
+
         return
