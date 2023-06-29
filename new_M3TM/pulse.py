@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class SimPulse:
     # This class lets us define te pulse for excitation of the sample
 
@@ -8,6 +9,12 @@ class SimPulse:
         # sample (object). Sample in use
         # pulse_width (float). Sigma of gaussian pulse shape in s
         # fluence (float). Fluence of the laser pulse in mJ/cm**2
+        # delay (float). time-delay of the pulse peak after simulation start in s (Let the magnetization relax
+        # to equilibrium before injecting the pulse
+
+        # Also returns:
+        # peak_power (float). Peak power per area of the pulse in W/m**2. Needed to compute the absorption profile.
+
         self.pulse_width = pulse_width
         self.fluence = fluence
         self.delay = delay
@@ -38,16 +45,19 @@ class SimPulse:
         until_pump_start_time = np.arange(0, start_pump_time, 1e-14)
         pump_time_grid = np.append(until_pump_start_time, raw_pump_time_grid)
 
-        raw_pump_grid = self.peak_power*np.exp(-((raw_pump_time_grid-p_del)/sigma)**2/2)
+        raw_pump_grid = np.exp(-((raw_pump_time_grid-p_del)/sigma)**2/2)
         pump_grid = np.append(np.zeros_like(until_pump_start_time), raw_pump_grid)
 
         pump_time_grid = np.append(pump_time_grid, end_pump_time+5e-15)
         pump_grid = np.append(pump_grid, 0.)
 
-        return pump_time_grid, self.depth_profile(pump_grid)
+        pump_map = self.depth_profile(pump_grid)
+
+        return pump_time_grid, pump_map
 
     def depth_profile(self, pump_grid):
-        # This method computes the depth dependence of the laser pulse and multiplies it with the time dependence.
+        # This method computes the depth dependence of the laser pulse in exponential fashion without reflection
+        # at interface and multiplies it with the time dependence.
 
         # Input:
         # sample (class object). The before constructed sample

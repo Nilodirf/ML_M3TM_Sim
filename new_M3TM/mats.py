@@ -7,6 +7,37 @@ class SimMaterials:
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
     def __init__(self, name, pen_dep, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
+        # Input:
+        # name (String). Name of the material
+        # pen_dep (float). Penetration depth of the layers of the material in m
+        # tdeb (float). Debye temperature of the material
+        # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
+        # vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
+        # kappap (float). Phononic heat diffusion constant in W/m/K
+        # kappae (float). Electronic heat diffusion constant in W/m/K (set to 0 if no itinerant electrons)
+        # gep (float). Electron-phonon coupling constant in W/m**3/K (set to 0 if no itinerant electrons)
+        # spin (float). Effective spin of the material (set to 0 if no itinerant spin-full electrons)
+        # tc (float). Curie temperature of the material (set to 0 if not magnetic)
+        # muat (float). Atomic magnetic moment in unit of mu_bohr. (set to 0 if not magnetic)
+        # asf (float). Electron-phonon-scattering induced spin flip probability
+        # of the material (set to 0 if no itinerant spin-full electrons)
+        # ce_gamma (float). Sommerfeld constant of electronic heat capacity
+        # in J/m**3/K (set to 0 if no itinerant electrons)
+        # cp_max (float). Maximal phononic heat capacity in W/m**3/K. Temperature dependence
+        # is computed with Einstein model
+
+        # Also returns:
+        # tein (float). The approximate Einstein temperature in relation to the Debye temperature.
+        # cp_T_grid, cp_T (numpy arrays). Arrays of (i) the temperature grid on which the Einstein
+        # heat capacity is computed and (ii) the corresponding cp values
+        # R (float/None). magnetization rate parameter in 1/s, None if muat == 0
+        # J (float/None). Mean field exchange coupling parameter, None if muat == 0
+        # arbsc (float/None). Closely related to rate parameter, None if muat == 0
+        # ms (numpy array/None). Spin-levels depending on the effective spin, None if muat == 0
+        # s_up_eig_squared (numpy array/None). Eigenvalues of the creation spin ladder operator for all spin sublevels
+        # s_dn_eig_squared (numpy array/None). Eigenvalues of the annihilation spin ladder operator
+        # for all spin sublevels
+
         self.name = name
         self.pen_dep = pen_dep
         self.tdeb = tdeb
@@ -31,9 +62,9 @@ class SimMaterials:
             self.s_up_eig_squared = None
             self.s_dn_eig_squared = None
         else:
-            self.R = 8 * self.asf * self.vat * self.tc**2 / self.tdeb**2 / sp.k / self.muat
-            self.J = 3 * sp.k * self.tc * self.spin / (self.spin+ 1 )
-            self.arbsc = self.R / self.tc**2 / sp.k * self.gep
+            self.R = 8 * self.asf * self.vat * self.tc**2 / self.tdeb**2 / sp.k / self.muat * self.gep
+            self.J = 3 * sp.k * self.tc * self.spin / (self.spin + 1)
+            self.arbsc = self.R / self.tc**2 / sp.k
             self.ms = (np.arange(2 * self.spin + 1) + np.array([-self.spin for i in range(int(2 * self.spin) + 1)]))
             self.s_up_eig_squared = -np.power(self.ms, 2) - self.ms + self.spin ** 2 + self.spin
             self.s_dn_eig_squared = -np.power(self.ms, 2) + self.ms + self.spin ** 2 + self.spin
@@ -59,4 +90,4 @@ class SimMaterials:
 
         t_grid = np.append(t_grid, 3*self.tdeb+1)
         cp_t_grid = np.append(cp_t_grid, self.cp_max)
-        return t_grid, cp_t_grid
+        return t_grid, list(cp_t_grid)

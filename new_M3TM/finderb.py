@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def finderb(key, array):
     """finderb
 
@@ -23,6 +26,7 @@ def finderb(key, array):
     for m in range(n):
         i[m] = finderb_nest(key[m], array)
     return i
+
 
 def finderb_nest(key, array):
     """finderb_nest
