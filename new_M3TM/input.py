@@ -29,7 +29,7 @@ sample.add_layers(material=sio2, layers=300)
 pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=1.3, delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
-sim = SimDynamics(sample, pulse, end_time=1e-9, ini_temp=5., constant_cp=True)
+sim = SimDynamics(sample, pulse, end_time=1e-10, ini_temp=5., constant_cp=True)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
