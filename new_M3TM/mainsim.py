@@ -3,8 +3,6 @@ from scipy import constants as sp
 from finderb import finderb
 from scipy.integrate import solve_ivp
 import os
-from npy_append_array import NpyAppendArray
-import time
 
 
 class SimDynamics:
@@ -381,18 +379,14 @@ class SimDynamics:
         for file in os.listdir(sim_path):
             os.remove(os.path.join(sim_path, file))
 
-        te_file = NpyAppendArray(sim_path + '/tes.npy')
-        tp_file = NpyAppendArray(sim_path + '/tps.npy')
-        m_file = NpyAppendArray(sim_path + '/ms.npy')
-        delay_file = NpyAppendArray(sim_path + '/delays.npy')
-        params_file = open(sim_path + '/params.dat', 'w+')
-
-        te_file.append(sim_tes)
-        tp_file.append(sim_tps)
-        m_file.append(sim_mags)
-        delay_file.append(sim_delay)
+        np.save(sim_path + '/tes.npy', sim_tes)
+        np.save(sim_path + '/tps.npy', sim_tps)
+        np.save(sim_path + '/ms.npy', sim_mags)
+        np.save(sim_path + '/delay.npy', sim_delay)
 
         mats = self.Sam.mats
+
+        params_file = open(sim_path + '/params.dat', 'w+')
 
         params_file.write('##Simulation parameters' + '\n')
         params_file.write('initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')

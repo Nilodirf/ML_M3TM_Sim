@@ -12,7 +12,7 @@ from mainsim import SimDynamics
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
 cgt = SimMaterials(name='CGT', pen_dep=10e-9, tdeb=175, dz=20.5e-10, vat=1e-29, ce_gamma=737., cp_max=8.9e4,
-                   kappap=0.002, kappae=0.01, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.3)
+                   kappap=0.002, kappae=0.01, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05)
 sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=5.4e-10, vat=1e-28, ce_gamma=0., cp_max=4e4, kappap=14.,
                     kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
 hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=7.7e-10, vat=1e-28, ce_gamma=0., cp_max=4e4, kappap=36.,
@@ -29,7 +29,7 @@ sample.add_layers(material=sio2, layers=300)
 pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=1.3, delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
-sim = SimDynamics(sample, pulse, end_time=1e-10, ini_temp=5., constant_cp=True)
+sim = SimDynamics(sample, pulse, end_time=1e-9, ini_temp=5., constant_cp=True)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
