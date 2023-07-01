@@ -17,6 +17,7 @@ class SimDynamics:
         # computed. Note that this takes very long at low temperatures
 
         # Also returns:
+        # self.time_grid (numpy array). 1d-array of the time-grid to be used in simulations.
 
         self.Sam = sample
         self.Pulse = pulse
@@ -26,6 +27,16 @@ class SimDynamics:
         self.time_grid = self.get_time_grid()
 
     def get_time_grid(self):
+        # This method creates a time-grid for the simulation on the basis of the pulse-time-grid defined
+        # in SimPulse class. Basically, after the pulse has been completely injected with a timestep of 0.1 fs,
+        # use 10 fs as time-steps. This helps the solver as it does not have to recalculate new time-steps all the time.
+
+        # Input:
+        # self (object). The simulation to be run
+
+        # Returns:
+        # time_grid (numpy array). 1d-array of the time-steps to be used in the dynamical simulation
+
         start_time_grid = self.Pulse.pulse_time_grid
         rest_time_grid = np.arange(start_time_grid[-1] + 1e-14, self.end_time, 1e-14)
         time_grid = np.concatenate((start_time_grid, rest_time_grid))

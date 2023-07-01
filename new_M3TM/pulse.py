@@ -13,7 +13,9 @@ class SimPulse:
         # to equilibrium before injecting the pulse
 
         # Also returns:
-        # peak_power (float). Peak power per area of the pulse in W/m**2. Needed to compute the absorption profile.
+        # peak_power (float). Peak power per area of the pulse in W/m**2. Needed to compute the absorption profile.#
+        # pulse_time_grid, pulse_map (numpy arrays). 1d-arrays of the time-grid on which the pulse is defined
+        # and the corresponding 2d-array of excitation power density at all times in all layers.
 
         self.pulse_width = pulse_width
         self.fluence = fluence
