@@ -11,11 +11,17 @@ from mainsim import SimDynamics
 
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
+<<<<<<< Updated upstream
 cgt = SimMaterials(name='CGT', pen_dep=10e-9, tdeb=175, dz=20.5e-10, vat=1e-29, ce_gamma=737., cp_max=8.9e4,
                    kappap=0.002, kappae=0.01, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05)
 sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=5.4e-10, vat=1e-28, ce_gamma=0., cp_max=4e4, kappap=14.,
+=======
+cgt = SimMaterials(name='CGT', pen_dep=10e-9, tdeb=175, dz=20.5e-10, vat=1e-29, ce_gamma=650., cp_max=8.9e6,
+                   kappap=5., kappae=0.01, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.3)
+sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=5.4e-10, vat=1e-28, ce_gamma=0., cp_max=4e6, kappap=14.,
+>>>>>>> Stashed changes
                     kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
-hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=7.7e-10, vat=1e-28, ce_gamma=0., cp_max=4e4, kappap=36.,
+hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=7.7e-10, vat=1e-28, ce_gamma=0., cp_max=4e6, kappap=36.,
                    kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
 
 # Create a sample, then add desired layers of the materials you want to simulate.

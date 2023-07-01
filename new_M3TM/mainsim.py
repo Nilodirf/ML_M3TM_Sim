@@ -23,6 +23,16 @@ class SimDynamics:
         self.end_time = end_time
         self.ini_temp = ini_temp
         self.constant_cp = constant_cp
+        self.time_grid = self.get_time_grid()
+
+    def get_time_grid(self):
+        start_time_grid = self.Pulse.pulse_time_grid
+        rest_time_grid = np.arange(start_time_grid[-1] + 1e-14, self.end_time, 1e-14)
+        time_grid = np.concatenate((start_time_grid, rest_time_grid))
+
+        return time_grid
+
+
 
     def initialize_temperature(self):
         # This method initializes the starting uniform temperature map.
@@ -79,7 +89,7 @@ class SimDynamics:
         cp_max_sam = self.Sam.get_params('cp_max')
         cp_sam = [np.array(i) for i in cp_sam]
         gep_sam = self.Sam.get_params('gep')[el_mask]
-        pulse_time_grid, pulse_map = self.Pulse.get_pulse_map()
+        pulse_time_grid, pulse_map = self.Pulse.pulse_time_grid, self.Pulse.pulse_map
         dz_sam = self.Sam.get_params('dz')
         kappa_e_sam = self.Sam.get_params('kappae')
         kappa_p_sam = self.Sam.get_params('kappap')
@@ -109,7 +119,7 @@ class SimDynamics:
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
-                            t_span=(0, self.end_time), y0=config0, max_step=1e-14, method='RK45')
+                            t_span=(0, self.end_time), y0=config0, t_eval=self.time_grid, method='RK45')
 
         return all_sol
 
