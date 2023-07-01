@@ -13,13 +13,16 @@ class SimPulse:
         # to equilibrium before injecting the pulse
 
         # Also returns:
-        # peak_power (float). Peak power per area of the pulse in W/m**2. Needed to compute the absorption profile.
+        # peak_power (float). Peak power per area of the pulse in W/m**2. Needed to compute the absorption profile.#
+        # pulse_time_grid, pulse_map (numpy arrays). 1d-arrays of the time-grid on which the pulse is defined
+        # and the corresponding 2d-array of excitation power density at all times in all layers.
 
         self.pulse_width = pulse_width
         self.fluence = fluence
         self.delay = delay
         self.peak_power = self.fluence/np.sqrt(2*np.pi)/self.pulse_width*10
         self.Sam = sample
+        self.pulse_time_grid, self.pulse_map = self.get_pulse_map()
 
     def get_pulse_map(self):
         # This method creates a time grid and a spatially independent pulse excitation of gaussian shape
@@ -48,7 +51,7 @@ class SimPulse:
         raw_pump_grid = np.exp(-((raw_pump_time_grid-p_del)/sigma)**2/2)
         pump_grid = np.append(np.zeros_like(until_pump_start_time), raw_pump_grid)
 
-        pump_time_grid = np.append(pump_time_grid, end_pump_time+5e-15)
+        pump_time_grid = np.append(pump_time_grid, end_pump_time+1e-14)
         pump_grid = np.append(pump_grid, 0.)
 
         pump_map = self.depth_profile(pump_grid)

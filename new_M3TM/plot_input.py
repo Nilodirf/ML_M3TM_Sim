@@ -9,5 +9,4 @@ plotter.map_plot(key='mag', save_fig=False)
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
 plotter.line_plot(key='te', min_layer=10, max_layer=20, save_fig=False)
-
-# Adding development branch
+plotter.line_plot(key='mag', min_layer=0, max_layer=10, save_fig=False)

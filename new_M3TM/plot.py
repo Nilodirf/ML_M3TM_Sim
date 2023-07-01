@@ -24,7 +24,7 @@ class SimPlot:
         # delay, tes, tps, mags (numpy arrays): The simulated maps of all three baths (2d except for 1d delay)
 
         path = 'Results/' + str(self.file) + '/'
-        delay = np.load(path + '/delays.npy')
+        delay = np.load(path + 'delay.npy')
         tes = np.load(path + 'tes.npy')
         tps = np.load(path + 'tps.npy')
         mags = np.load(path + 'ms.npy')

@@ -3,7 +3,6 @@ from scipy import constants as sp
 from finderb import finderb
 from scipy.integrate import solve_ivp
 import os
-from npy_append_array import NpyAppendArray
 
 
 class SimDynamics:
@@ -18,12 +17,33 @@ class SimDynamics:
         # computed. Note that this takes very long at low temperatures
 
         # Also returns:
+        # self.time_grid (numpy array). 1d-array of the time-grid to be used in simulations.
 
         self.Sam = sample
         self.Pulse = pulse
         self.end_time = end_time
         self.ini_temp = ini_temp
         self.constant_cp = constant_cp
+        self.time_grid = self.get_time_grid()
+
+    def get_time_grid(self):
+        # This method creates a time-grid for the simulation on the basis of the pulse-time-grid defined
+        # in SimPulse class. Basically, after the pulse has been completely injected with a timestep of 0.1 fs,
+        # use 10 fs as time-steps. This helps the solver as it does not have to recalculate new time-steps all the time.
+
+        # Input:
+        # self (object). The simulation to be run
+
+        # Returns:
+        # time_grid (numpy array). 1d-array of the time-steps to be used in the dynamical simulation
+
+        start_time_grid = self.Pulse.pulse_time_grid
+        rest_time_grid = np.arange(start_time_grid[-1] + 1e-14, self.end_time, 1e-14)
+        time_grid = np.concatenate((start_time_grid, rest_time_grid))
+
+        return time_grid
+
+
 
     def initialize_temperature(self):
         # This method initializes the starting uniform temperature map.
@@ -80,7 +100,7 @@ class SimDynamics:
         cp_max_sam = self.Sam.get_params('cp_max')
         cp_sam = [np.array(i) for i in cp_sam]
         gep_sam = self.Sam.get_params('gep')[el_mask]
-        pulse_time_grid, pulse_map = self.Pulse.get_pulse_map()
+        pulse_time_grid, pulse_map = self.Pulse.pulse_time_grid, self.Pulse.pulse_map
         dz_sam = self.Sam.get_params('dz')
         kappa_e_sam = self.Sam.get_params('kappae')
         kappa_p_sam = self.Sam.get_params('kappap')
@@ -110,7 +130,7 @@ class SimDynamics:
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
-                            t_span=(0, self.end_time), y0=config0, max_step=1e-14, method='RK45')
+                            t_span=(0, self.end_time), y0=config0, t_eval=self.time_grid, method='RK45')
 
         return all_sol
 
@@ -378,17 +398,39 @@ class SimDynamics:
         if not os.path.exists(sim_path):
             os.makedirs(sim_path)
         for file in os.listdir(sim_path):
-            if str(file).endswith('.npy'):
-                os.remove(os.path.join(sim_path, file))
+            os.remove(os.path.join(sim_path, file))
 
-        te_file = NpyAppendArray(sim_path + '/tes.npy')
-        tp_file = NpyAppendArray(sim_path + '/tps.npy')
-        m_file = NpyAppendArray(sim_path + '/ms.npy')
-        delay_file = NpyAppendArray(sim_path + '/delays.npy')
+        np.save(sim_path + '/tes.npy', sim_tes)
+        np.save(sim_path + '/tps.npy', sim_tps)
+        np.save(sim_path + '/ms.npy', sim_mags)
+        np.save(sim_path + '/delay.npy', sim_delay)
 
-        te_file.append(sim_tes)
-        tp_file.append(sim_tps)
-        m_file.append(sim_mags)
-        delay_file.append(sim_delay)
+        mats = self.Sam.mats
+
+        params_file = open(sim_path + '/params.dat', 'w+')
+
+        params_file.write('##Simulation parameters' + '\n')
+        params_file.write('initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
+        params_file.write('##Sample parameters' + '\n')
+        params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
+        params_file.write('Material positions in order: ' + str(self.Sam.mat_ind) + '\n')
+        params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
+        params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
+        params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
+        params_file.write('asf =' + str([mat.asf for mat in mats]) + '\n')
+        params_file.write('gep =' + str([mat.gep for mat in mats]) + '[W/m^3/K]' + '\n')
+        params_file.write('gamma_el =' + str([mat.ce_gamma for mat in mats]) + '[J/m^3/K^2]' + '\n')
+        params_file.write('cv_ph_max =' + str([mat.cp_max for mat in mats]) + '[J/m^3/K]' + '\n')
+        params_file.write('assumed constant cp:' + str(self.constant_cp) + '\n')
+        params_file.write('kappa_el =' + str([mat.kappae for mat in mats]) + '[W/mK]' + '\n')
+        params_file.write('kappa_ph =' + str([mat.kappap for mat in mats]) + '[W/mK]' + '\n')
+        params_file.write('Tc =' + str([mat.tc for mat in mats]) + '[K]' + '\n')
+        params_file.write('T_Deb =' + str([mat.tdeb for mat in mats]) + '[K]' + '\n')
+        params_file.write('### Pulse parameters' + '\n')
+        params_file.write('Estimated fluence:' + str(self.Pulse.fluence) + '[mJ/cm^2]' + '\n')
+        params_file.write('Sigma =' + str(self.Pulse.pulse_width) + '[s]' + '\n')
+        params_file.write('Delay =' + str(self.Pulse.delay) + '[s]' + '\n')
+        params_file.write('Penetration depth = ' + str([mat.pen_dep for mat in mats]) + '[m]')
+        params_file.close()
 
         return
