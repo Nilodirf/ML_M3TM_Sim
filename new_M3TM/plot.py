@@ -109,7 +109,7 @@ class SimPlot:
 
         plt.figure(figsize=(8, 6))
 
-        for i in range(min_layer, max_layer-1):
+        for i in range(min_layer, max_layer):
             plt.plot(x, y[:, i], label='layer '+str(i))
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(str(y_label), fontsize=16)
