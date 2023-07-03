@@ -239,7 +239,7 @@ class SimDynamics:
 
         te_diff_right = np.concatenate((np.diff(te), np.zeros(1)))
         te_diff_left = -np.roll(te_diff_right, 1)
-        te_double_diff = -np.concatenate((np.zeros(1), np.concatenate((np.diff(te ,2), np.zeros(1)))))
+        te_double_diff = -np.concatenate((np.zeros(1), np.concatenate((np.diff(te, 2), np.zeros(1)))))
         te_tp_double_diff = -np.concatenate((np.zeros(1), np.concatenate((np.diff(te/tp, 2), np.zeros(1)))))
 
         term_1 = np.multiply(kappa_e_dz_pref * np.divide(te, tp), te_diff_right + te_diff_left)

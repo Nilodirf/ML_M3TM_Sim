@@ -31,7 +31,7 @@ class SimPlot:
 
         return delay, tes, tps, mags
 
-    def map_plot(self, key, save_fig):
+    def map_plot(self, key, min_layer, max_layer, save_fig):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
 
         # Input:
@@ -61,9 +61,9 @@ class SimPlot:
 
         plt.figure(figsize=(8, 6))
 
-        (M, N) = z.shape
+        (M, N) = z[:, min_layer: max_layer].shape
 
-        plt.imshow(z.T, aspect='auto', origin='lower', extent=[x[0], x[-1], 0, N-1], cmap='jet')
+        plt.imshow(z[:, min_layer: max_layer].T, aspect='auto', origin='lower', extent=[x[0], x[-1], 0, N-1], cmap='jet')
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'layer', fontsize=16)
         plt.title(str(title), fontsize=20)
@@ -77,7 +77,7 @@ class SimPlot:
 
         return
 
-    def line_plot(self, key, min_layer, max_layer, save_fig):
+    def line_plot(self, key, min_layer, max_layer, average, save_fig):
         # This method produces line plots of the dynamics of a desired subsystem and for a number of desired layers.
 
         # Input:
@@ -109,11 +109,14 @@ class SimPlot:
 
         plt.figure(figsize=(8, 6))
 
-        for i in range(min_layer, max_layer-1):
-            plt.plot(x, y[:, i], label='layer '+str(i))
+        if average:
+            plt.plot(x, np.sum(y[:, min_layer:max_layer], axis=1)/(max_layer-min_layer))
+        else:
+            for i in range(min_layer, max_layer):
+                plt.plot(x, y[:, i], label='layer '+str(i))
+            plt.legend(fontsize=14)
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(str(y_label), fontsize=16)
-        plt.legend(fontsize=14)
         plt.title(str(title), fontsize=20)
 
         if save_fig:

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class SimSample:
     # Within this class the sample as a 1d-array of materials can be constructed and parameters and functions for
     # the whole sample can be defined and read out.
