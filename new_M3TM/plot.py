@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from finderb import finderb
 
 
 class SimPlot:
@@ -31,18 +32,34 @@ class SimPlot:
 
         return delay, tes, tps, mags
 
-    def map_plot(self, key, min_layer, max_layer, save_fig):
+    def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
 
         # Input:
         # key (string). Chose what you want to plot: `te`, `tp`, `mag` are possible
         # save_fig (boolean). If True, the plot will be saved with the according title denoting the map that is
-        # being plotted in the simulation result folder.
+        # min_layer (int). first layer to be plotted. Default is None and then converted to the first layer
+        # max_layer (max_layer). last layer to be plotted. Default is None and then converted to the last layer
+        # being plotted in the simulation result folder. Default is False
+        # min_time (float). The time when the plot should start in ps. Default is None and then converted to the
+        # minimal time in self.delay
+        # max_time (float). The maximal time that should be plotted in ps. Default is None and then converted
+        # to the maximum time in self.delay
 
         # Returns:
         # None. After creating the plot and possibly saving it, the functions returns nothing.
 
         x = self.delay * 1e12
+
+        if min_time is None:
+            min_time = x[0]
+        if max_time is None:
+            max_time = x[-1]
+
+        first_time_index = finderb(min_time, x)[0]
+        last_time_index = finderb(max_time, x)[0]
+        x = x[first_time_index: last_time_index]
+
         if key == 'te':
             z = self.tes
             title = 'Electron Temperature Map'
@@ -61,9 +78,13 @@ class SimPlot:
 
         plt.figure(figsize=(8, 6))
 
-        (M, N) = z[:, min_layer: max_layer].shape
+        (M0, N0) = z.shape
+        if min_layer is None:
+            min_layer = 0
+        if max_layer is None:
+            max_layer = N0
 
-        plt.imshow(z[:, min_layer: max_layer].T, aspect='auto', origin='lower', extent=[x[0], x[-1], 0, N-1], cmap='jet')
+        plt.pcolormesh(x, np.arange(min_layer, max_layer), z[first_time_index:last_time_index, min_layer: max_layer].T, cmap='jet')
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'layer', fontsize=16)
         plt.title(str(title), fontsize=20)
@@ -77,20 +98,36 @@ class SimPlot:
 
         return
 
-    def line_plot(self, key, min_layer, max_layer, average, save_fig):
+    def line_plot(self, key, average=False, min_layer=None, max_layer=None,
+                  save_fig=False, min_time=None, max_time=None):
         # This method produces line plots of the dynamics of a desired subsystem and for a number of desired layers.
 
         # Input:
         # key (string). Chose what you want to plot: `te`, `tp`, `mag` are possible
-        # min_layer (int). first layer to be plotted
-        # max_layer (max_layer). last layer to be plotted
+        # average (boolean). If true, the mentioned data is averaged over the selected layers. Default is False
+        # min_layer (int). first layer to be plotted. Default is None and then converted to the first layer
+        # max_layer (max_layer). last layer to be plotted. Default is None and then converted to the last layer
         # save_fig (boolean). If True, the plot will be saved with the according title denoting the map that is
-        # being plotted in the simulation result folder.
+        # being plotted in the simulation result folder.Default is False
+        # min_time (float). The time when the plot should start in ps. Default is None and then converted to the
+        # minimal time in self.delay
+        # max_time (float). The maximal time that should be plotted in ps. Default is None and then converted
+        # to the maximum time in self.delay
 
         # Returns:
         # None. After creating the plot and possibly saving it, the functions returns nothing.
 
         x = self.delay * 1e12
+
+        if min_time is None:
+            min_time = x[0]
+        if max_time is None:
+            max_time = x[-1]
+
+        first_time_index = finderb(min_time, x)[0]
+        last_time_index = finderb(max_time, x)[0]
+        x = x[first_time_index: last_time_index]
+
         if key == 'te':
             y = self.tes
             title = 'Electron Temperature Dynamics'
@@ -107,13 +144,19 @@ class SimPlot:
             print('In SimPlot.map_plot(): Please enter a valid key: You can either plot ´te´, ´tp´ or ´mag´.')
             return
 
+        (M0, N0) = y.shape
+        if min_layer is None:
+            min_layer = 0
+        if max_layer is None:
+            max_layer = N0
+
         plt.figure(figsize=(8, 6))
 
         if average:
-            plt.plot(x, np.sum(y[:, min_layer:max_layer], axis=1)/(max_layer-min_layer))
+            plt.plot(x, np.sum(y[first_time_index:last_time_index, min_layer:max_layer], axis=1)/(max_layer-min_layer))
         else:
             for i in range(min_layer, max_layer):
-                plt.plot(x, y[:, i], label='layer '+str(i))
+                plt.plot(x, y[first_time_index:last_time_index, i], label='layer '+str(i))
             plt.legend(fontsize=14)
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(str(y_label), fontsize=16)

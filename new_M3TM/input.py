@@ -8,12 +8,14 @@ from mats import SimMaterials
 from sample import SimSample
 from pulse import SimPulse
 from mainsim import SimDynamics
+import sys
 import numpy as np
+np.set_printoptions(threshold=sys.maxsize)
 
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
 cgt = SimMaterials(name='CGT', pen_dep=30e-9, tdeb=175, dz=20.5e-10, vat=1e-29, ce_gamma=737., cp_max=8.9e6,
-                   kappap=5.34, kappae=0.0016, gep=3e18, spin=1.5, tc=65., muat=4., asf=0.25)
+                   kappap=5.34, kappae=0.0016, gep=3e15, spin=1.5, tc=65., muat=4., asf=0.25)
 sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=5.4e-10, vat=1e-28, ce_gamma=0., cp_max=4e6, kappap=1.4,
                     kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
 hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=7.7e-10, vat=1e-28, ce_gamma=0., cp_max=4e6, kappap=36.,
