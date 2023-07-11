@@ -8,6 +8,7 @@ from mats import SimMaterials
 from sample import SimSample
 from pulse import SimPulse
 from mainsim import SimDynamics
+import numpy as np
 
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
@@ -22,8 +23,8 @@ hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=7.7e-10, vat=1e-28, ce_ga
 # The first material to be added will be closest to the laser pulse and so on.
 sample = SimSample()
 sample.add_layers(material=hbn, layers=14)
-sample.add_layers(material=cgt, layers=15)
-sample.add_layers(material=sio2, layers=553)
+sample.add_layers(material=cgt, layers=15, kappap_int=1.)
+sample.add_layers(material=sio2, layers=553, kappap_int=2.)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
 pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=1.5, delay=1e-12)
@@ -33,7 +34,6 @@ sim = SimDynamics(sample=sample, pulse=pulse, end_time=1e-9, ini_temp=15., const
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
-print(solution.t)
 
 # Save the data in a file with the desired name
 sim.save_data(solution, save_file='try_1')
