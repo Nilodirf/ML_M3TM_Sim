@@ -104,8 +104,8 @@ class SimDynamics:
         dz_sam = self.Sam.get_params('dz')
         kappa_e_sam = self.Sam.get_params('kappae')
         kappa_p_sam = self.Sam.get_params('kappap')
-        kappa_e_dz_pref = np.divide(kappa_e_sam, np.power(dz_sam, 2))[el_mask]
-        kappa_p_dz_pref = np.divide(kappa_p_sam, np.power(dz_sam, 2))
+        kappa_e_dz_pref = np.divide(kappa_e_sam, np.power(dz_sam, 2)[..., np.newaxis])[el_mask]
+        kappa_p_dz_pref = np.divide(kappa_p_sam, np.power(dz_sam, 2)[..., np.newaxis])
         j_sam = self.Sam.get_params('J')[mag_mask]
         spin_sam = self.Sam.get_params('spin')[mag_mask]
         arbsc_sam = self.Sam.get_params('arbsc')[mag_mask]
@@ -242,8 +242,9 @@ class SimDynamics:
         te_double_diff = -np.concatenate((np.zeros(1), np.concatenate((np.diff(te, 2), np.zeros(1)))))
         te_tp_double_diff = -np.concatenate((np.zeros(1), np.concatenate((np.diff(te/tp, 2), np.zeros(1)))))
 
-        term_1 = np.multiply(kappa_e_dz_pref * np.divide(te, tp), te_diff_right + te_diff_left)
-        term_2 = 0.25 * kappa_e_dz_pref * te_tp_double_diff * te_double_diff
+        term_1 = (np.multiply(kappa_e_dz_pref[:, 1], te_diff_right)
+                  + np.multiply(kappa_e_dz_pref[:, 0], te_diff_left)) * np.divide(te, tp)
+        term_2 = 0.25 * kappa_e_dz_pref[:, 0] * te_tp_double_diff * te_double_diff
 
         dte_dt_diff = np.divide(term_1 + term_2, ce_sam_t)
 
@@ -265,7 +266,8 @@ class SimDynamics:
         tp_diff_right = np.concatenate((np.diff(tp), np.zeros(1)))
         tp_diff_left = -np.roll(tp_diff_right, 1)
 
-        dtp_dt_diff = np.divide(np.multiply(kappa_p_dz_pref, tp_diff_right+tp_diff_left), cp_sam_t)
+        dtp_dt_diff = np.divide(np.multiply(kappa_p_dz_pref[:, 1], tp_diff_right) +
+                                np.multiply(kappa_p_dz_pref[:, 0], tp_diff_left), cp_sam_t)
 
         return dtp_dt_diff
 

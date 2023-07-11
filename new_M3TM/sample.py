@@ -16,6 +16,10 @@ class SimSample:
         # mag_mask (boolean array). Mask showing at which position magnetic materials are placed.
         # mats, mat_ind (list, list). List of the different materials in the sample and their positions.
         # mag_num (int). Number of magnetic materials in the sample.
+        # kappa_p_int (numpy array). 1d-array of the interface constants of phononic heat diffusion. Starts empty,
+        # recalculated after adding of layers
+        # kappa_e_int (numpy array). 1d-array of the interface constants of electronic heat diffusion. Starts empty,
+        # recalculated after adding of layers
 
         self.mat_arr = np.array([])
         self.len = self.get_len()
@@ -24,17 +28,61 @@ class SimSample:
         self.mag_mask = self.get_magdyn_mask()
         self.mats, self.mat_ind = self.get_mat_positions()
         self.mag_num = self.get_num_mag_mat()
+        self.kappa_p_int = np.array([])
+        self.kappa_e_int = np.array([])
 
-    def add_layers(self, material, layers):
+    def add_layers(self, material, layers, kappap_int=None, kappae_int=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
 
         # Input:
         # self (object). A pointer to the sample in construction
         # material (object). A material previously defined with the materials class
         # layers (int). Number of layers with depth material.dz to be added to the sample
+        # kappap_int (float). Phononic interface heat conductivity to the last block of the sample
+        # kappae_int (float). Electronic interface heat conductivity to the last block of the sample
 
         # Returns:
         # mat_arr (numpy array). 1d-array after the layers have been added
+
+        if self.len > 0:
+            assert kappap_int is not None and \
+                   (type(kappap_int) == float or kappap_int == 'min' or kappap_int == 'max'), \
+                    'Please introduce phononic diffusion interface constant using kappap_int = <value> (in W/m/K) or '\
+                    '"max" or "min" to either set the value manually or use the larger/smaller value of '\
+                    'phononic heat conductivities of the adjacent materials.'
+
+            if material.ce_gamma != 0 and self.mat_arr[-1].ce_gamma != 0:
+                assert kappae_int is not None and \
+                       (type(kappae_int) == float or kappae_int == 'min' or kappap_int == 'max'), \
+                        'Please introduce electronic diffusion interface constant using ' \
+                        'kappap_int = <value> (in W/m/K) ' \
+                        'or "max" or "min" to either set the value manually or use the larger/smaller value of '\
+                        'electronic heat conductivities of the adjacent materials.'
+
+            else:
+                kappae_int = 0.
+
+            if kappap_int == 'min':
+                self.kappa_p_int = \
+                    np.append(self.kappa_p_int, np.amin(np.array([self.mat_arr[-1].kappap, material.kappap])))
+
+            elif kappap_int == 'max':
+                self.kappa_p_int = \
+                    np.append(self.kappa_p_int, np.amax(np.array([self.mat_arr[-1].kappap, material.kappap])))
+
+            else:
+                self.kappa_p_int = np.append(self.kappa_p_int, kappap_int)
+
+            if kappae_int == 'min':
+                self.kappa_e_int = \
+                    np.append(self.kappa_e_int, np.amin(np.array([self.mat_arr[-1].kappae, material.kappae])))
+
+            elif kappae_int == 'max':
+                self.kappa_e_int = \
+                    np.append(self.kappa_e_int, np.amax(np.array([self.mat_arr[-1].kappae, material.kappae])))
+
+            else:
+                self.kappa_e_int = np.append(self.kappa_e_int, kappae_int)
 
         self.mat_arr = np.append(self.mat_arr, np.array([material for _ in range(layers)]))
         self.len = self.get_len()
@@ -56,8 +104,11 @@ class SimSample:
         # Returns:
         # params (numpy array). 1d-array of the parameters asked for
         # Special case for cp_T: Returns the grid on which the Einstein heat capacity is pre-computed
-        # and the respective heat capacities.
+        # and the respective heat capacities
         # Special case for ms, s_up(dn)_eig_squared: Returns only the parameters for magnetic materials
+        # Special case for kappae(p)_sam): Returns 2d-array of diffusion constants to the left (closer to the laser)
+        # in kappa_e(p)_sam[:,0] and to the right in kappa_e(p)_sam[:,1], respecting the interface coefficients given in
+        # self.add_layers
 
         if param == 'cp_T':
             return [mat.cp_T_grid for mat in self.mats], [mat.cp_T for mat in self.mats]
@@ -67,6 +118,26 @@ class SimSample:
             return np.array([mat.s_up_eig_squared for mat in self.mat_arr if mat.muat != 0])
         elif param == 's_dn_eig_squared':
             return np.array([mat.s_dn_eig_squared for mat in self.mat_arr if mat.muat != 0])
+        elif param == 'kappae':
+            kappa_e_sam = np.zeros((self.len, 2))
+            kappa_e_sam[:, 1] = np.array([mat.kappae for mat in self.mat_arr])
+            pos = 0
+            for i, num in enumerate(self.mat_blocks):
+                pos += num
+                kappa_e_sam[pos-1, 1] = self.kappa_e_int[i-1]
+            kappa_e_sam[-1, 1] = 0.
+            kappa_e_sam[:, 0] = np.roll(kappa_e_sam[:, 1], shift=1, axis=0)
+            return kappa_e_sam
+        elif param == 'kappap':
+            kappa_p_sam = np.zeros((self.len, 2))
+            kappa_p_sam[:, 1] = np.array([mat.kappap for mat in self.mat_arr])
+            pos = 0
+            for i, num in enumerate(self.mat_blocks):
+                pos += num
+                kappa_p_sam[pos-1, 1] = self.kappa_p_int[i-1]
+            kappa_p_sam[-1, 1] = 0.
+            kappa_p_sam[:, 0] = np.roll(kappa_p_sam[:, 1], shift=1, axis=0)
+            return kappa_p_sam
         else:
             return np.array([mat.__dict__[param] for mat in self.mat_arr])
 
@@ -88,8 +159,8 @@ class SimSample:
         # self (object): The sample in use
 
         # Returns:
-        # material_blocks (list). List of the blocks of layers separated by changes in materials
-        # along the sample, containing the number of repeated layers
+        # material_blocks (list). List of lists of the blocks of layers separated by changes in materials
+        # along the sample, containing the number of repeated layers in each list of list.
 
         material_blocks = []
         n_sam = self.get_len()
@@ -135,7 +206,7 @@ class SimSample:
         return magdyn_mask
 
     def get_mat_positions(self):
-        # This method determines all different matierials in the sample and creates a nested list of their positions.
+        # This method determines all different materials in the sample and creates a nested list of their positions.
 
         # Input:
         # self (object). The sample in use
