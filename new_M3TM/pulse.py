@@ -41,11 +41,11 @@ class SimPulse:
         # and for the whole sample (second dimension)
         p_del = self.delay
         sigma = self.pulse_width
-        start_pump_time = p_del-6*sigma
+        start_pump_time = p_del-10*sigma
         end_pump_time = p_del+10*sigma
 
         raw_pump_time_grid = np.arange(start_pump_time, end_pump_time, 1e-16)
-        until_pump_start_time = np.arange(0, start_pump_time, 1e-14)
+        until_pump_start_time = np.arange(0, start_pump_time, 1e-16)
         pump_time_grid = np.append(until_pump_start_time, raw_pump_time_grid)
 
         raw_pump_grid = np.exp(-((raw_pump_time_grid-p_del)/sigma)**2/2)
