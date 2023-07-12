@@ -124,7 +124,8 @@ class SimSample:
             pos = 0
             for i, num in enumerate(self.mat_blocks):
                 pos += num
-                kappa_e_sam[pos-1, 1] = self.kappa_e_int[i-1]
+                if i < len(self.mat_blocks)-1:
+                    kappa_e_sam[pos-1, 1] = self.kappa_e_int[i]
             kappa_e_sam[-1, 1] = 0.
             kappa_e_sam[:, 0] = np.roll(kappa_e_sam[:, 1], shift=1, axis=0)
             return kappa_e_sam
@@ -134,7 +135,8 @@ class SimSample:
             pos = 0
             for i, num in enumerate(self.mat_blocks):
                 pos += num
-                kappa_p_sam[pos-1, 1] = self.kappa_p_int[i-1]
+                if i < len(self.mat_blocks)-1:
+                    kappa_p_sam[pos-1, 1] = self.kappa_p_int[i]
             kappa_p_sam[-1, 1] = 0.
             kappa_p_sam[:, 0] = np.roll(kappa_p_sam[:, 1], shift=1, axis=0)
             return kappa_p_sam
