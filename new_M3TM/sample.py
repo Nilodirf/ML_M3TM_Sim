@@ -20,6 +20,7 @@ class SimSample:
         # recalculated after adding of layers
         # kappa_e_int (numpy array). 1d-array of the interface constants of electronic heat diffusion. Starts empty,
         # recalculated after adding of layers
+        # len_te (int). Number of layers that have free electrons (determined with el_mask)
 
         self.mat_arr = np.array([])
         self.len = self.get_len()
@@ -30,7 +31,8 @@ class SimSample:
         self.mag_num = self.get_num_mag_mat()
         self.kappa_p_int = np.array([])
         self.kappa_e_int = np.array([])
-        self.len_te = np.sum(np.ones(self.len)[self.el_mask])
+        self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
+        self.el_mag_mask = self.get_el_mag_mask()
 
     def add_layers(self, material, layers, kappap_int=None, kappae_int=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
@@ -93,6 +95,7 @@ class SimSample:
         self.mats, self.mat_ind = self.get_mat_positions()
         self.mag_num = self.get_num_mag_mat()
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
+        self.el_mag_mask = self.get_el_mag_mask()
 
         return self.mat_arr
 
@@ -208,6 +211,21 @@ class SimSample:
         magdyn_mask = self.get_params('muat') != 0
 
         return magdyn_mask
+
+    def get_el_mag_mask(self):
+        # This method creates a mask for free-electron layers, filtering out non-magnetic ones. Important for handling
+        # of samples with free-electron, but non-magnetic layers.
+
+        # Input:
+        # self (object). The sample in use
+
+        # Returns:
+        # el_mag_mask (boolean array). 1d-array of length self.len_te, with entries True for magnetic layers, False for
+        # nonmagnetic layers.
+
+        el_mag_mask = np.array([mat.muat for mat in self.mat_arr[self.el_mask]]) != 0
+
+        return el_mag_mask
 
     def get_mat_positions(self):
         # This method determines all different materials in the sample and creates a nested list of their positions.

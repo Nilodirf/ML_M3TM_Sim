@@ -55,7 +55,7 @@ class SimDynamics:
         # te_arr (numpy array). 1d-array of the starting electron temperatures
         # tp_arr (numpy array). 1d-array of the starting phonon temperatures
 
-        te_arr = np.ones_like(self.Sam.mat_arr[self.Sam.mag_mask])*self.ini_temp
+        te_arr = np.ones_like(self.Sam.mat_arr[self.Sam.el_mask])*self.ini_temp
         tp_arr = np.ones(self.Sam.len)*self.ini_temp
 
         return te_arr, tp_arr
@@ -95,6 +95,7 @@ class SimDynamics:
         len_sam_te = self.Sam.len_te
         el_mask = self.Sam.el_mask
         mag_mask = self.Sam.mag_mask
+        el_mag_mask = self.Sam.el_mag_mask
         ce_gamma_sam = self.Sam.get_params('ce_gamma')[el_mask]
         mats, mat_ind = self.Sam.mats, self.Sam.mat_ind
         cp_sam_grid, cp_sam = self.Sam.get_params('cp_T')
@@ -123,7 +124,7 @@ class SimDynamics:
         config0 = np.concatenate((ts, fss0))
 
         all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, len_sam_te,
-                                                                                mat_ind,
+                                                                                mat_ind, el_mag_mask,
                                                                                 mag_mask, el_mask, ce_gamma_sam,
                                                                                 cp_sam_grid, cp_sam, cp_max_sam,
                                                                                 gep_sam, pulse_map,
@@ -138,7 +139,8 @@ class SimDynamics:
 
 
     @staticmethod
-    def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, mag_mask, el_mask, ce_gamma_sam,
+    def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, el_mag_mask,
+                           mag_mask, el_mask, ce_gamma_sam,
                            cp_sam_grid, cp_sam, cp_max_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
                            kappa_p_dz_pref, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
                            ms_sam, mag_num, vat_sam, constant_cp):
@@ -159,7 +161,7 @@ class SimDynamics:
 
         mag = SimDynamics.get_mag(fss, ms_sam, spin_sam)
         dfs_dt = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                                         mag, fss, te, tp[mag_mask])
+                                         mag, fss, te, tp[mag_mask], el_mag_mask)
         dm_dt = SimDynamics.get_mag(dfs_dt, ms_sam, spin_sam)
 
         mag_en_t = SimDynamics.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
@@ -174,11 +176,10 @@ class SimDynamics:
         pulse_t = pulse_map[pulse_time][el_mask]
         ce_sam_t = np.multiply(ce_gamma_sam, te)
 
-        dte_dt = np.zeros(len_sam_te)
         dtp_dt = np.zeros(len_sam)
 
         dte_dt, dtp_dt[el_mask] = SimDynamics.loc_temp_dyn(ce_sam_t, cp_sam_t[el_mask], gep_sam, te,
-                                                                    tp[el_mask], pulse_t, mag_en_t)
+                                                                    tp[el_mask], pulse_t, mag_en_t, el_mag_mask)
         dte_dt_diff = SimDynamics.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp[el_mask])
         dtp_dt_diff = SimDynamics.phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp)
         dte_dt += dte_dt_diff
@@ -191,7 +192,7 @@ class SimDynamics:
         return all_increments_flat
 
     @staticmethod
-    def loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t, mag_en_t):
+    def loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t, mag_en_t, el_mag_mask):
         # This method computes the local temperature dynamics, namely electron-phonon-coupling, electron-spin-coupling
         # and the pulse excitation. The temperature dependence of all parameters shall be precomputed for the input.
         # dte_dt= 1/ce*(gep*(tp-te)+S(t)+ J*m/V_at*dm/dt)
@@ -217,8 +218,8 @@ class SimDynamics:
 
         e_p_coupling = np.multiply(gep_sam, (tp- te))
 
-        de_dt += e_p_coupling
-        de_dt += pulse_t + mag_en_t
+        de_dt += e_p_coupling + pulse_t
+        de_dt[el_mag_mask] += mag_en_t
         de_dt = np.divide(de_dt, ce_sam_t)
 
         dp_dt -= np.divide(e_p_coupling, cp_sam_t)
@@ -274,7 +275,7 @@ class SimDynamics:
         return dtp_dt_diff
 
     @staticmethod
-    def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs, te, tp):
+    def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs, te, tp, el_mag_mask):
         # This method computes the increments of spin-level occupation for the whole magnetic part of the sample.
 
         # Input:
@@ -293,7 +294,7 @@ class SimDynamics:
         # dfs_dt (numpy array). 2d-array of the increments in spin-level occupation in all magnetic layers
 
         h_mf = np.multiply(j_sam, mag)
-        eta = np.divide(h_mf, np.multiply(2 * spin_sam * sp.k, te))
+        eta = np.divide(h_mf, np.multiply(2 * spin_sam * sp.k, te[el_mag_mask]))
         incr_pref = arbsc_sam*tp*h_mf/4/spin_sam/np.sinh(eta)
 
         fs_up = np.multiply(s_up_eig_sq_sam, fs)
