@@ -55,7 +55,7 @@ class SimDynamics:
         # te_arr (numpy array). 1d-array of the starting electron temperatures
         # tp_arr (numpy array). 1d-array of the starting phonon temperatures
 
-        te_arr = np.ones(self.Sam.len)*self.ini_temp
+        te_arr = np.ones_like(self.Sam.mat_arr[self.Sam.mag_mask])*self.ini_temp
         tp_arr = np.ones(self.Sam.len)*self.ini_temp
 
         return te_arr, tp_arr
@@ -92,6 +92,7 @@ class SimDynamics:
         # all_sol (object). The solution and details of the simulation run by solve_ivp
 
         len_sam = self.Sam.len
+        len_sam_te = self.Sam.len_te
         el_mask = self.Sam.el_mask
         mag_mask = self.Sam.mag_mask
         ce_gamma_sam = self.Sam.get_params('ce_gamma')[el_mask]
@@ -121,7 +122,8 @@ class SimDynamics:
 
         config0 = np.concatenate((ts, fss0))
 
-        all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, mat_ind,
+        all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, len_sam_te,
+                                                                                mat_ind,
                                                                                 mag_mask, el_mask, ce_gamma_sam,
                                                                                 cp_sam_grid, cp_sam, cp_max_sam,
                                                                                 gep_sam, pulse_map,
@@ -136,7 +138,7 @@ class SimDynamics:
 
 
     @staticmethod
-    def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, mat_ind, mag_mask, el_mask, ce_gamma_sam,
+    def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, mag_mask, el_mask, ce_gamma_sam,
                            cp_sam_grid, cp_sam, cp_max_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
                            kappa_p_dz_pref, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
                            ms_sam, mag_num, vat_sam, constant_cp):
@@ -150,14 +152,14 @@ class SimDynamics:
         # all_increments_flat (numpy array). Flattened 1d-array of the increments of T_e, T_p
         # and fs (spin-level occupation in the magnetic material)
 
-        te = te_tp_fs_flat[:len_sam]
-        tp = te_tp_fs_flat[len_sam:2*len_sam]
-        fss_flat = te_tp_fs_flat[2*len_sam:]
+        te = te_tp_fs_flat[:len_sam_te]
+        tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
+        fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
         fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
 
         mag = SimDynamics.get_mag(fss, ms_sam, spin_sam)
         dfs_dt = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                                         mag, fss, te[mag_mask], tp[mag_mask])
+                                         mag, fss, te, tp[mag_mask])
         dm_dt = SimDynamics.get_mag(dfs_dt, ms_sam, spin_sam)
 
         mag_en_t = SimDynamics.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
@@ -170,16 +172,16 @@ class SimDynamics:
                 cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
-        ce_sam_t = np.multiply(ce_gamma_sam, te[el_mask])
+        ce_sam_t = np.multiply(ce_gamma_sam, te)
 
-        dte_dt = np.zeros(len_sam)
+        dte_dt = np.zeros(len_sam_te)
         dtp_dt = np.zeros(len_sam)
 
-        dte_dt[el_mask], dtp_dt[el_mask] = SimDynamics.loc_temp_dyn(ce_sam_t, cp_sam_t[el_mask], gep_sam, te[el_mask],
+        dte_dt, dtp_dt[el_mask] = SimDynamics.loc_temp_dyn(ce_sam_t, cp_sam_t[el_mask], gep_sam, te,
                                                                     tp[el_mask], pulse_t, mag_en_t)
-        dte_dt_diff = SimDynamics.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te[el_mask], tp[el_mask])
+        dte_dt_diff = SimDynamics.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp[el_mask])
         dtp_dt_diff = SimDynamics.phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp)
-        dte_dt[el_mask] += dte_dt_diff
+        dte_dt += dte_dt_diff
         dtp_dt += dtp_dt_diff
 
         dfs_dt_flat = dfs_dt.flatten()
@@ -357,10 +359,10 @@ class SimDynamics:
 
         sim_delay = sim_results.t
         sim_results = sim_results.y.T
-        tes = sim_results[:, :self.Sam.len]
-        tps = sim_results[:, self.Sam.len:2 * self.Sam.len]
+        tes = sim_results[:, :self.Sam.len_te]
+        tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len]
 
-        fss_flat = sim_results[:, 2 * self.Sam.len:]
+        fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
         fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num, 4))
         mags = self.get_mag_results(fss)
 

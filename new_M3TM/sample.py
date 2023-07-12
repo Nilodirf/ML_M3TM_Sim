@@ -30,6 +30,7 @@ class SimSample:
         self.mag_num = self.get_num_mag_mat()
         self.kappa_p_int = np.array([])
         self.kappa_e_int = np.array([])
+        self.len_te = np.sum(np.ones(self.len)[self.el_mask])
 
     def add_layers(self, material, layers, kappap_int=None, kappae_int=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
@@ -91,6 +92,7 @@ class SimSample:
         self.mag_mask = self.get_magdyn_mask()
         self.mats, self.mat_ind = self.get_mat_positions()
         self.mag_num = self.get_num_mag_mat()
+        self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
 
         return self.mat_arr
 
