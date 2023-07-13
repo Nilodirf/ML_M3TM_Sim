@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from finderb import finderb
+import ast
 
 
 class SimPlot:
@@ -10,10 +11,12 @@ class SimPlot:
         # file (string). The simulation result folder you want to access and plot data from
 
         # Also returns:
-        # delay, tes, tps, mags (numpy arrays): The simulated maps of all three baths (2d except for 1d delay)
+        # delay, tes, tps, mags (numpy arrays). The simulated maps of all three baths (2d except for 1d delay)
+        # layer_labels (list). List of labels for all layers in the materials with material and position relative
+        # to the first appearance of the material in the sample
 
         self.file = file
-        self.delay, self.tes, self.tps, self.mags = self.get_data()
+        self.delay, self.tes, self.tps, self.mags, self.layer_labels = self.get_data()
 
     def get_data(self):
         # This method loads the data maps from the desired file.
@@ -30,7 +33,38 @@ class SimPlot:
         tps = np.load(path + 'tps.npy')
         mags = np.load(path + 'ms.npy')
 
-        return delay, tes, tps, mags
+        with open(path + 'params.dat', 'r') as file:
+            content = file.readlines()
+
+        materials = None
+        positions = ''
+        part_of_positions = False
+
+        for i, line in enumerate(content):
+            if line.startswith('Material positions in order:'):
+                positions += line.replace('Material positions in order: ', '').replace('array(', '').replace(')', '')\
+                    .replace('\n', ' ')
+                part_of_positions = True
+            elif line.startswith('Layer depth'):
+                break
+            elif line.startswith('Materials:'):
+                materials_content = line.replace('Materials: ', '')
+                materials = ast.literal_eval(materials_content)
+            else:
+                if part_of_positions:
+                    positions += line.replace('array(', '').replace(')', '').replace('       ', '').replace('\n', ' ')
+        positions = positions.replace('[[', '').replace(']]', '')
+        positions = positions.split('], [')
+
+        positions = [mat.split(',') for mat in positions]
+        print(len(positions))
+        positions = [[str(int(pos)-int(pos_line[0]) + 1) for pos in pos_line] for pos_line in positions]
+
+        layer_labels = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
+                                                 for position in positions_line]
+                                                 for i, positions_line in enumerate(positions)]))
+
+        return delay, tes, tps, mags, layer_labels
 
     def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
@@ -84,7 +118,8 @@ class SimPlot:
         if max_layer is None:
             max_layer = N0
 
-        plt.pcolormesh(x, np.arange(min_layer, max_layer), z[first_time_index:last_time_index, min_layer: max_layer].T, cmap='jet')
+        plt.pcolormesh(x, np.arange(min_layer, max_layer), z[first_time_index:last_time_index, min_layer: max_layer].T,
+                       cmap='jet')
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'layer', fontsize=16)
         plt.title(str(title), fontsize=20)
@@ -156,7 +191,7 @@ class SimPlot:
             plt.plot(x, np.sum(y[first_time_index:last_time_index, min_layer:max_layer], axis=1)/(max_layer-min_layer))
         else:
             for i in range(min_layer, max_layer):
-                plt.plot(x, y[first_time_index:last_time_index, i], label='layer '+str(i))
+                plt.plot(x, y[first_time_index:last_time_index, i], label=self.layer_labels[i])
             plt.legend(fontsize=14)
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(str(y_label), fontsize=16)

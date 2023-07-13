@@ -251,7 +251,7 @@ class SimSample:
         return mats, [np.array(ind_list) for ind_list in mat_indices]
 
     def get_num_mag_mat(self):
-        # This method merely counts the number of magnetic materials in the sample, determined by wheather ther atomic
+        # This method merely counts the number of magnetic materials in the sample, determined by whether the atomic
         # magnetic moment is larger than zero.
 
         # Input:
