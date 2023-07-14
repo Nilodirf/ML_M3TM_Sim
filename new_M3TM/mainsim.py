@@ -151,7 +151,7 @@ class SimDynamics:
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
-                            t_span=(0, self.end_time), y0=config0, t_eval=self.time_grid, method='RK45')
+                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK45')
 
         return all_sol
 
@@ -188,7 +188,7 @@ class SimDynamics:
         else:
             cp_sam_t = np.zeros(len_sam)
             for i, ind_list in enumerate(mat_ind):
-                cp_sam_grid_t = finderb(te[ind_list], cp_sam_grid[i])
+                cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
                 cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
