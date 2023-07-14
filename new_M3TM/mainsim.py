@@ -188,7 +188,7 @@ class SimDynamics:
         else:
             cp_sam_t = np.zeros(len_sam)
             for i, ind_list in enumerate(mat_ind):
-                cp_sam_grid_t = finderb(te[ind_list], cp_sam_grid[i])
+                cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
                 cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
