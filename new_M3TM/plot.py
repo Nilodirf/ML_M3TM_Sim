@@ -49,11 +49,13 @@ class SimPlot:
                     .replace('\n', ' ')
                 part_of_positions = True
             elif line.startswith('Layer depth'):
+                thicknesses = line.replace('Layer depth = ', '').replace('[m]', '')
+                thicknesses = ast.literal_eval(thicknesses)
                 part_of_positions = False
             elif line.startswith('Materials:'):
                 materials = line.replace('Materials: ', '')
                 materials = ast.literal_eval(materials)
-            elif line.startswith('kappa_el')  :
+            elif line.startswith('kappa_el'):
                 kappa_els = line.replace('kappa_el =', '').replace('[W/mK]', '')
                 kappa_els = ast.literal_eval(kappa_els)
             elif line.startswith('mu_at'):

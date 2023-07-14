@@ -9,6 +9,8 @@ from sample import SimSample
 from pulse import SimPulse
 from mainsim import SimDynamics
 
+import time
+
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
 hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=7.7e-10, vat=1e-28, ce_gamma=0., cp_max=1.6e5, kappap=5.,
@@ -29,10 +31,15 @@ sample.add_layers(material=sio2, layers=553, kappap_int=4.)
 pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=1.5, delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-9, ini_temp=20., constant_cp=True)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-9, ini_temp=15., constant_cp=True)
 
 # Run the simulation by calling the function that creates the map of all three baths
+start_time = time.time()
 solution = sim.get_t_m_maps()
+end_time = time.time()
+
+run_time = end_time - start_time
+print('New Sim took' + str(run_time) + 's')
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='15_nm')
+sim.save_data(solution, save_file='150_nm_new_grid')
