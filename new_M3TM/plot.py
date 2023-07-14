@@ -16,7 +16,8 @@ class SimPlot:
         # to the first appearance of the material in the sample
 
         self.file = file
-        self.delay, self.tes, self.tps, self.mags, self.layer_labels = self.get_data()
+        self.delay, self.tes, self.tps, self.mags,\
+            self.layer_labels, self.layer_labels_te, self.layer_labels_muat = self.get_data()
 
     def get_data(self):
         # This method loads the data maps from the desired file.
@@ -38,6 +39,8 @@ class SimPlot:
 
         materials = None
         positions = ''
+        kappa_els = None
+        mu_ats = None
         part_of_positions = False
 
         for i, line in enumerate(content):
@@ -46,25 +49,37 @@ class SimPlot:
                     .replace('\n', ' ')
                 part_of_positions = True
             elif line.startswith('Layer depth'):
-                break
+                part_of_positions = False
             elif line.startswith('Materials:'):
-                materials_content = line.replace('Materials: ', '')
-                materials = ast.literal_eval(materials_content)
+                materials = line.replace('Materials: ', '')
+                materials = ast.literal_eval(materials)
+            elif line.startswith('kappa_el')  :
+                kappa_els = line.replace('kappa_el =', '').replace('[W/mK]', '')
+                kappa_els = ast.literal_eval(kappa_els)
+            elif line.startswith('mu_at'):
+                mu_ats = line.replace('mu_at = ', '').replace('[mu_Bohr]', '')
+                mu_ats = ast.literal_eval(mu_ats)
             else:
                 if part_of_positions:
                     positions += line.replace('array(', '').replace(')', '').replace('       ', '').replace('\n', ' ')
         positions = positions.replace('[[', '').replace(']]', '')
         positions = positions.split('], [')
-
         positions = [mat.split(',') for mat in positions]
-        print(len(positions))
         positions = [[str(int(pos)-int(pos_line[0]) + 1) for pos in pos_line] for pos_line in positions]
 
         layer_labels = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                                  for position in positions_line]
                                                  for i, positions_line in enumerate(positions)]))
 
-        return delay, tes, tps, mags, layer_labels
+        layer_labels_te = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
+                                         for position in positions_line]
+                                         for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))
+
+        layer_labels_mag = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
+                                          for position in positions_line]
+                                          for i, positions_line in enumerate(positions) if kappa_els[i] != 0]))
+
+        return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag
 
     def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
@@ -81,7 +96,7 @@ class SimPlot:
         # to the maximum time in self.delay
 
         # Returns:
-        # None. After creating the plot and possibly saving it, the functions returns nothing.
+        # None. After creating the plot and possibly saving it, the functions returns nothing
 
         x = self.delay * 1e12
 
@@ -150,7 +165,7 @@ class SimPlot:
         # to the maximum time in self.delay
 
         # Returns:
-        # None. After creating the plot and possibly saving it, the functions returns nothing.
+        # None. After creating the plot and possibly saving it, the functions returns nothing
 
         x = self.delay * 1e12
 
@@ -167,14 +182,17 @@ class SimPlot:
             y = self.tes
             title = 'Electron Temperature Dynamics'
             y_label = 'T_e [K]'
+            line_labels = self.layer_labels_te[min_layer: max_layer]
         elif key == 'tp':
             y = self.tps
             title = 'Phonon Temperature Dynamics'
             y_label = 'T_p [K]'
+            line_labels = self.layer_labels[min_layer: max_layer]
         elif key == 'mag':
             y = self.mags
             title = 'Magnetization Dynamics'
             y_label = 'Magnetization'
+            line_labels = self.layer_labels_muat[min_layer: max_layer]
         else:
             print('In SimPlot.map_plot(): Please enter a valid key: You can either plot ´te´, ´tp´ or ´mag´.')
             return
@@ -189,10 +207,11 @@ class SimPlot:
 
         if average:
             plt.plot(x, np.sum(y[first_time_index:last_time_index, min_layer:max_layer], axis=1)/(max_layer-min_layer))
+            layer_labels = []
         else:
             for i in range(min_layer, max_layer):
-                plt.plot(x, y[first_time_index:last_time_index, i], label=self.layer_labels[i])
-            plt.legend(fontsize=14)
+                plt.plot(x, y[first_time_index:last_time_index, i])
+            plt.legend(line_labels, fontsize=14)
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(str(y_label), fontsize=16)
         plt.title(str(title), fontsize=20)
@@ -203,3 +222,83 @@ class SimPlot:
         plt.show()
 
         return
+
+
+class SimComparePlot:
+    # This class enables comparison of different data sets.
+
+    def __init__(self, files):
+        self.files = files
+
+    @staticmethod
+    def get_data(file):
+        # This method loads the data maps from the desired file.
+
+        # Input:
+        # self (object). The current plotter object
+
+        # Returns:
+        # delay, tes, tps, mags (numpy arrays): The simulated maps of all three baths (2d except for 1d delay)
+
+        path = 'Results/' + str(file) + '/'
+        delay = np.load(path + 'delay.npy')
+        mags = np.load(path + 'ms.npy')
+
+        return delay, mags
+
+    def kerr_plot(self, pen_dep, layer_thickness, min_time, max_time, save_fig=False):
+        # This method plots a Kerr-signal, exponentially weighting the magnetization of each layer in the dataset,
+        # normalizing the data and plotting several data on top of eachother.
+
+        # Input:
+        # self (object). The current plotter object
+        # pen_dep (float). Penetration depth of the probe pulse in m
+        # layer thickness. Thickness of the magnetic layers. (This could be automized in a more complicated fashion,
+        # might do this in the future)
+        # min_time (float). The time when the plot should start in ps
+        # max_time (float). The maximal time that should be plotted in ps
+        # save_fig (boolean). If True, the plot will be saved with the according title denoting the files that are
+        # being plotted in the Results folder. Default is False
+
+        # Returns:
+        # None. After creating the plot and possibly saving it, the functions returns nothing
+
+        plt.figure(figsize=(8, 6))
+
+        for file in self.files:
+            delay, mags = SimComparePlot.get_data(file)
+
+            delay = delay*1e12
+
+            first_time_index = finderb(min_time, delay)[0]
+            last_time_index = finderb(max_time, delay)[0]
+            delay = delay[first_time_index: last_time_index]
+
+            zero_time = finderb(0., delay)[0]
+
+            exp_decay = np.exp(-np.arange(len(mags.T))*layer_thickness/pen_dep)
+            kerr_signal = np.sum(np.multiply(mags, exp_decay[np.newaxis, ...]), axis=1)
+
+            kerr_in_time = kerr_signal[first_time_index:last_time_index]
+
+            norm_kerr_signal = (kerr_in_time-kerr_signal[zero_time])\
+                                / np.abs(np.amin(kerr_signal-kerr_signal[zero_time]))
+
+            plt.plot(delay, norm_kerr_signal, label=str(file))
+
+        plt.xlabel(r'delay [ps]', fontsize=16)
+        plt.ylabel(r'Norm. Kerr signal', fontsize=16)
+        plt.title(r'MOKE Simulation', fontsize=20)
+        plt.legend(fontsize=14)
+
+        if save_fig:
+            plt.savefig('Results/' + str(self.files) + '_Kerr/' + '.pdf')
+
+        plt.show()
+
+        return
+
+
+
+
+
