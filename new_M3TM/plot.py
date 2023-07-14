@@ -49,6 +49,8 @@ class SimPlot:
                     .replace('\n', ' ')
                 part_of_positions = True
             elif line.startswith('Layer depth'):
+                thicknesses = line.replace('Layer depth = ', '').replace('[m]', '')
+                thicknesses = ast.literal_eval(thicks)
                 part_of_positions = False
             elif line.startswith('Materials:'):
                 materials = line.replace('Materials: ', '')
