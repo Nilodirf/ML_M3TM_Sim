@@ -12,8 +12,12 @@ class SimPlot:
 
         # Also returns:
         # delay, tes, tps, mags (numpy arrays). The simulated maps of all three baths (2d except for 1d delay)
-        # layer_labels (list). List of labels for all layers in the materials with material and position relative
-        # to the first appearance of the material in the sample
+        # layer_labels (numpy array). 1d-array of labels for all layers in the materials with material
+        # and position relative to the first appearance of the material in the sample
+        # layer_labels_te(mag) (numpy arrays). 1d-array of labels for only the layers
+        # with free electrons (magnetization dynamics)
+        # depth_labels (numpy array). 1d-array of labels for map-plots, containing the depth of the sample in m.
+        # depth_labels_te(mag) (numpy arrays). Depth labels for electronic (magnetic) layers in the sample
 
         self.file = file
         self.delay, self.tes, self.tps, self.mags,\
@@ -28,6 +32,12 @@ class SimPlot:
 
         # Returns:
         # delay, tes, tps, mags (numpy arrays): The simulated maps of all three baths (2d except for 1d delay)
+        # layer_labels (numpy array). 1d-array of labels for all layers in the materials with material
+        # and position relative to the first appearance of the material in the sample
+        # layer_labels_te(mag) (numpy arrays). 1d-array of labels for only the layers
+        # with free electrons (magnetization dynamics)
+        # depth_labels (numpy array). 1d-array of labels for map-plots, containing the depth of the sample in m.
+        # depth_labels_te(mag) (numpy arrays). Depth labels for electronic (magnetic) layers in the sample
 
         path = 'Results/' + str(self.file) + '/'
         delay = np.load(path + 'delay.npy')

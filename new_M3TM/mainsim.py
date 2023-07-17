@@ -136,7 +136,7 @@ class SimDynamics:
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
-                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK45', atol=1e-8)
+                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK45')
 
         return all_sol
 
