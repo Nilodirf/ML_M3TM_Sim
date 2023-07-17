@@ -17,7 +17,8 @@ class SimPlot:
 
         self.file = file
         self.delay, self.tes, self.tps, self.mags,\
-            self.layer_labels, self.layer_labels_te, self.layer_labels_muat = self.get_data()
+            self.layer_labels, self.layer_labels_te, self.layer_labels_muat,\
+            self.depth_labels, self.depth_labels_te, self.depth_labels_mag = self.get_data()
 
     def get_data(self):
         # This method loads the data maps from the desired file.
@@ -41,6 +42,7 @@ class SimPlot:
         positions = ''
         kappa_els = None
         mu_ats = None
+        thicknesses = None
         part_of_positions = False
 
         for i, line in enumerate(content):
@@ -50,12 +52,12 @@ class SimPlot:
                 part_of_positions = True
             elif line.startswith('Layer depth'):
                 thicknesses = line.replace('Layer depth = ', '').replace('[m]', '')
-                thicknesses = ast.literal_eval(thicks)
+                thicknesses = ast.literal_eval(thicknesses)
                 part_of_positions = False
             elif line.startswith('Materials:'):
                 materials = line.replace('Materials: ', '')
                 materials = ast.literal_eval(materials)
-            elif line.startswith('kappa_el')  :
+            elif line.startswith('kappa_el'):
                 kappa_els = line.replace('kappa_el =', '').replace('[W/mK]', '')
                 kappa_els = ast.literal_eval(kappa_els)
             elif line.startswith('mu_at'):
@@ -81,7 +83,23 @@ class SimPlot:
                                           for position in positions_line]
                                           for i, positions_line in enumerate(positions) if kappa_els[i] != 0]))
 
-        return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag
+        layer_thicknesses = np.concatenate(np.array([[thicknesses[i] for position in positions_line]
+                                           for i, positions_line in enumerate(positions)]))*1e9
+
+        layer_thicknesses_te = np.concatenate(np.array([[thicknesses[i] for position in positions_line]
+                                              for i, positions_line in enumerate(positions) if kappa_els[i] != 0]))*1e9
+
+        layer_thicknesses_mag = np.concatenate(np.array([[thicknesses[i] for position in positions_line]
+                                               for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))*1e9
+
+        depth_labels = np.array([np.sum(layer_thicknesses[:i+1]) for i in range(len(layer_thicknesses))])
+
+        depth_labels_te = np.array([np.sum(layer_thicknesses_te[:i+1]) for i in range(len(layer_thicknesses_te))])
+
+        depth_labels_mag = np.array([np.sum(layer_thicknesses_mag[:i + 1]) for i in range(len(layer_thicknesses_mag))])
+
+        return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag,\
+               depth_labels, depth_labels_te, depth_labels_mag
 
     def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
@@ -114,14 +132,17 @@ class SimPlot:
         if key == 'te':
             z = self.tes
             title = 'Electron Temperature Map'
+            y_axis = self.depth_labels_te[min_layer: max_layer]
             z_label = 'T_e [K]'
         elif key == 'tp':
             z = self.tps
             title = 'Phonon Temperature Map'
+            y_axis = self.depth_labels[min_layer: max_layer]
             z_label = 'T_p [K]'
         elif key == 'mag':
             z = self.mags
             title = 'Magnetization Map'
+            y_axis = self.depth_labels_mag[min_layer:max_layer]
             z_label = 'Magnetization'
         else:
             print('In SimPlot.map_plot(): Please enter a valid key: You can either plot ´te´, ´tp´ or ´mag´.')
@@ -135,10 +156,10 @@ class SimPlot:
         if max_layer is None:
             max_layer = N0
 
-        plt.pcolormesh(x, np.arange(min_layer, max_layer), z[first_time_index:last_time_index, min_layer: max_layer].T,
+        plt.pcolormesh(x, y_axis, z[first_time_index:last_time_index, min_layer: max_layer].T,
                        cmap='jet')
         plt.xlabel(r'time [ps]', fontsize=16)
-        plt.ylabel(r'layer', fontsize=16)
+        plt.ylabel(r'sample depth [nm]', fontsize=16)
         plt.title(str(title), fontsize=20)
         cbar = plt.colorbar(label=str(z_label))
         cbar.set_label(str(z_label), rotation=270, labelpad=15)
