@@ -423,6 +423,7 @@ class SimDynamics:
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
         params_file.write('Material positions in order: ' + str(self.Sam.mat_ind) + '\n')
         params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
+        params_file.write('Atomic volumes = ' + str([mat.vat for mat in mats]) + '[m^3]' + '\n')
         params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
         params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
         params_file.write('asf =' + str([mat.asf for mat in mats]) + '\n')
