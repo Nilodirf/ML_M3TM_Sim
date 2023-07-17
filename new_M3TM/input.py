@@ -35,4 +35,8 @@ sim = SimDynamics(sample=sample, pulse=pulse, end_time=3e-9, ini_temp=15., const
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
+
 sim.save_data(solution, save_file='15_test')
+
+sim.save_data(solution, save_file='150_nm')
+
