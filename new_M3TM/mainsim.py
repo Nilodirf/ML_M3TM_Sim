@@ -41,27 +41,12 @@ class SimDynamics:
         if self.end_time < 5e-12:
             rest_time_grid = np.arange(start_time_grid[-1] + 1e-15, np.round(self.end_time, 15), 1e-15)
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
-        elif self.end_time < 1e-10:
-            ep_time_grid = np.arange(start_time_grid[-1] + 1e-15, 5e-12, 1e-15)
-            rest_time_grid = np.arange(ep_time_grid[-1] + 1e-14, np.round(self.end_time, 14), 1e-14)
-            time_grid = np.concatenate((start_time_grid, rest_time_grid))
-        elif self.end_time < 1e-9:
-            ep_time_grid = np.arange(start_time_grid[-1] + 1e-15, 5e-12, 1e-15)
-            inter_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-14, 1e-10, 1e-14)))
-            rest_time_grid = np.concatenate((inter_time_grid, np.arange(inter_time_grid[-1] + 1e-12,
-                                                                        np.round(self.end_time, 12), 1e-12)))
-            time_grid = np.concatenate((start_time_grid, rest_time_grid))
         else:
             ep_time_grid = np.arange(start_time_grid[-1] + 1e-15, 5e-12, 1e-15)
-            inter_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-14, 1e-10, 1e-14)))
-            inter2_time_grid = np.concatenate((inter_time_grid, np.arange(inter_time_grid[-1] + 1e-12, 1e-9, 1e-12)))
-            rest_time_grid = np.concatenate((inter2_time_grid, np.arange(inter2_time_grid[-1] + 1e-11,
-                                                                         np.round(self.end_time, 11), 1e-11)))
+            rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-14, self.end_time, 1e-14)))
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
 
         return time_grid
-
-
 
     def initialize_temperature(self):
         # This method initializes the starting uniform temperature map.
@@ -438,6 +423,7 @@ class SimDynamics:
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
         params_file.write('Material positions in order: ' + str(self.Sam.mat_ind) + '\n')
         params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
+        params_file.write('Atomic volumes = ' + str([mat.vat for mat in mats]) + '[m^3]' + '\n')
         params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
         params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
         params_file.write('asf =' + str([mat.asf for mat in mats]) + '\n')

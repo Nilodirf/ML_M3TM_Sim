@@ -49,14 +49,14 @@ class SimSample:
 
         if self.len > 0:
             assert kappap_int is not None and \
-                   (type(kappap_int) == float or kappap_int == 'min' or kappap_int == 'max'), \
+                   (type(kappap_int) == float or kappap_int == 'min' or kappap_int == 'max' or kappap_int == 'av'), \
                     'Please introduce phononic diffusion interface constant using kappap_int = <value> (in W/m/K) or '\
                     '"max" or "min" to either set the value manually or use the larger/smaller value of '\
                     'phononic heat conductivities of the adjacent materials.'
 
             if material.ce_gamma != 0 and self.mat_arr[-1].ce_gamma != 0:
                 assert kappae_int is not None and \
-                       (type(kappae_int) == float or kappae_int == 'min' or kappap_int == 'max'), \
+                       (type(kappae_int) == float or kappae_int == 'min' or kappap_int == 'max' or kappae_int == 'av'),\
                         'Please introduce electronic diffusion interface constant using ' \
                         'kappap_int = <value> (in W/m/K) ' \
                         'or "max" or "min" to either set the value manually or use the larger/smaller value of '\
@@ -73,6 +73,10 @@ class SimSample:
                 self.kappa_p_int = \
                     np.append(self.kappa_p_int, np.amax(np.array([self.mat_arr[-1].kappap, material.kappap])))
 
+            elif kappap_int == 'av':
+                self.kappa_p_int = \
+                    np.append(self.kappa_p_int, (self.mat_arr[-1].kappap+material.kappap)/2)
+
             else:
                 self.kappa_p_int = np.append(self.kappa_p_int, kappap_int)
 
@@ -83,6 +87,10 @@ class SimSample:
             elif kappae_int == 'max':
                 self.kappa_e_int = \
                     np.append(self.kappa_e_int, np.amax(np.array([self.mat_arr[-1].kappae, material.kappae])))
+
+            elif kappae_int == 'av':
+                self.kappa_e_int = \
+                    np.append(self.kappa_e_int, (self.mat_arr[-1].kappae+material.kappae)/2)
 
             else:
                 self.kappa_e_int = np.append(self.kappa_e_int, kappae_int)

@@ -86,7 +86,7 @@ class SimMaterials:
         t_grid_course = np.arange(self.tein+1, 3*self.tein)
         t_grid = np.append(t_grid_fine, t_grid_course)
         t_red = np.divide(self.tein, t_grid)
-        cp_t_grid = self.cp_max*t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2)
+        cp_t_grid = self.cp_max*((t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2))+0.1)
 
         t_grid = np.append(t_grid, 3*self.tdeb+1)
         cp_t_grid = np.append(cp_t_grid, self.cp_max)
