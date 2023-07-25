@@ -41,8 +41,8 @@ class SimSample:
         # self (object). A pointer to the sample in construction
         # material (object). A material previously defined with the materials class
         # layers (int). Number of layers with depth material.dz to be added to the sample
-        # kappap_int (float). Phononic interface heat conductivity to the last block of the sample
-        # kappae_int (float). Electronic interface heat conductivity to the last block of the sample
+        # kappap_int (float/string). Phononic interface heat conductivity to the last block of the sample
+        # kappae_int (float/string). Electronic interface heat conductivity to the last block of the sample
 
         # Returns:
         # mat_arr (numpy array). 1d-array after the layers have been added

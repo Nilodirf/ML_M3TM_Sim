@@ -111,7 +111,8 @@ class SimPlot:
         return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag,\
                depth_labels, depth_labels_te, depth_labels_mag
 
-    def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None):
+    def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None,
+                 color_scale='inferno', text_color='white'):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
 
         # Input:
@@ -124,6 +125,9 @@ class SimPlot:
         # minimal time in self.delay
         # max_time (float). The maximal time that should be plotted in ps. Default is None and then converted
         # to the maximum time in self.delay
+        # color_scale (string). One of the python in-built colorscales to show the data. Default is 'inferno'
+        # text_color (string). One of the standard colors in which the materials and horzontal lines denoting material
+        # separation will be written. Default is 'white'
 
         # Returns:
         # None. After creating the plot and possibly saving it, the functions returns nothing
@@ -143,16 +147,31 @@ class SimPlot:
             z = self.tes
             title = 'Electron Temperature Map'
             y_axis = self.depth_labels_te[min_layer: max_layer]
+            y_labels = self.layer_labels_te[min_layer: max_layer]
+            y_label_mask = np.array([True if '1' in index else False for index in y_labels])
+            mat_sep_marks = y_axis[y_label_mask]
+            mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
+            text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
             z_label = 'T_e [K]'
         elif key == 'tp':
             z = self.tps
             title = 'Phonon Temperature Map'
             y_axis = self.depth_labels[min_layer: max_layer]
+            y_labels = self.layer_labels[min_layer:max_layer]
+            y_label_mask = np.array([True if index.endswith('_1') else False for index in y_labels])
+            mat_sep_marks = y_axis[y_label_mask]
+            mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
+            text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
             z_label = 'T_p [K]'
         elif key == 'mag':
             z = self.mags
             title = 'Magnetization Map'
-            y_axis = self.depth_labels_mag[min_layer:max_layer]
+            y_axis = self.depth_labels_mag[min_layer: max_layer]
+            y_labels = self.layer_labels_muat[min_layer: max_layer]
+            y_label_mask = np.array([True if '1' in index else False for index in y_labels])
+            mat_sep_marks = y_axis[y_label_mask]
+            mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
+            text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
             z_label = 'Magnetization'
         else:
             print('In SimPlot.map_plot(): Please enter a valid key: You can either plot ´te´, ´tp´ or ´mag´.')
@@ -166,13 +185,18 @@ class SimPlot:
         if max_layer is None:
             max_layer = N0
 
-        plt.pcolormesh(x, y_axis, z[first_time_index:last_time_index, min_layer: max_layer].T,
-                       cmap='jet')
+        plt.pcolormesh(x, y_axis-1, z[first_time_index:last_time_index, min_layer: max_layer].T,
+                       cmap=color_scale)
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'sample depth [nm]', fontsize=16)
         plt.title(str(title), fontsize=20)
         cbar = plt.colorbar(label=str(z_label))
         cbar.set_label(str(z_label), rotation=270, labelpad=15)
+
+        for i, mat_sep in enumerate(mat_sep_marks):
+            if y_axis[0] < mat_sep < y_axis[-1]:
+                plt.hlines(float(mat_sep), x[0], x[-1], color=text_color)
+            plt.text((x[-1]-x[0])*9/10, float(mat_sep) + 1, text_above[i], fontsize=14, color=text_color)
 
         if save_fig:
             plt.savefig('Results/' + str(self.file) + '/' + str(title) + '.pdf')
