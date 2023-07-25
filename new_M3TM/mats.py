@@ -82,12 +82,10 @@ class SimMaterials:
         # cp_t_grid (numpy array). 1d-array of Einstein lattice capacity for the above temperature grid,
         # the last value being cp_max for every temperature above 3*tdeb+1 K
 
-        t_grid_fine = np.arange(1, self.tein, 0.1)
-        t_grid_course = np.arange(self.tein+1, 3*self.tein)
-        t_grid = np.append(t_grid_fine, t_grid_course)
+        t_grid = np.arange(1., 2*self.tein, 0.1)
         t_red = np.divide(self.tein, t_grid)
-        cp_t_grid = self.cp_max*((t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2))+0.1)
+        cp_t_grid = self.cp_max*(t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2))
 
-        t_grid = np.append(t_grid, 3*self.tdeb+1)
+        t_grid = np.append(t_grid, 2*self.tein+1)
         cp_t_grid = np.append(cp_t_grid, self.cp_max)
         return t_grid, list(cp_t_grid)
