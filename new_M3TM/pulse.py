@@ -13,9 +13,10 @@ class SimPulse:
         # to equilibrium before injecting the pulse
 
         # Also returns:
-        # peak_power (float). Peak power per area of the pulse in W/m**2. Needed to compute the absorption profile.#
+        # peak_power (float). Peak power per area (intensity) of the pulse in W/m**2.
+        # Needed to compute the absorption profile
         # pulse_time_grid, pulse_map (numpy arrays). 1d-arrays of the time-grid on which the pulse is defined
-        # and the corresponding 2d-array of excitation power density at all times in all layers.
+        # and the corresponding 2d-array of excitation power density at all times in all layers
 
         self.pulse_width = pulse_width
         self.fluence = fluence
@@ -44,14 +45,14 @@ class SimPulse:
         start_pump_time = p_del-10*sigma
         end_pump_time = p_del+10*sigma
 
-        raw_pump_time_grid = np.arange(start_pump_time, end_pump_time, 1e-16)
-        until_pump_start_time = np.arange(0, start_pump_time, 1e-16)
+        raw_pump_time_grid = np.arange(start_pump_time, end_pump_time, 1e-17)
+        until_pump_start_time = np.arange(0, start_pump_time, 1e-17)
         pump_time_grid = np.append(until_pump_start_time, raw_pump_time_grid)
 
         raw_pump_grid = np.exp(-((raw_pump_time_grid-p_del)/sigma)**2/2)
         pump_grid = np.append(np.zeros_like(until_pump_start_time), raw_pump_grid)
 
-        pump_time_grid = np.append(pump_time_grid, end_pump_time+1e-14)
+        pump_time_grid = np.append(pump_time_grid, end_pump_time+1e-17)
         pump_grid = np.append(pump_grid, 0.)
 
         pump_map = self.depth_profile(pump_grid)
@@ -79,18 +80,21 @@ class SimPulse:
         first_layer = 0
         last_layer = 0
 
+        already_penetrated = 0
+
         for i in range(len(mat_blocks)):
             last_layer += mat_blocks[i]
             if pendep_sam[first_layer] == 1:
                 powers = np.append(powers, np.zeros(mat_blocks[i]))
                 first_layer = last_layer
                 continue
-            pen_red = np.divide(np.arange(mat_blocks[i])*dz_sam[first_layer:last_layer],
+            pen_red = np.divide((np.arange(mat_blocks[i])+already_penetrated)*dz_sam[first_layer:last_layer],
                                 pendep_sam[first_layer:last_layer])
             powers = np.append(powers, max_power/pendep_sam[first_layer:last_layer]
                                * np.exp(-pen_red))
             max_power = powers[-1]*pendep_sam[last_layer-1]
             first_layer = last_layer
+            already_penetrated = 1
         excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
-
+        print(powers)
         return excitation_map

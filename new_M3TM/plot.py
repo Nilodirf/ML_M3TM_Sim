@@ -145,19 +145,30 @@ class SimPlot:
 
         if key == 'te':
             z = self.tes
+            (M0, N0) = z.shape
+            if min_layer is None:
+                min_layer = 0
+            if max_layer is None:
+                max_layer = N0
             title = 'Electron Temperature Map'
             y_axis = self.depth_labels_te[min_layer: max_layer]
             y_labels = self.layer_labels_te[min_layer: max_layer]
-            y_label_mask = np.array([True if '1' in index else False for index in y_labels])
+            y_label_mask = np.array([True if index.endswith('_1') else False for index in y_labels])
             mat_sep_marks = y_axis[y_label_mask]
             mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
             text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
             z_label = 'T_e [K]'
         elif key == 'tp':
             z = self.tps
+            (M0, N0) = z.shape
+            if min_layer is None:
+                min_layer = 0
+            if max_layer is None:
+                max_layer = N0
             title = 'Phonon Temperature Map'
             y_axis = self.depth_labels[min_layer: max_layer]
             y_labels = self.layer_labels[min_layer:max_layer]
+            print(y_labels)
             y_label_mask = np.array([True if index.endswith('_1') else False for index in y_labels])
             mat_sep_marks = y_axis[y_label_mask]
             mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
@@ -165,6 +176,11 @@ class SimPlot:
             z_label = 'T_p [K]'
         elif key == 'mag':
             z = self.mags
+            (M0, N0) = z.shape
+            if min_layer is None:
+                min_layer = 0
+            if max_layer is None:
+                max_layer = N0
             title = 'Magnetization Map'
             y_axis = self.depth_labels_mag[min_layer: max_layer]
             y_labels = self.layer_labels_muat[min_layer: max_layer]
@@ -179,13 +195,7 @@ class SimPlot:
 
         plt.figure(figsize=(8, 6))
 
-        (M0, N0) = z.shape
-        if min_layer is None:
-            min_layer = 0
-        if max_layer is None:
-            max_layer = N0
-
-        plt.pcolormesh(x, y_axis-1, z[first_time_index:last_time_index, min_layer: max_layer].T,
+        plt.pcolormesh(x, y_axis, z[first_time_index:last_time_index, min_layer: max_layer].T,
                        cmap=color_scale)
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'sample depth [nm]', fontsize=16)
@@ -199,7 +209,7 @@ class SimPlot:
             plt.text((x[-1]-x[0])*9/10, float(mat_sep) + 1, text_above[i], fontsize=14, color=text_color)
 
         if save_fig:
-            plt.savefig('Results/' + str(self.file) + '/' + str(title) + '.pdf')
+            plt.savefig('Results/' + str(self.file) + '/' + str(title) + '.png')
 
         plt.show()
 
