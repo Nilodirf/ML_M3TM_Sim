@@ -217,7 +217,7 @@ class SimPlot:
         return
 
     def line_plot(self, key, average=False, min_layer=None, max_layer=None,
-                  save_fig=False, min_time=None, max_time=None):
+                  save_fig=False, min_time=None, max_time=None, norm=False):
         # This method produces line plots of the dynamics of a desired subsystem and for a number of desired layers.
 
         # Input:
@@ -275,11 +275,22 @@ class SimPlot:
 
         if average:
             plt.plot(x, np.sum(y[first_time_index:last_time_index, min_layer:max_layer], axis=1)/(max_layer-min_layer))
-            layer_labels = []
+
         else:
+
+            if average is False and key == 'mag' and norm:
+                norm_factor = 0
+                for i in range(min_layer, max_layer+1):
+                    max_difference_in_layer = np.abs(np.amin(y[first_time_index:last_time_index, i]-y[first_time_index, i]))
+                    if max_difference_in_layer > norm_factor:
+                        norm_factor = max_difference_in_layer
+                if norm_factor > 0:
+                    y = 1 + (y-y[first_time_index])/norm_factor
+
             for i in range(min_layer, max_layer):
                 plt.plot(x, y[first_time_index:last_time_index, i])
             plt.legend(line_labels, fontsize=14)
+
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(str(y_label), fontsize=16)
         plt.title(str(title), fontsize=20)
