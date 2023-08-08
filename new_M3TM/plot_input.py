@@ -12,5 +12,5 @@ plotter = SimPlot(file='mgo_fe_mgo')
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
 # plotter.line_plot(key='tp', min_layer=10, max_layer=19, average=True, save_fig=True)
-plotter.line_plot(key='te', average=False, max_layer=7, save_fig=True)
-plotter.line_plot(key='mag', min_layer=0, max_layer=9, average=False, save_fig=True)
+# plotter.line_plot(key='te', average=False, max_layer=7, save_fig=True)
+plotter.line_plot(key='mag', min_layer=0, max_layer=9, average=False, save_fig=True, norm=True)
