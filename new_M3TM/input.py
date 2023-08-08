@@ -14,8 +14,8 @@ from mainsim import SimDynamics
 
 mgo = SimMaterials(name='MgO', pen_dep=1, tdeb=400, dz=0.2e-9, vat=1e-28, ce_gamma=0., cp_max=4e6, kappap=42.,
                    kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
-iron = SimMaterials(name='Fe', pen_dep=17e-9, tdeb=300, dz=0.2e-9, vat=1e-29, ce_gamma=750., cp_max=3.5e6,
-                   kappap=8., kappae=10., gep=2e18, spin=2, tc=1024., muat=2., asf=0.02)
+iron = SimMaterials(name='Fe', pen_dep=17e-9, tdeb=300, dz=0.2e-9, vat=1e-30, ce_gamma=750., cp_max=3.5e6,
+                    kappap=8., kappae=80., gep=2e18, spin=2, tc=1024., muat=2., asf=0.02)
 
 # mgo = SimMaterials(name='MgO', pen_dep=1, tdeb=400, dz=0.4e-9, vat=1e-28, ce_gamma=0., cp_max=4e6, kappap=42.,
 #                    kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
@@ -28,6 +28,7 @@ sample = SimSample()
 sample.add_layers(material=mgo, layers=10)
 sample.add_layers(material=iron, layers=10, kappap_int='av')
 sample.add_layers(material=mgo, layers=100, kappap_int='av')
+
 
 # sample = SimSample()
 # sample.add_layers(material=mgo, layers=10)
@@ -101,7 +102,7 @@ sample.add_layers(material=mgo, layers=100, kappap_int='av')
 
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=6., delay=1e-12)
+pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=15., delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
 sim = SimDynamics(sample=sample, pulse=pulse, end_time=10e-12, ini_temp=295., constant_cp=False)

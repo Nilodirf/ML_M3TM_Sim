@@ -80,6 +80,7 @@ class SimPlot:
         positions = positions.split('], [')
         positions = [mat.split(',') for mat in positions]
         positions = [[str(int(pos)-int(pos_line[0]) + 1) for pos in pos_line] for pos_line in positions]
+        print(positions)
 
         layer_labels = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                                  for position in positions_line]
@@ -313,9 +314,9 @@ class SimComparePlot:
 
         return delay, mags
 
-    def kerr_plot(self, pen_dep, layer_thickness, min_time, max_time, save_fig=False):
+    def kerr_plot(self, pen_dep, layer_thickness, min_time, max_time, save_fig=False, norm=False):
         # This method plots a Kerr-signal, exponentially weighting the magnetization of each layer in the dataset,
-        # normalizing the data and plotting several data on top of eachother.
+        # normalizing the data and plotting several data on top of each other.
 
         # Input:
         # self (object). The current plotter object
@@ -348,8 +349,11 @@ class SimComparePlot:
 
             kerr_in_time = kerr_signal[first_time_index:last_time_index]
 
-            norm_kerr_signal = (kerr_in_time-kerr_signal[zero_time])\
-                                / np.abs(np.amin(kerr_signal-kerr_signal[zero_time]))
+            if norm:
+                norm_kerr_signal = (kerr_in_time-kerr_signal[zero_time])\
+                                    / np.abs(np.amin(kerr_signal-kerr_signal[zero_time]))
+            else:
+                norm_kerr_signal = kerr_in_time
 
             plt.plot(delay, norm_kerr_signal, label=str(file))
 

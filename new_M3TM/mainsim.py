@@ -86,7 +86,7 @@ class SimDynamics:
 
     @staticmethod
     def equilibrate_mag(fss0, te0, tp0, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                        mag0, el_mag_mask):
+                        el_mag_mask, mag_num, ms_sam):
         # This method equilibrates the magnetization to its mean field equilibrium value at the initial temperature.
 
         # Input:
@@ -98,16 +98,25 @@ class SimDynamics:
         # with the initial temperature profile (for now only uniform)
 
         # increase the damping to speed up the equilibration process
-        arbsc_sam *= 20
+        arbsc_sam_eq = arbsc_sam*10
 
         # Call the solver to equilibrate the system for 5 ps
         eq_sol = solve_ivp(lambda t, fs: SimDynamics.mag_occ_dyn(fs=fs, te=te0, tp=tp0, j_sam=j_sam, spin_sam=spin_sam,
-                                                                   arbsc_sam=arbsc_sam, s_up_eig_sq_sam=s_up_eig_sq_sam,
-                                                                   s_dn_eig_sq_sam=s_dn_eig_sq_sam,
-                                                                   mag=mag0, el_mag_mask=el_mag_mask),
-                                                                   t_span=(0, 5e-12), y0=fss0.flatten(), method='RK23')
+                                                                 arbsc_sam=arbsc_sam_eq,
+                                                                 s_up_eig_sq_sam=s_up_eig_sq_sam,
+                                                                 s_dn_eig_sq_sam=s_dn_eig_sq_sam, ms_sam=ms_sam,
+                                                                 el_mag_mask=el_mag_mask, mag_num=mag_num),
+                                                                 t_span=(0, 5e-12), y0=fss0.flatten(), method='RK23')
         # get the last spin configuration after equilibration:
         fs_eq = eq_sol.y.T[-1]
+
+        del eq_sol
+
+        m_eq = SimDynamics.get_mag(fs_eq, ms_sam, spin_sam, mag_num)
+
+        print('Magnetization equilibrated.')
+        print('m = ', str(m_eq))
+        print('T_0 = ', str(te0[el_mag_mask]), ' [K]')
 
         # return it to run the main simulation:
         return fs_eq
@@ -152,12 +161,11 @@ class SimDynamics:
         # initialize the starting temperature profile, spin occupations and magnetization:
         te0, tp0 = self.initialize_temperature()
         fss0 = self.initialize_spin_configuration().flatten()
-        mag0 = SimDynamics.get_mag(fss0, ms_sam, spin_sam, mag_num)
 
         # equilibrate the spin occupations according to the starting temperature profile:
         # (Here, the temperature does not change and there is no energy-transfer from the spin system)
         fss_eq = SimDynamics.equilibrate_mag(fss0, te0, tp0[mag_mask], j_sam, spin_sam, arbsc_sam,
-                                             s_up_eig_sq_sam, s_dn_eig_sq_sam, mag0, el_mag_mask)
+                                             s_up_eig_sq_sam, s_dn_eig_sq_sam, el_mag_mask, mag_num, ms_sam)
 
         # Concatenate the initial temperatures and spin occupations to pass to the solver:
         ts = np.concatenate((te0, tp0))
@@ -201,10 +209,10 @@ class SimDynamics:
         fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
         # fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
 
-        mag = SimDynamics.get_mag(fss_flat, ms_sam, spin_sam, mag_num)
         dfs_dt_flat = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                                              mag, fss_flat, te, tp[mag_mask], el_mag_mask)
+                                              fss_flat, te, tp[mag_mask], el_mag_mask, mag_num, ms_sam)
         dm_dt = SimDynamics.get_mag(dfs_dt_flat, ms_sam, spin_sam, mag_num)
+        mag = SimDynamics.get_mag(fss_flat, ms_sam, spin_sam, mag_num)
         mag_en_t = SimDynamics.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
 
         if constant_cp:
@@ -317,7 +325,8 @@ class SimDynamics:
         return dtp_dt_diff
 
     @staticmethod
-    def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs, te, tp, el_mag_mask):
+    def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
+                    fs, te, tp, el_mag_mask, mag_num, ms_sam):
         # This method computes the increments of spin-level occupation for the whole magnetic part of the sample.
 
         # Input:
@@ -335,8 +344,12 @@ class SimDynamics:
         # Returns:
         # dfs_dt (numpy array). 2d-array of the increments in spin-level occupation in all magnetic layers
 
+        fs = np.reshape(fs, (mag_num, (int(2 * spin_sam[0] + 1))))
+
+        mag = SimDynamics.get_mag(fs, ms_sam, spin_sam, mag_num)
+
         h_mf = np.multiply(j_sam, mag)
-        eta = np.divide(h_mf, np.multiply(2 * spin_sam * sp.k, te[el_mag_mask]))
+        eta = np.divide(h_mf, np.multiply(2 * spin_sam * sp.k, te[el_mag_mask])).astype(float)
         incr_pref = arbsc_sam*tp*h_mf/4/spin_sam/np.sinh(eta)
 
         fs_up = np.multiply(s_up_eig_sq_sam, fs)
@@ -441,8 +454,10 @@ class SimDynamics:
         # Returns:
         # None. After saving the data in the proper format and folder, the method closes without output.
 
+        # define the output path:
         sim_path = 'Results/' + str(save_file)
 
+        # get the data to be saved from the one
         sim_delay, sim_tes, sim_tps, sim_mags = self.seperate_data(sim_results)
 
         if not os.path.exists(sim_path):

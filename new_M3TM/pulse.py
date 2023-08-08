@@ -96,5 +96,4 @@ class SimPulse:
             first_layer = last_layer
             already_penetrated = 1
         excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
-        print(powers)
         return excitation_map
