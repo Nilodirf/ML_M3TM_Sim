@@ -10,7 +10,7 @@ class SimMaterials:
         # Input:
         # name (String). Name of the material
         # pen_dep (float). Penetration depth of the layers of the material in m
-        # tdeb (float). Debye temperature of the material
+        # tdeb (float). Debye temperature of the material in K
         # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
         # vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
         # kappap (float). Phononic heat diffusion constant in W/m/K
