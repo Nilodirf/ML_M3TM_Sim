@@ -1,4 +1,5 @@
 import numpy as np
+from matplotlib import colors as mplcol
 from matplotlib import pyplot as plt
 from finderb import finderb
 import ast
@@ -80,7 +81,6 @@ class SimPlot:
         positions = positions.split('], [')
         positions = [mat.split(',') for mat in positions]
         positions = [[str(int(pos)-int(pos_line[0]) + 1) for pos in pos_line] for pos_line in positions]
-        print(positions)
 
         layer_labels = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                                  for position in positions_line]
@@ -113,7 +113,7 @@ class SimPlot:
                depth_labels, depth_labels_te, depth_labels_mag
 
     def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None,
-                 color_scale='inferno', text_color='white'):
+                 color_scale='inferno', text_color='white', vmin=None, vmax=None):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
 
         # Input:
@@ -129,6 +129,11 @@ class SimPlot:
         # color_scale (string). One of the python in-built colorscales to show the data. Default is 'inferno'
         # text_color (string). One of the standard colors in which the materials and horzontal lines denoting material
         # separation will be written. Default is 'white'
+        # vmax (float). The minimum z-value to which the color map will be scaled. If not specified, default is None
+        # and will be converted to the minimum temperature (or magnetization) in the selected dataset to be plotted.
+        # vmax (float). The maximum z-value to which the color map will be scaled. If not specified, default is None
+        # and will be converted to the maximum temperature (or magnetization) in the selected dataset to be plotted.
+
 
         # Returns:
         # None. After creating the plot and possibly saving it, the functions returns nothing
@@ -169,7 +174,6 @@ class SimPlot:
             title = 'Phonon Temperature Map'
             y_axis = self.depth_labels[min_layer: max_layer]
             y_labels = self.layer_labels[min_layer:max_layer]
-            print(y_labels)
             y_label_mask = np.array([True if index.endswith('_1') else False for index in y_labels])
             mat_sep_marks = y_axis[y_label_mask]
             mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
@@ -196,12 +200,21 @@ class SimPlot:
 
         plt.figure(figsize=(8, 6))
 
-        plt.pcolormesh(x, y_axis, z[first_time_index:last_time_index, min_layer: max_layer].T,
-                       cmap=color_scale)
+        z = z[first_time_index:last_time_index, min_layer: max_layer]
+
+        if vmin is None:
+            vmin = np.amin(z)
+        if vmax is None:
+            vmax = np.amax(z)
+
+        norm = mplcol.Normalize(vmin=vmin, vmax=vmax)
+
+        plt.pcolormesh(x, y_axis, z.T,
+                       cmap=color_scale, norm=norm)
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'sample depth [nm]', fontsize=16)
         plt.title(str(title), fontsize=20)
-        cbar = plt.colorbar(label=str(z_label))
+        cbar = plt.colorbar(label=str(z_label), norm=norm)
         cbar.set_label(str(z_label), rotation=270, labelpad=15)
 
         for i, mat_sep in enumerate(mat_sep_marks):
@@ -231,6 +244,9 @@ class SimPlot:
         # minimal time in self.delay
         # max_time (float). The maximal time that should be plotted in ps. Default is None and then converted
         # to the maximum time in self.delay
+        # norm (boolean). If key == 'mag', average is False and norm is True, the magnetization dynamics of all layers
+        # will be normalized in a way that the layer with the largest demagnetization will demagnetize from 1 to 0
+        # in the selected time and layer range.
 
         # Returns:
         # None. After creating the plot and possibly saving it, the functions returns nothing
