@@ -294,10 +294,12 @@ class SimPlot:
 
         else:
 
-            if average is False and key == 'mag' and norm:
+            if key == 'mag' and norm:
+                y_label = 'Normalized magnetization'
                 norm_factor = 0
                 for i in range(min_layer, max_layer+1):
-                    max_difference_in_layer = np.abs(np.amin(y[first_time_index:last_time_index, i]-y[first_time_index, i]))
+                    max_difference_in_layer = np.abs(np.amin(y[first_time_index:last_time_index, i]
+                                                             - y[first_time_index, i]))
                     if max_difference_in_layer > norm_factor:
                         norm_factor = max_difference_in_layer
                 if norm_factor > 0:
@@ -395,8 +397,3 @@ class SimComparePlot:
         plt.show()
 
         return
-
-
-
-
-
