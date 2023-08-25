@@ -7,7 +7,7 @@ import os
 
 class SimDynamics:
     # This is the main Simulation class that holds all methods to compute dynamics of the extended M3TM.
-    def __init__(self, sample, pulse, end_time, ini_temp, constant_cp):
+    def __init__(self, sample, pulse, end_time, ini_temp, constant_cp, ep_eq_dt, long_time_dt, solver, max_step):
         # Input:
         # sample (object). The sample in use
         # pulse (object). The pulse excitation in use
@@ -15,6 +15,13 @@ class SimDynamics:
         # ini_temp (float). Initial temperature of electron and phonon baths in the whole sample in K
         # constant_cp (boolean). If set True, cp_max is used for phonon heat capacity. If False, Einstein model is
         # computed. Note that this takes very long at low temperatures
+        # ep_eq_dt (float). The timestep in s of evaluation of the differential equation
+        # after pulse excitation until 5 ps
+        # long_time_dt (float). The timestep in s of evaluation of the differential equation after 5 ps
+        # until end of sim
+        # solver (String). The solver used to evaluate the differential equation. See documentation of
+        # scipy.integrate.solve_ivp
+        # max_step (float). Maximum step size in s of the solver for the whole simulation
 
         # Also returns:
         # self.time_grid (numpy array). 1d-array of the time-grid to be used in simulations.
@@ -24,7 +31,11 @@ class SimDynamics:
         self.end_time = end_time
         self.ini_temp = ini_temp
         self.constant_cp = constant_cp
+        self. ep_eq_dt = ep_eq_dt
+        self.long_time_dt = long_time_dt
         self.time_grid = self.get_time_grid()
+        self.solver = solver
+        self.max_step = max_step
 
     def get_time_grid(self):
         # This method creates a time-grid for the simulation on the basis of the pulse-time-grid defined
@@ -39,11 +50,12 @@ class SimDynamics:
 
         start_time_grid = self.Pulse.pulse_time_grid
         if self.end_time < 5e-12:
-            rest_time_grid = np.arange(start_time_grid[-1] + 5e-17, np.round(self.end_time, 15), 5e-17)
+            rest_time_grid = np.arange(start_time_grid[-1] + self.ep_eq_dt, np.round(self.end_time, 15), self.ep_eq_dt)
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
         else:
-            ep_time_grid = np.arange(start_time_grid[-1] + 5e-17, 5e-12, 5e-17)
-            rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-15, self.end_time, 1e-15)))
+            ep_time_grid = np.arange(start_time_grid[-1] + self.ep_eq_dt, 5e-12, self.ep_eq_dt)
+            rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + self.long_time_dt,
+                                                                     self.end_time, self.long_time_dt)))
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
 
         return time_grid
@@ -182,7 +194,8 @@ class SimDynamics:
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
-                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK23')
+                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method=self.solver,
+                            max_step=self.max_step)
 
         # return the simulation results:
         return all_sol
@@ -340,6 +353,10 @@ class SimDynamics:
         # in all magnetic layers (first dimension).
         # te (numpy array). 1d-array of the current electron temperatures.
         # tp (numpy array). 1d-array of the current phonon temperatures.
+        # el_mag_mask (boolean array). 1d-array of the length of number of layers with free electron behaviour,
+        # with True for magnetic behaviour and False if non-magnetic
+        # mag_num (int). Number of magnetic layers
+        # ms_sam (numpy array). 2-d array of the spin-z-levels of magnetic materials in their respective layer.
 
         # Returns:
         # dfs_dt (numpy array). 2d-array of the increments in spin-level occupation in all magnetic layers
