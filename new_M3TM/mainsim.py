@@ -77,13 +77,13 @@ class SimDynamics:
 
     def initialize_spin_configuration(self):
         # This method initializes fully polarized spins in all magnetic layers (selected by whether mu_at > 0)
-        # The maximal spin-level is being fully occupied, while the rest are empty.
+        # The maximum spin-level is being fully occupied, while the rest are empty.
 
         # Input:
         # self (object). The simulation to be run
 
         # Returns:
-        # fss0 (numpy array). 1d-array of the initial spin configuration in reach magnetic layer
+        # fss0 (numpy array). 2d-array of the initial spin configuration in each magnetic layer
 
         fss0 = []
 
@@ -381,6 +381,7 @@ class SimDynamics:
         rate_dn_gain = np.roll(rate_dn_loss, -1)
 
         dfs_dt = rate_up_gain + rate_dn_gain - rate_up_loss - rate_dn_loss
+
         return dfs_dt.flatten()
 
     @staticmethod
@@ -491,9 +492,9 @@ class SimDynamics:
 
         params_file = open(sim_path + '/params.dat', 'w+')
 
-        params_file.write('##Simulation parameters' + '\n')
+        params_file.write('### Simulation parameters' + '\n')
         params_file.write('initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
-        params_file.write('##Sample parameters' + '\n')
+        params_file.write('### Sample parameters' + '\n')
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
         params_file.write('Material positions in order: ' + str(self.Sam.mat_ind) + '\n')
         params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
@@ -514,7 +515,7 @@ class SimDynamics:
         params_file.write('Sigma =' + str(self.Pulse.pulse_width) + '[s]' + '\n')
         params_file.write('Delay =' + str(self.Pulse.delay) + '[s]' + '\n')
         params_file.write('Penetration depth = ' + str([mat.pen_dep for mat in mats]) + '[m]' + '\n')
-        params_file.write('##Interface paramters' + '\n')
+        params_file.write('### Interface parameters' + '\n')
         params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + '[W/m/K]' + '\n')
         params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + '[W/m/K]' + '\n')
         params_file.close()
