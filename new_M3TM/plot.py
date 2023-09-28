@@ -126,8 +126,8 @@ class SimPlot:
         # minimal time in self.delay
         # max_time (float). The maximal time that should be plotted in ps. Default is None and then converted
         # to the maximum time in self.delay
-        # color_scale (string). One of the python in-built colorscales to show the data. Default is 'inferno'
-        # text_color (string). One of the standard colors in which the materials and horzontal lines denoting material
+        # color_scale (string). One of the python in-built color-scales to show the data. Default is 'inferno'
+        # text_color (string). One of the standard colors in which the materials and horizontal lines denoting material
         # separation will be written. Default is 'white'
         # vmin (float). The minimum z-value to which the color map will be scaled. If not specified, default is None
         # and will be converted to the minimum temperature (or magnetization) in the selected dataset to be plotted.
