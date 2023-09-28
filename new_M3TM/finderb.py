@@ -62,4 +62,3 @@ def finderb_nest(key, array):
             a = c
 
     return a
-
