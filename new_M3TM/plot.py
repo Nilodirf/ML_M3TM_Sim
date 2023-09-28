@@ -129,7 +129,7 @@ class SimPlot:
         # color_scale (string). One of the python in-built colorscales to show the data. Default is 'inferno'
         # text_color (string). One of the standard colors in which the materials and horzontal lines denoting material
         # separation will be written. Default is 'white'
-        # vmax (float). The minimum z-value to which the color map will be scaled. If not specified, default is None
+        # vmin (float). The minimum z-value to which the color map will be scaled. If not specified, default is None
         # and will be converted to the minimum temperature (or magnetization) in the selected dataset to be plotted.
         # vmax (float). The maximum z-value to which the color map will be scaled. If not specified, default is None
         # and will be converted to the maximum temperature (or magnetization) in the selected dataset to be plotted.
