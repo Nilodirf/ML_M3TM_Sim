@@ -110,7 +110,7 @@ class SimDynamics:
         # with the initial temperature profile (for now only uniform)
 
         # increase the damping to speed up the equilibration process
-        arbsc_sam_eq = arbsc_sam*10
+        arbsc_sam_eq = arbsc_sam*1e5
 
         # Call the solver to equilibrate the system for 5 ps
         eq_sol = solve_ivp(lambda t, fs: SimDynamics.mag_occ_dyn(fs=fs, te=te0, tp=tp0, j_sam=j_sam, spin_sam=spin_sam,

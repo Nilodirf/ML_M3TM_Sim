@@ -30,11 +30,11 @@ sample.add_layers(material=SiO2, layers=149, kappap_int='av')
 pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=0.5, delay=1e-12, pulse_dt=1e-16)
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=3e-9, ini_temp=15., constant_cp=False, ep_eq_dt=1e-16,
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=10e-12, ini_temp=50., constant_cp=False, ep_eq_dt=1e-16,
                   long_time_dt=1e-14, solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='hBN_CGT_SiO2_ke0')
+sim.save_data(solution, save_file='try_to_plot')

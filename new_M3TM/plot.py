@@ -51,7 +51,7 @@ class SimPlot:
 
         materials = None
         positions = ''
-        kappa_els = None
+        gamma_els = None
         mu_ats = None
         thicknesses = None
         part_of_positions = False
@@ -68,9 +68,9 @@ class SimPlot:
             elif line.startswith('Materials:'):
                 materials = line.replace('Materials: ', '')
                 materials = ast.literal_eval(materials)
-            elif line.startswith('kappa_el'):
-                kappa_els = line.replace('kappa_el =', '').replace('[W/mK]', '')
-                kappa_els = ast.literal_eval(kappa_els)
+            elif line.startswith('gamma_el'):
+                gamma_els = line.replace('gamma_el =', '').replace('[J/m^3/K^2]', '')
+                gamma_els = ast.literal_eval(gamma_els)
             elif line.startswith('mu_at'):
                 mu_ats = line.replace('mu_at = ', '').replace('[mu_Bohr]', '')
                 mu_ats = ast.literal_eval(mu_ats)
@@ -88,19 +88,19 @@ class SimPlot:
 
         layer_labels_te = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                          for position in positions_line]
-                                         for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))
+                                         for i, positions_line in enumerate(positions) if gamma_els[i] != 0]))
 
         layer_labels_mag = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                           for position in positions_line]
-                                          for i, positions_line in enumerate(positions) if kappa_els[i] != 0]))
+                                          for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))
 
-        layer_thicknesses = np.concatenate(np.array([[thicknesses[i] for position in positions_line]
+        layer_thicknesses = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
                                            for i, positions_line in enumerate(positions)]))*1e9
 
-        layer_thicknesses_te = np.concatenate(np.array([[thicknesses[i] for position in positions_line]
-                                              for i, positions_line in enumerate(positions) if kappa_els[i] != 0]))*1e9
+        layer_thicknesses_te = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
+                                              for i, positions_line in enumerate(positions) if gamma_els[i] != 0]))*1e9
 
-        layer_thicknesses_mag = np.concatenate(np.array([[thicknesses[i] for position in positions_line]
+        layer_thicknesses_mag = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
                                                for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))*1e9
 
         depth_labels = np.array([np.sum(layer_thicknesses[:i+1]) for i in range(len(layer_thicknesses))])
@@ -211,6 +211,7 @@ class SimPlot:
 
         plt.pcolormesh(x, y_axis, z.T,
                        cmap=color_scale, norm=norm)
+
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'sample depth [nm]', fontsize=16)
         plt.title(str(title), fontsize=20)
@@ -220,7 +221,9 @@ class SimPlot:
         for i, mat_sep in enumerate(mat_sep_marks):
             if y_axis[0] < mat_sep < y_axis[-1]:
                 plt.hlines(float(mat_sep), x[0], x[-1], color=text_color)
-            plt.text((x[-1]-x[0])*9/10, float(mat_sep) + 1, text_above[i], fontsize=14, color=text_color)
+            plt.text((x[-1]-x[0])*0.5/10, float(mat_sep) + 13, text_above[i], fontsize=14, color=text_color)
+
+        plt.gca().invert_yaxis()
 
         if save_fig:
             plt.savefig('Results/' + str(self.file) + '/' + str(title) + '.png')
