@@ -323,6 +323,46 @@ class SimPlot:
 
         return
 
+    def convert_to_dat(self):
+        # This method converts the simulation results that are initiated with this class as arrays from .npy files
+        # to .dat files and stores them with the same name in the same directory.
+
+        # Input:
+        # self. The plot object in use
+
+        # Returns:
+        # None. The method is void, only the .dat files are created and written.
+
+        # Define path to save files:
+        path = 'Results/' + str(self.file) + '/'
+
+        # Define files:
+        delay_dat_file = open(path + 'delays.dat', 'w+')
+        te_dat_file = open(path + 'tes.dat', 'w+')
+        tp_dat_file = open(path + 'tps.dat', 'w+')
+        mag_dat_file = open(path + 'mag.dat','w+')
+
+        # Filter the results to write in .dat to save memory:
+        write_mask = np.round(self.delay, 16) % 1e-14 < 1e-16
+
+        # Write the according data in the files:
+        for i in range(len(self.delay[write_mask])):
+            delay_dat_file.write(str(self.delay[write_mask][i]) + '\n')
+            te_dat_file.write(str([np.round(te_loc, 5) for te_loc in self.tes[write_mask][i]]).replace('[', '').replace(']', '')
+                              .replace(',', '\t') + '\n')
+            tp_dat_file.write(str([np.round(tp_loc, 5) for tp_loc in self.tps[write_mask][i]]).replace('[', '').replace(']', '')
+                              .replace(',', '\t') + '\n')
+            mag_dat_file.write(str([np.round(mag_loc, 5) for mag_loc in self.mags[write_mask][i]]).replace('[', '').replace(']', '')
+                               .replace(',', '\t') + '\n')
+
+        # Close the files:
+        delay_dat_file.close()
+        te_dat_file.close()
+        tp_dat_file.close()
+        mag_dat_file.close()
+
+        return
+
 
 class SimComparePlot:
     # This class enables comparison of different data sets.

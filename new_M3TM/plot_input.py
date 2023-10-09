@@ -4,10 +4,12 @@ from plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='try_to_plot')
+plotter = SimPlot(file='15_nm')
+
+plotter.convert_to_dat()
 
 # Plot a map of the denoted simulation of one of the three subsystems, save if you want to:
-plotter.map_plot(key='tp',  save_fig=False)
+# plotter.map_plot(key='tp',  save_fig=False)
 # plotter.map_plot(key='te', max_time=30, save_fig=True)
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
