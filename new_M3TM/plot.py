@@ -340,20 +340,27 @@ class SimPlot:
         delay_dat_file = open(path + 'delays.dat', 'w+')
         te_dat_file = open(path + 'tes.dat', 'w+')
         tp_dat_file = open(path + 'tps.dat', 'w+')
-        mag_dat_file = open(path + 'mag.dat','w+')
+        mag_dat_file = open(path + 'mag.dat', 'w+')
 
-        # Filter the results to write in .dat to save memory:
-        write_mask = np.round(self.delay, 16) % 1e-14 < 1e-16
+        # Filter the results to write in .dat to save memory (every 10 fs in 20 ps, then every 1 ps):
+        time_in_ps = self.delay * 1e12
+
+        small_times_filter = np.logical_and(time_in_ps < 20, np.round(time_in_ps, 4)*1e2 % 1 == 0)
+        large_times_filer = np.logical_and(time_in_ps >= 20, np.round(time_in_ps, 2) % 1 == 0)
+
+        write_mask = np.logical_or(small_times_filter, large_times_filer)
+        delay_to_write = np.round(time_in_ps, 2)[write_mask]
 
         # Write the according data in the files:
-        for i in range(len(self.delay[write_mask])):
-            delay_dat_file.write(str(self.delay[write_mask][i]) + '\n')
-            te_dat_file.write(str([np.round(te_loc, 5) for te_loc in self.tes[write_mask][i]]).replace('[', '').replace(']', '')
-                              .replace(',', '\t') + '\n')
-            tp_dat_file.write(str([np.round(tp_loc, 5) for tp_loc in self.tps[write_mask][i]]).replace('[', '').replace(']', '')
-                              .replace(',', '\t') + '\n')
-            mag_dat_file.write(str([np.round(mag_loc, 5) for mag_loc in self.mags[write_mask][i]]).replace('[', '').replace(']', '')
-                               .replace(',', '\t') + '\n')
+        # After every time step, defined by the filter write_mask, a linebreak is forced in the .dat files.
+        for i in range(len(delay_to_write)):
+            delay_dat_file.write(str(delay_to_write[i]) + '\n')
+            te_dat_file.write(str([np.round(te_loc, 4) for te_loc in self.tes[write_mask][i]]).replace('[', '')
+                              .replace(']', '').replace(',', '\t') + '\n')
+            tp_dat_file.write(str([np.round(tp_loc, 4) for tp_loc in self.tps[write_mask][i]]).replace('[', '')
+                              .replace(']', '').replace(',', '\t') + '\n')
+            mag_dat_file.write(str([np.round(mag_loc, 4) for mag_loc in self.mags[write_mask][i]]).replace('[', '')
+                               .replace(']', '').replace(',', '\t') + '\n')
 
         # Close the files:
         delay_dat_file.close()

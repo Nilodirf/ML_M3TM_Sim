@@ -4,7 +4,7 @@ from plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='15_nm')
+plotter = SimPlot(file='150_nm')
 
 plotter.convert_to_dat()
 
@@ -13,6 +13,6 @@ plotter.convert_to_dat()
 # plotter.map_plot(key='te', max_time=30, save_fig=True)
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
-# plotter.line_plot(key='tp', min_layer=10, max_layer=19, average=True, save_fig=True)
+plotter.line_plot(key='tp', min_layer=10, max_layer=19, average=True, save_fig=True)
 # plotter.line_plot(key='te', average=False, save_fig=False)
 # plotter.line_plot(key='mag', min_layer=0, average=False, save_fig=True, norm=False)
