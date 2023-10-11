@@ -354,8 +354,13 @@ class SimPlot:
         # If time increments in the data are larger than 10 fs, filter out datapoints recorded several times:
         for i, entry in enumerate(times_to_write_unfiltered):
             if entry not in times_to_write:
-                times_to_write.append(entry)
-                write_time_indices.append(write_time_indices_unfiltered[i])
+                if entry <= 10e-12:
+                    times_to_write.append(entry)
+                    write_time_indices.append(write_time_indices_unfiltered[i])
+                else:
+                    if entry*1e13 % 1 ==0:
+                        times_to_write.append(entry)
+                        write_time_indices.append(write_time_indices_unfiltered[i])
 
         # Write the according data in the files:
         # After every time step, defined by the filter write_mask, a linebreak is forced in the .dat files.
