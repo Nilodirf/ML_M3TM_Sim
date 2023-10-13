@@ -341,24 +341,35 @@ class SimPlot:
         tp_dat_file = open(path + 'tps.dat', 'w+')
         mag_dat_file = open(path + 'mag.dat', 'w+')
 
-        # Filter the results to write in .dat to save memory (every 10 fs in 20 ps, then every 1 ps):
-        time_in_ps = self.delay * 1e12
+        # Filter the results to write in .dat to save memory (every 10 fs):
+        time_in_ps = self.delay*1e12
+        time_increment = 1e-2
+        write_times = np.arange(0,time_in_ps[-1], time_increment)
+        write_time_indices_unfiltered = finderb(write_times, time_in_ps)
+        times_to_write_unfiltered = np.round(self.delay, 14)[write_time_indices_unfiltered]
+        times_to_write = []
+        write_time_indices = []
 
-        small_times_filter = np.logical_and(time_in_ps < 20, np.round(time_in_ps, 4)*1e2 % 1 == 0)
-        large_times_filer = np.logical_and(time_in_ps >= 20, np.round(time_in_ps, 2) % 1 == 0)
-
-        write_mask = np.logical_or(small_times_filter, large_times_filer)
-        delay_to_write = np.round(time_in_ps, 2)[write_mask]
+        # If time increments in the data are larger than 10 fs, filter out datapoints recorded several times:
+        for i, entry in enumerate(times_to_write_unfiltered):
+            if entry not in times_to_write:
+                if entry <= 10e-12:
+                    times_to_write.append(entry)
+                    write_time_indices.append(write_time_indices_unfiltered[i])
+                else:
+                    if entry*1e13 % 1 ==0:
+                        times_to_write.append(entry)
+                        write_time_indices.append(write_time_indices_unfiltered[i])
 
         # Write the according data in the files:
         # After every time step, defined by the filter write_mask, a linebreak is forced in the .dat files.
-        for i in range(len(delay_to_write)):
-            delay_dat_file.write(str(delay_to_write[i]) + '\n')
-            te_dat_file.write(str([np.round(te_loc, 4) for te_loc in self.tes[write_mask][i]]).replace('[', '')
+        for i in range(len(times_to_write)):
+            delay_dat_file.write(str(times_to_write[i]) + '\n')
+            te_dat_file.write(str([np.round(te_loc, 4) for te_loc in self.tes[write_time_indices][i]]).replace('[', '')
                               .replace(']', '').replace(',', '\t') + '\n')
-            tp_dat_file.write(str([np.round(tp_loc, 4) for tp_loc in self.tps[write_mask][i]]).replace('[', '')
+            tp_dat_file.write(str([np.round(tp_loc, 4) for tp_loc in self.tps[write_time_indices][i]]).replace('[', '')
                               .replace(']', '').replace(',', '\t') + '\n')
-            mag_dat_file.write(str([np.round(mag_loc, 4) for mag_loc in self.mags[write_mask][i]]).replace('[', '')
+            mag_dat_file.write(str([np.round(mag_loc, 4) for mag_loc in self.mags[write_time_indices][i]]).replace('[', '')
                                .replace(']', '').replace(',', '\t') + '\n')
 
         # Close the files:

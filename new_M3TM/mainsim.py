@@ -234,7 +234,7 @@ class SimDynamics:
             cp_sam_t = np.zeros(len_sam)
             for i, ind_list in enumerate(mat_ind):
                 cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
-                cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
+                cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t] # APPLY THE SAME THING TO THE PLOT FILE TO SAVE TIMESTEPS IN .DAT FORMAT!!
 
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
