@@ -209,8 +209,7 @@ class SimPlot:
 
         norm = mplcol.Normalize(vmin=vmin, vmax=vmax)
 
-        plt.pcolormesh(x, y_axis, z.T,
-                       cmap=color_scale, norm=norm)
+        plt.pcolormesh(x, y_axis, z.T, cmap=color_scale, norm=norm)
 
         plt.xlabel(r'time [ps]', fontsize=16)
         plt.ylabel(r'sample depth [nm]', fontsize=16)
