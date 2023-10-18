@@ -4,13 +4,18 @@ import numpy as np
 class SimPulse:
     # This class lets us define te pulse for excitation of the sample
 
-    def __init__(self, sample, pulse_width, fluence, delay, pulse_dt):
+    def __init__(self, sample, pulse_width, fluence, delay, pulse_dt, method, energy=None, theta=None, phi=None):
         # Input:
         # sample (object). Sample in use
         # pulse_width (float). Sigma of gaussian pulse shape in s
         # fluence (float). Fluence of the laser pulse in mJ/cm**2
         # delay (float). time-delay of the pulse peak after simulation start in s (Let the magnetization relax
         # to equilibrium before injecting the pulse
+        # method (String). The method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abele'
+        # for the matrix formulation calculating the profile via the Fresnel equations.
+        # energy (float). Energy of the optical laser pulse in eV. Only necessary for method 'Abele'
+        # theta (float). Angle of incidence of the pump pulse in respect to the sample plane normal in deg.
+        # phi (float). Angle of polarized E-field of optical pulse in respect to incidence plane in deg.
 
         # Also returns:
         # peak_power (float). Peak power per area (intensity) of the pulse in W/m**2.
@@ -24,6 +29,12 @@ class SimPulse:
         self.peak_power = self.fluence/np.sqrt(2*np.pi)/self.pulse_width*10
         self.Sam = sample
         self.pulse_dt = pulse_dt
+        self.method = method
+        assert self.method == 'LB' or self.method == 'Abele', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
+                                                              ' or \' Abele\' (for computation of Fresnel equations).'
+        self.energy = energy
+        self.theta = theta
+        self.phi = phi
         self.pulse_time_grid, self.pulse_map = self.get_pulse_map()
 
     def get_pulse_map(self):
@@ -41,6 +52,7 @@ class SimPulse:
         # pump_time_grid (numpy array). 1d-array of the time grid on which the pulse is defined
         # pump_map (numpy array). 2d-array of the corresponding pump energies on the time grid (first dimension)
         # and for the whole sample (second dimension)
+
         p_del = self.delay
         sigma = self.pulse_width
         timestep = self.pulse_width
@@ -80,23 +92,33 @@ class SimPulse:
 
         max_power = self.peak_power
         powers = np.array([])
-        first_layer = 0
-        last_layer = 0
 
-        already_penetrated = 0
+        if self.method == 'LB':
 
-        for i in range(len(mat_blocks)):
-            last_layer += mat_blocks[i]
-            if pendep_sam[first_layer] == 1:
-                powers = np.append(powers, np.zeros(mat_blocks[i]))
+            first_layer = 0
+            last_layer = 0
+
+            already_penetrated = 0
+
+            for i in range(len(mat_blocks)):
+                last_layer += mat_blocks[i]
+                if pendep_sam[first_layer] == 1:
+                    powers = np.append(powers, np.zeros(mat_blocks[i]))
+                    first_layer = last_layer
+                    continue
+                pen_red = np.divide((np.arange(mat_blocks[i])+already_penetrated)*dz_sam[first_layer:last_layer],
+                                    pendep_sam[first_layer:last_layer])
+                powers = np.append(powers, max_power/pendep_sam[first_layer:last_layer]
+                                   * np.exp(-pen_red))
+                max_power = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
-                continue
-            pen_red = np.divide((np.arange(mat_blocks[i])+already_penetrated)*dz_sam[first_layer:last_layer],
-                                pendep_sam[first_layer:last_layer])
-            powers = np.append(powers, max_power/pendep_sam[first_layer:last_layer]
-                               * np.exp(-pen_red))
-            max_power = powers[-1]*pendep_sam[last_layer-1]
-            first_layer = last_layer
-            already_penetrated = 1
-        excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
-        return excitation_map
+                already_penetrated = 1
+            excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
+            return excitation_map
+
+        elif self.method == 'Abele':
+
+            assert self.Sam.get_params('n').any() is not None, 'Please define a refractive index for every constituent'\
+                                                               'of the sample within the definition of the materials.'
+            assert self.energy is not None and self.theta is not None and self.phi is not None, \
+                'For the chosen method, make sure energy, theta and phi are defined.'

@@ -6,7 +6,8 @@ class SimMaterials:
     # The material class holds mostly parameters of the materials in the sample to be constructed.
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
-    def __init__(self, name, pen_dep, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
+    def __init__(self, name, pen_dep, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf,
+                 n=None):
         # Input:
         # name (String). Name of the material
         # pen_dep (float). Penetration depth of the layers of the material in m
@@ -25,6 +26,7 @@ class SimMaterials:
         # in J/m**3/K (set to 0 if no itinerant electrons)
         # cp_max (float). Maximal phononic heat capacity in W/m**3/K. Temperature dependence
         # is computed with Einstein model
+        # n (complex float). Complex refractive index of the material. Use syntax n_r + n_i j to initiate.
 
         # Also returns:
         # tein (float). The approximate Einstein temperature in relation to the Debye temperature.
@@ -54,6 +56,7 @@ class SimMaterials:
         self.cp_max = cp_max
         self.tein = 0.75*tdeb
         self.cp_T_grid, self.cp_T = self.create_cp_T()
+        self.n = n
         if muat == 0:
             self.R = 0
             self.J = 0
