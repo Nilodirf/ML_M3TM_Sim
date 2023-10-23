@@ -14,8 +14,10 @@ class SimPulse:
         # method (String). The method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abele'
         # for the matrix formulation calculating the profile via the Fresnel equations.
         # energy (float). Energy of the optical laser pulse in eV. Only necessary for method 'Abele'
-        # theta (float). Angle of incidence of the pump pulse in respect to the sample plane normal in deg.
-        # phi (float). Angle of polarized E-field of optical pulse in respect to incidence plane in deg.
+        # theta (float). Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so
+        # between 0 and 1/2.
+        # phi (float). Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so
+        # between 0 and 1/2.
 
         # Also returns:
         # peak_power (float). Peak power per area (intensity) of the pulse in W/m**2.
@@ -122,3 +124,19 @@ class SimPulse:
                                                                'of the sample within the definition of the materials.'
             assert self.energy is not None and self.theta is not None and self.phi is not None, \
                 'For the chosen method, make sure energy, theta and phi are defined.'
+
+            # compute the normalized electric field amplitudes from the given angles:
+            e_x0 = np.cos(self.phi)*sin(self.theta)
+            e_y0 = np.sin(self.phi)*sin(self.theta)
+            e_z0 = np.cos(self.theta)
+
+            # set up array of refraction indices, first layer and last layer considered vacuum before/after sample:
+            n_comp_arr = np.append(np.append(np.ones(1), self.Sam.n_comp_arr), np.ones(1))
+
+            # compute the penetration angle theta in every sample constituent from Snell's law:
+            theta_arr = np.empty(len(self.Sam.mat_blocks)+2, dtype=complex)
+            theta_arr[0]=self.theta
+            for i, angle in enumerate(theta_arr[1:]):
+                angle = np.arcsin(n_comp_arr[i-1]/n_comp_arr[i]*np.sin(theta_arr[i-1]))
+
+            ### NEXT: FRESNEL EQUATIONS

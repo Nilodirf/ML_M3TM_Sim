@@ -21,6 +21,9 @@ class SimSample:
         # kappa_e_int (numpy array). 1d-array of the interface constants of electronic heat diffusion. Starts empty,
         # recalculated after adding of layers
         # len_te (int). Number of layers that have free electrons (determined with el_mask)
+        # el_mag_mask (boolean array). Array of the length of numbers of layers that hold free electrons, True if
+        # also magnetic, False if not
+        # n_comp_arr (numpy array). 1d-array of the complex refractive indices of the sample constituents (blocks)
 
         self.mat_arr = np.array([])
         self.len = self.get_len()
@@ -33,8 +36,9 @@ class SimSample:
         self.kappa_e_int = np.array([])
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
+        self.n_comp_arr = np.array([])
 
-    def add_layers(self, material, layers, kappap_int=None, kappae_int=None):
+    def add_layers(self, material, layers, kappap_int=None, kappae_int=None, n_comp=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
 
         # Input:
@@ -43,6 +47,7 @@ class SimSample:
         # layers (int). Number of layers with depth material.dz to be added to the sample
         # kappap_int (float/string). Phononic interface heat conductivity to the last block of the sample
         # kappae_int (float/string). Electronic interface heat conductivity to the last block of the sample
+        # n_comp (complex float). Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate.
 
         # Returns:
         # mat_arr (numpy array). 1d-array after the layers have been added
@@ -104,6 +109,7 @@ class SimSample:
         self.mag_num = self.get_num_mag_mat()
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
+        self.n_comp_arr = np.append(self.n_comp_arr, n_comp)
 
         return self.mat_arr
 
