@@ -27,7 +27,7 @@ sample.add_layers(material=CGT, layers=7, kappap_int='av')
 sample.add_layers(material=SiO2, layers=149, kappap_int='av')
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=0.5, delay=1e-12, pulse_dt=1e-16)
+pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=0.5, delay=1e-12, pulse_dt=1e-16, method='LB')
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
 sim = SimDynamics(sample=sample, pulse=pulse, end_time=10e-12, ini_temp=15., constant_cp=False, ep_eq_dt=1e-16,

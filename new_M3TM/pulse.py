@@ -125,18 +125,55 @@ class SimPulse:
             assert self.energy is not None and self.theta is not None and self.phi is not None, \
                 'For the chosen method, make sure energy, theta and phi are defined.'
 
+            # N is the number of blocks/constituents in the sample, so all in all we have N+2 blocks in the system:
+            N = len(self.Sam.mat_blocks)
+
             # compute the normalized electric field amplitudes from the given angles:
-            e_x0 = np.cos(self.phi)*sin(self.theta)
-            e_y0 = np.sin(self.phi)*sin(self.theta)
+            e_x0 = np.cos(self.phi)*np.sin(self.theta)
+            e_y0 = np.sin(self.phi)*np.sin(self.theta)
             e_z0 = np.cos(self.theta)
 
             # set up array of refraction indices, first layer and last layer considered vacuum before/after sample:
             n_comp_arr = np.append(np.append(np.ones(1), self.Sam.n_comp_arr), np.ones(1))
 
             # compute the penetration angle theta in every sample constituent from Snell's law:
-            theta_arr = np.empty(len(self.Sam.mat_blocks)+2, dtype=complex)
-            theta_arr[0]=self.theta
+            theta_arr = np.empty(N+2, dtype=complex)
+            theta_arr[0] = self.theta
             for i, angle in enumerate(theta_arr[1:]):
                 angle = np.arcsin(n_comp_arr[i-1]/n_comp_arr[i]*np.sin(theta_arr[i-1]))
 
-            ### NEXT: FRESNEL EQUATIONS
+            # fresnel equations at N+1 interfaces:
+            n_last = n_comp_arr[:-1]
+            n_next = n_comp_arr[1:]
+            cos_theta_last = np.cos(theta_arr[:-1])
+            cos_theta_next = np.cos(theta_arr[1:])
+
+            r_s = np.divide(n_last*cos_theta_last-n_next*cos_theta_next, n_last*cos_theta_last+n_next*cos_theta_next)
+            t_s = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_last+n_next*cos_theta_next)
+            r_p = np.divide(n_last*cos_theta_next-n_next*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
+            t_p = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
+
+            # we need the thicknesses of blocks:
+            dzs = self.Sam.get_params('dz')
+            dzs_in_blocks = []
+            block_thicknesses = []
+            start = 0
+            for layers_in_block in self.Sam.mat_blocks:
+                layers_in_block += start
+                dzs_in_blocks.append([dzs[start:layers_in_block-1]])
+                block_thicknesses.append(sum(dzs[start:layers_in_block-1]))
+                start += layers_in_block
+
+            # now the D_matrices, for N+1 blocks:
+            all_D_s_mat = np.empty((N+1, 2, 2), dtype=complex)
+            all_D_p_mat = np.empty((N+1, 2, 2), dtype=complex)
+
+            all_D_s_mat[0] = np.array([[1, r_s[0]/t_s[0]], [r_s[0]/t_s[0], 1]])
+            all_D_p_mat[0] = np.array([[1, r_p[0]/t_p[0]], [r_p[0]/t_p[0], 1]])
+
+            for i, mat in enumerate(all_D_s_mat[1:]):
+                mat = np.dot(all_D_s_mat[i-1], np.array([[],[]]))
+
+
+
+

@@ -181,7 +181,7 @@ class SimSample:
 
         # Returns:
         # material_blocks (list). List of lists of the blocks of layers separated by changes in materials
-        # along the sample, containing the number of repeated layers in each list of list.
+        # along the sample, containing the number of repeated layers in each element.
 
         material_blocks = []
         n_sam = self.get_len()
