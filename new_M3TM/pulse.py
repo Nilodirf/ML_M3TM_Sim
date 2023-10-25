@@ -8,7 +8,7 @@ class SimPulse:
         # Input:
         # sample (object). Sample in use
         # pulse_width (float). Sigma of gaussian pulse shape in s
-        # fluence (float). Fluence of the laser pulse in mJ/cm**2
+        # fluence (float). Fluence of the laser pulse in mJ/cm**2. Converted to J/m**2
         # delay (float). time-delay of the pulse peak after simulation start in s (Let the magnetization relax
         # to equilibrium before injecting the pulse
         # method (String). The method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abele'
@@ -26,9 +26,9 @@ class SimPulse:
         # and the corresponding 2d-array of excitation power density at all times in all layers
 
         self.pulse_width = pulse_width
-        self.fluence = fluence
+        self.fluence = fluence/10
         self.delay = delay
-        self.peak_power = self.fluence/np.sqrt(2*np.pi)/self.pulse_width*10
+        self.peak_power = self.fluence/np.sqrt(2*np.pi)/self.pulse_width
         self.Sam = sample
         self.pulse_dt = pulse_dt
         self.method = method
@@ -77,8 +77,8 @@ class SimPulse:
         return pump_time_grid, pump_map
 
     def depth_profile(self, pump_grid):
-        # This method computes the depth dependence of the laser pulse in exponential fashion without reflection
-        # at interface and multiplies it with the time dependence.
+        # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abele's
+        # matrix method.
 
         # Input:
         # sample (class object). The before constructed sample
@@ -133,6 +133,10 @@ class SimPulse:
             e_y0 = np.sin(self.phi)*np.sin(self.theta)
             e_z0 = np.cos(self.theta)
 
+            # find s and p polarizations from it:
+            e_p0 = np.sqrt(e_x0**2+e_z0**2)
+            e_s0 = e_y0
+
             # set up array of refraction indices, first layer and last layer considered vacuum before/after sample:
             n_comp_arr = np.append(np.append(np.ones(1), self.Sam.n_comp_arr), np.ones(1))
 
@@ -164,15 +168,60 @@ class SimPulse:
                 block_thicknesses.append(sum(dzs[start:layers_in_block-1]))
                 start += layers_in_block
 
-            # now the D_matrices, for N+1 blocks:
-            all_D_s_mat = np.empty((N+1, 2, 2), dtype=complex)
-            all_D_p_mat = np.empty((N+1, 2, 2), dtype=complex)
+            block_thicknesses = np.array(block_thicknesses)
 
-            all_D_s_mat[0] = np.array([[1, r_s[0]/t_s[0]], [r_s[0]/t_s[0], 1]])
-            all_D_p_mat[0] = np.array([[1, r_p[0]/t_p[0]], [r_p[0]/t_p[0], 1]])
+            # now the propagation matrices, for N+1 blocks:
+            all_C_s_mat = np.empty((N+1, 2, 2), dtype=complex)
+            all_C_p_mat = np.empty((N+1, 2, 2), dtype=complex)
 
-            for i, mat in enumerate(all_D_s_mat[1:]):
-                mat = np.dot(all_D_s_mat[i-1], np.array([[],[]]))
+            all_C_s_mat[0] = np.array([[1, r_s[0]], [r_s[0], 1]])
+            all_C_p_mat[0] = np.array([[1, r_p[0]], [r_p[0], 1]])
+
+            all_phases = 2*np.pi*n_comp_arr[1:-1]*cos_theta_last[1:]*block_thicknesses*1j
+
+            for i in range(1, len(all_C_s_mat[1:])):
+                all_C_s_mat[i] = 1/t_s[i]*np.array([[np.exp(all_phases[i]), r_s[i]*np.exp(all_phases[i])],
+                                         [r_s[i]*np.exp(all_phases[i]), np.exp(all_phases[i])]])
+                all_C_p_mat[i] = np.array([[np.exp(all_phases[i]), r_p[i]*np.exp(all_phases[i])],
+                                                    [r_p[i]*np.exp(all_phases[i]), np.exp(all_phases[i])]])
+
+            # now D_matrices:
+            all_D_s_mat = np.empty((N+2, 2, 2), dtype=complex)
+            all_D_p_mat = np.empty((N+2, 2, 2), dtype=complex)
+
+            all_D_s_mat[-1] = np.identity(2)
+            all_D_p_mat[-1] = np.identity(2)
+
+            for i in range(len(all_D_p_mat)-2, -1, -1):
+                all_D_s_mat[i] = np.matmul(all_D_s_mat[i+1], all_C_s_mat[i])
+                all_D_p_mat[i] = np.matmul(all_D_p_mat, all_C_p_mat[i])
+
+            # total reflection, transmission:
+
+            t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1])*cos_theta_next[-1]),
+                              np.conj(n_comp_arr[0]*cos_theta_last[0]))* np.abs(np.prod(t_p)/all_D_p_mat[-1, 0, 0])**2
+            t_s_tot = np.real(np.divide(n_comp_arr[-1]*cos_theta_next[-1], n_comp_arr[0]*cos_theta_last[0]))\
+                      * np.abs(np.prod(t_s)/all_D_s_mat[0, 0, 0])**2
+            r_s_tot = np.abs(all_D_s_mat[0, 1, 0] / all_D_s_mat[0, 0, 0])**2
+            r_p_tot = np.abs(all_D_p_mat[0, 1, 0] / all_D_p_mat[0, 0, 0])**2
+
+            # electric field in all N+2 blocks, for +(-) propagating waves of layer j indexed [j,0(1)]:
+            all_E_p_amps = np.empty((N+2, 2), dtype=complex)
+            all_E_s_amps = np.empty((N + 2, 2), dtype=complex)
+
+            for i in range(N+1):
+                t_p_e0 = np.prod(tp[:i])*e_p0
+                t_s_e0 = np.prod(ts[:i])*e_s0
+                all_E_p_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_e0
+                all_E_p_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_e0
+                all_E_s_amps[i, 0] = all_D_s_mat[i, 0, 0]/all_D_s_mat[0, 0, 0]*t_s_e0
+                all_E_s_amps[i, 1] = all_D_s_mat[i, 1, 0]/all_D_s_mat[0, 0, 0]*t_s_e0
+
+
+
+
+
+
 
 
 
