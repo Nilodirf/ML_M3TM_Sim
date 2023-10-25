@@ -120,8 +120,8 @@ class SimPulse:
 
         elif self.method == 'Abele':
 
-            assert self.Sam.get_params('n').any() is not None, 'Please define a refractive index for every constituent'\
-                                                               'of the sample within the definition of the materials.'
+            assert self.Sam.n_comp_arr.any() is not None, 'Please define a refractive index for every constituent'\
+                                                               'of the sample within the definition of the sample.'
             assert self.energy is not None and self.theta is not None and self.phi is not None, \
                 'For the chosen method, make sure energy, theta and phi are defined.'
 
@@ -132,6 +132,9 @@ class SimPulse:
             e_x0 = np.cos(self.phi)*np.sin(self.theta)
             e_y0 = np.sin(self.phi)*np.sin(self.theta)
             e_z0 = np.cos(self.theta)
+
+            # wavelength from photon energy:
+            wave_length = self.energy/4.1357e-15
 
             # find s and p polarizations from it:
             e_p0 = np.sqrt(e_x0**2+e_z0**2)
@@ -177,7 +180,7 @@ class SimPulse:
             all_C_s_mat[0] = np.array([[1, r_s[0]], [r_s[0], 1]])
             all_C_p_mat[0] = np.array([[1, r_p[0]], [r_p[0], 1]])
 
-            all_phases = 2*np.pi*n_comp_arr[1:-1]*cos_theta_last[1:]*block_thicknesses*1j
+            all_phases = 2*np.pi*wave_length*n_comp_arr[1:-1]*cos_theta_last[1:]*block_thicknesses*1j
 
             for i in range(1, len(all_C_s_mat[1:])):
                 all_C_s_mat[i] = 1/t_s[i]*np.array([[np.exp(all_phases[i]), r_s[i]*np.exp(all_phases[i])],
@@ -216,6 +219,9 @@ class SimPulse:
                 all_E_p_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_e0
                 all_E_s_amps[i, 0] = all_D_s_mat[i, 0, 0]/all_D_s_mat[0, 0, 0]*t_s_e0
                 all_E_s_amps[i, 1] = all_D_s_mat[i, 1, 0]/all_D_s_mat[0, 0, 0]*t_s_e0
+
+            # NEXT STEPS: K_Z values, E components, z-depths!!! Think about wheather I need p,s  components with Ex, Ey, Ez,
+            # think about the angle theta again, maybe pi/2 phaseshift to what I defined
 
 
 
