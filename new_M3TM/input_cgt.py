@@ -3,7 +3,7 @@
 # Unless explicitly stated otherwise, all parameters are to be put in SI units.
 # Short documentation of the simulation setup is given before each block here.
 
-# Import classes from other files to set up materials, sample and pulse:
+# Import classes from other files to set up materials, sample, pulse and main simulation:
 from mats import SimMaterials
 from sample import SimSample
 from pulse import SimPulse
@@ -22,12 +22,13 @@ SiO2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=2e-9, vat=1e-30, ce_gam
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
 sample = SimSample()
-sample.add_layers(material=hBN, layers=7)
-sample.add_layers(material=CGT, layers=7, kappap_int='av')
-sample.add_layers(material=SiO2, layers=149, kappap_int='av')
+sample.add_layers(material=hBN, layers=7, n_comp=1+0j)
+sample.add_layers(material=CGT, layers=7, kappap_int='av', n_comp=4.5+2.4j)
+sample.add_layers(material=SiO2, layers=149, kappap_int='av', n_comp=1.5+0j)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=0.5, delay=1e-12, pulse_dt=1e-16, method='LB')
+pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=0.5, delay=1e-12, pulse_dt=1e-16, method='Abele', theta=1/3, phi=1/5, energy=1.5)
+pulse.visualize(key='both')
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
 sim = SimDynamics(sample=sample, pulse=pulse, end_time=10e-12, ini_temp=15., constant_cp=False, ep_eq_dt=1e-16,

@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import constants as sp
-
+from matplotlib import pyplot as plt
+from finderb import finderb
 
 class SimPulse:
     # This class lets us define te pulse for excitation of the sample
@@ -58,7 +59,7 @@ class SimPulse:
 
         p_del = self.delay
         sigma = self.pulse_width
-        timestep = self.pulse_width
+        timestep = self.pulse_dt
 
         start_pump_time = p_del-10*sigma
         end_pump_time = p_del+10*sigma
@@ -158,6 +159,7 @@ class SimPulse:
             cos_theta_last = np.cos(theta_arr[:-1])
             cos_theta_next = np.cos(theta_arr[1:])
 
+
             r_s = np.divide(n_last*cos_theta_last-n_next*cos_theta_next, n_last*cos_theta_last+n_next*cos_theta_next)
             t_s = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_last+n_next*cos_theta_next)
             r_p = np.divide(n_last*cos_theta_next-n_next*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
@@ -168,15 +170,16 @@ class SimPulse:
             penetration_from_interface = np.array([])
             block_thicknesses = np.array([])
             start = 0
-            for layers_in_block in self.Sam.mat_blocks:
-                layers_in_block += start
-                penetration = np.append(penetration_from_interface.append(np.cumsum(np.array([dzs[start:layers_in_block-1]]))-dzs[start]))
-                block_thicknesses = np.append(block_thicknesses.append(sum(dzs[start:layers_in_block-1])))
-                start += layers_in_block
+            for end in self.Sam.mat_blocks:
+                end += start
+                penetration_from_interface = np.append(penetration_from_interface, np.cumsum(dzs[start:end])-dzs[start])
+                block_thicknesses = np.append(block_thicknesses, sum(dzs[start:end]))
+                start = end
 
             # now the propagation matrices, for N+1 blocks:
             all_C_s_mat = np.empty((N+1, 2, 2), dtype=complex)
             all_C_p_mat = np.empty((N+1, 2, 2), dtype=complex)
+
 
             all_C_s_mat[0] = np.array([[1, r_s[0]], [r_s[0], 1]])
             all_C_p_mat[0] = np.array([[1, r_p[0]], [r_p[0], 1]])
@@ -198,12 +201,12 @@ class SimPulse:
 
             for i in range(len(all_D_p_mat)-2, -1, -1):
                 all_D_s_mat[i] = np.matmul(all_D_s_mat[i+1], all_C_s_mat[i])
-                all_D_p_mat[i] = np.matmul(all_D_p_mat, all_C_p_mat[i])
+                all_D_p_mat[i] = np.matmul(all_D_p_mat[i+1], all_C_p_mat[i])
 
             # total reflection, transmission:
 
-            t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1])*cos_theta_next[-1]),
-                              np.conj(n_comp_arr[0]*cos_theta_last[0]))* np.abs(np.prod(t_p)/all_D_p_mat[-1, 0, 0])**2
+            t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1]*cos_theta_next[-1]),
+                              np.conj(n_comp_arr[0]*cos_theta_last[0])))* np.abs(np.prod(t_p)/all_D_p_mat[-1, 0, 0])**2
             t_s_tot = np.real(np.divide(n_comp_arr[-1]*cos_theta_next[-1], n_comp_arr[0]*cos_theta_last[0]))\
                       * np.abs(np.prod(t_s)/all_D_s_mat[0, 0, 0])**2
             r_s_tot = np.abs(all_D_s_mat[0, 1, 0] / all_D_s_mat[0, 0, 0])**2
@@ -215,11 +218,11 @@ class SimPulse:
             all_E_y_amps = np.empty((N+2, 2), dtype=complex)
 
             for i in range(N+1):
-                t_p = np.prod(tp[:i])
-                t_s = np.prod(ts[:i])
-                t_p_ex = t_p * e_x0
-                t_p_ez = t_p * e_z0
-                t_s_ey = t_s * e_y0
+                tp = np.prod(t_p[:i])
+                ts = np.prod(t_s[:i])
+                t_p_ex = tp * e_x0
+                t_p_ez = tp * e_z0
+                t_s_ey = ts * e_y0
                 all_E_x_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_ex
                 all_E_x_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_ex
                 all_E_z_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_ez
@@ -231,20 +234,21 @@ class SimPulse:
             kz_in_sample = 2*np.pi/wave_length*n_comp_arr[1:-1]*np.cos(theta_arr[1:-1])
 
             # electric field in all layers of sample and proportionality factor for absorptance:
-            e_x_in_sample = np.empty(self.Sam.get_len, 2)
-            e_y_in_sample = np.empty(self.Sam.get_len, 2)
-            e_z_in_sample = np.empty(self.Sam.get_len, 2)
-            q_prop = np.empty(self.Sam.get_len)
+            e_x_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
+            e_y_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
+            e_z_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
+            q_prop = np.empty(self.Sam.len)
 
             first_layer = 0
-            for i, last_layer in enumerate(np.cumsum(self.Sam.mat_blocks)):
-                phase = 1j*kz_in_sample*penetration_from_interface[first_layer:last_layer]
-                phase = np.array(phase, -phase)
-                e_x_in_sample[first_layer: last_layer] = all_E_x_amps[i+1] * phase[..., np.newaxis]
-                e_y_in_sample[first_layer: last_layer] = all_E_y_amps[i+1] * phase[..., np.newaxis]
-                e_z_in_sample[first_layer: last_layer] = all_E_z_amps[i+1] * phase[..., np.newaxis]
-                q_prop[first_layer: last_layer] = np.real(np.divide(n_comp_arr[i+1]*cos(theta_arr[i+1]),cos(self.theta)))\
-                * 4*np.pi/wave_length*np.imag(n_comp_arr[i+1]*cos(theta_arr[i+1]))
+            for i, last_layer in enumerate(self.Sam.mat_blocks):
+                last_layer += first_layer
+                phase = 1j*kz_in_sample[i]*penetration_from_interface[first_layer:last_layer]
+                phase = np.array([np.exp(phase), np.exp(-phase)]).T
+                e_x_in_sample[first_layer: last_layer] = phase * all_E_x_amps[i+1, :]
+                e_y_in_sample[first_layer: last_layer] = phase * all_E_y_amps[i+1, :]
+                e_z_in_sample[first_layer: last_layer] = phase * all_E_z_amps[i+1, :]
+                q_prop[first_layer: last_layer] = np.real(np.divide(n_comp_arr[i+1]*np.cos(theta_arr[i+1]), np.cos(self.theta)))\
+                * 4*np.pi/wave_length*np.imag(n_comp_arr[i+1]*np.cos(theta_arr[i+1]))
                 first_layer = last_layer
 
             # from the E-field we get the normalized intensity:
@@ -258,4 +262,53 @@ class SimPulse:
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 
+            ### FIX: for phi, theta = [0, pi/2] things crash. add exceptions!!!
+            ### ADD: assertion for absorption but no ce defined!!
+            ### CHANGE: pen_dep and layer_thickness to sample class, not materials
+
             return excitation_map
+
+    def visualize(self, key):
+
+        assert key == 't' or key == 'z' or key == 'both', 'Please select one of the three plotting options \'t\' ' \
+                                                        '(to see time dependence), \'z\' (to see depth dependence),' \
+                                                        '\'both\' (to see the pulse map in time and depth).'
+        plt.figure(figsize=(8,6))
+
+        if key == 't':
+            norm = np.amax(self.pulse_map)
+            j = 0
+            max = 0.
+            for layer_index in range(self.Sam.len):
+                if self.pulse_map[:, layer_index].any() > max:
+                    max = np.amax(self.pulse_map[:, layer_index])
+                    j = layer_index
+            print(norm)
+            print(self.pulse_time_grid)
+            print(self.pulse_map[:,0])
+            plt.plot(self.pulse_time_grid, self.pulse_map[:, j]/norm)
+            plt.xlabel(r'delay [ps]', fontsize=16)
+            plt.ylabel(r'S(t)/S$_{max}$', fontsize=16)
+            plt.show()
+
+        elif key == 'z':
+            norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
+            sample_depth = np.cumsum(self.Sam.get_params('dz')) - self.Sam.get_params('dz')[0]
+            plt.plot(sample_depth, self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm)
+            plt.xlabel(r'sample depth z [m]', fontsize=16)
+            plt.ylabel(r'S(z)/S$_{max}$', fontsize=16)
+            plt.show()
+
+        else:
+            sample_depth = np.cumsum(self.Sam.get_params('dz'))-self.Sam.get_params('dz')[0]
+            plt.xlabel(r'delay [ps]', fontsize=16)
+            plt.ylabel(r'sample depth [m]', fontsize=16)
+            plt.pcolormesh(self.pulse_time_grid, sample_depth, self.pulse_map.T, cmap='inferno')
+            cbar = plt.colorbar()
+            cbar.set_label(r'absorbed pump power density [W/m$^3$]', rotation=270, labelpad=15)
+            plt.show()
+
+        ### CHANGES: s to ps, m to nm
+        ### ADD: Documentation
+
+        return
