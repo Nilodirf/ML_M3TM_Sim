@@ -28,17 +28,17 @@ class SimPulse:
         # and the corresponding 2d-array of excitation power density at all times in all layers
 
         self.pulse_width = pulse_width
-        self.fluence = fluence/10
+        self.fluence = fluence
         self.delay = delay
-        self.peak_intensity = self.fluence/np.sqrt(2*np.pi)/self.pulse_width
+        self.peak_intensity = self.fluence/np.sqrt(2*np.pi)/self.pulse_width/10
         self.Sam = sample
         self.pulse_dt = pulse_dt
         self.method = method
-        assert self.method == 'LB' or self.method == 'Abele', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
-                                                              ' or \' Abele\' (for computation of Fresnel equations).'
+        assert self.method == 'LB' or self.method == 'Abeles', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
+                                                              ' or \' Abeles\' (for computation of Fresnel equations).'
         self.energy = energy
-        self.theta = theta
-        self.phi = phi
+        self.theta = np.pi * theta
+        self.phi = np.pi * phi
         self.pulse_time_grid, self.pulse_map = self.get_pulse_map()
 
     def get_pulse_map(self):
@@ -79,7 +79,7 @@ class SimPulse:
         return pump_time_grid, pump_map
 
     def depth_profile(self, pump_grid):
-        # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abele's
+        # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abeles'
         # matrix method.
 
         # Input:
@@ -94,7 +94,7 @@ class SimPulse:
         pendep_sam = self.Sam.get_params('pen_dep')
         mat_blocks = self.Sam.mat_blocks
 
-        max_power = self.peak_intensity
+        max_intensity = self.peak_intensity
         powers = np.array([])
 
         if self.method == 'LB':
@@ -112,16 +112,20 @@ class SimPulse:
                     continue
                 pen_red = np.divide((np.arange(mat_blocks[i])+already_penetrated)*dz_sam[first_layer:last_layer],
                                     pendep_sam[first_layer:last_layer])
-                powers = np.append(powers, max_power/pendep_sam[first_layer:last_layer]
+                powers = np.append(powers, max_intensity/pendep_sam[first_layer:last_layer]
                                    * np.exp(-pen_red))
-                max_power = powers[-1]*pendep_sam[last_layer-1]
+                max_intensity = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
                 already_penetrated = 1
+            abs_flu = np.sum(powers*self.Sam.get_params('dz')) * (np.sqrt(2*np.pi)*self.pulse_width*10)
+            trans_flu = self.fluence-abs_flu
+            ref_flu = 0
+            print(powers[powers != 0])
             excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
 
             return excitation_map
 
-        elif self.method == 'Abele':
+        elif self.method == 'Abeles':
 
             assert self.Sam.n_comp_arr.any() is not None, 'Please define a refractive index for every constituent'\
                                                                'of the sample within the definition of the sample.'
@@ -136,13 +140,10 @@ class SimPulse:
             wave_length = sp.h*sp.c/sp.physical_constants['electron volt'][0]/self.energy
 
             # compute the normalized electric field amplitudes from the given angles:
-            e_x0 = np.cos(self.phi)*np.cos(self.theta)
-            e_y0 = np.sin(self.phi)*np.cos(self.theta)
-            e_z0 = np.sin(self.theta)
 
             # find s and p polarizations from it:
-            e_p0 = np.sqrt(e_x0**2+e_z0**2)
-            e_s0 = e_y0
+            e_p0 = np.cos(self.phi)
+            e_s0 = np.sin(self.phi)
 
             # set up array of refraction indices, first layer and last layer considered vacuum before/after sample:
             n_comp_arr = np.append(np.append(np.ones(1), self.Sam.n_comp_arr), np.ones(1))
@@ -150,8 +151,8 @@ class SimPulse:
             # compute the penetration angle theta in every sample constituent from Snell's law:
             theta_arr = np.empty(N+2, dtype=complex)
             theta_arr[0] = self.theta
-            for i, angle in enumerate(theta_arr[1:]):
-                angle = np.arcsin(n_comp_arr[i-1]/n_comp_arr[i]*np.sin(theta_arr[i-1]))
+            for i in range(1, len(theta_arr)):
+                theta_arr[i] = np.arcsin(n_comp_arr[i-1]/n_comp_arr[i]*np.sin(theta_arr[i-1]))
 
             # fresnel equations at N+1 interfaces:
             n_last = n_comp_arr[:-1]
@@ -159,11 +160,12 @@ class SimPulse:
             cos_theta_last = np.cos(theta_arr[:-1])
             cos_theta_next = np.cos(theta_arr[1:])
 
-
             r_s = np.divide(n_last*cos_theta_last-n_next*cos_theta_next, n_last*cos_theta_last+n_next*cos_theta_next)
             t_s = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_last+n_next*cos_theta_next)
             r_p = np.divide(n_last*cos_theta_next-n_next*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
             t_p = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
+
+            print(r_s)
 
             # we need the thicknesses of blocks and the distance from previous interfaces:
             dzs = self.Sam.get_params('dz')
@@ -180,17 +182,16 @@ class SimPulse:
             all_C_s_mat = np.empty((N+1, 2, 2), dtype=complex)
             all_C_p_mat = np.empty((N+1, 2, 2), dtype=complex)
 
-
             all_C_s_mat[0] = np.array([[1, r_s[0]], [r_s[0], 1]])
             all_C_p_mat[0] = np.array([[1, r_p[0]], [r_p[0], 1]])
 
             all_phases = 2*np.pi/wave_length*n_comp_arr[1:-1]*cos_theta_last[1:]*block_thicknesses*1j
 
-            for i in range(1, len(all_C_s_mat[1:])):
-                all_C_s_mat[i] = 1/t_s[i]*np.array([[np.exp(all_phases[i]), r_s[i]*np.exp(all_phases[i])],
-                                         [r_s[i]*np.exp(all_phases[i]), np.exp(all_phases[i])]])
-                all_C_p_mat[i] = np.array([[np.exp(all_phases[i]), r_p[i]*np.exp(all_phases[i])],
-                                                    [r_p[i]*np.exp(all_phases[i]), np.exp(all_phases[i])]])
+            for i in range(1, len(all_C_s_mat)):
+                all_C_s_mat[i] = np.array([[np.exp(-all_phases[i-1]), r_s[i]*np.exp(-all_phases[i-1])],
+                                          [r_s[i]*np.exp(all_phases[i-1]), np.exp(all_phases[i-1])]])
+                all_C_p_mat[i] = np.array([[np.exp(-all_phases[i-1]), r_p[i]*np.exp(-all_phases[i-1])],
+                                           [r_p[i]*np.exp(all_phases[i-1]), np.exp(all_phases[i-1])]])
 
             # now D_matrices:
             all_D_s_mat = np.empty((N+2, 2, 2), dtype=complex)
@@ -204,39 +205,32 @@ class SimPulse:
                 all_D_p_mat[i] = np.matmul(all_D_p_mat[i+1], all_C_p_mat[i])
 
             # total reflection, transmission:
-
             t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1]*cos_theta_next[-1]),
                               np.conj(n_comp_arr[0]*cos_theta_last[0])))* np.abs(np.prod(t_p)/all_D_p_mat[-1, 0, 0])**2
             t_s_tot = np.real(np.divide(n_comp_arr[-1]*cos_theta_next[-1], n_comp_arr[0]*cos_theta_last[0]))\
                       * np.abs(np.prod(t_s)/all_D_s_mat[0, 0, 0])**2
             r_s_tot = np.abs(all_D_s_mat[0, 1, 0] / all_D_s_mat[0, 0, 0])**2
-            r_p_tot = np.abs(all_D_p_mat[0, 1, 0] / all_D_p_mat[0, 0, 0])**2
+            r_p_tot = np.abs(all_D_p_mat[0, 1, 0] / all_D_p_mat[0, 0, 0])**2 if self.theta != 1/2 else None
 
             # electric field in all N+2 blocks, for +(-) propagating waves of layer j indexed [j,0(1)]:
-            all_E_x_amps = np.empty((N+2, 2), dtype=complex)
-            all_E_z_amps = np.empty((N+2, 2), dtype=complex)
-            all_E_y_amps = np.empty((N+2, 2), dtype=complex)
+            all_E_s_amps = np.empty((N+2, 2), dtype=complex)
+            all_E_p_amps = np.empty((N+2, 2), dtype=complex)
 
             for i in range(N+1):
                 tp = np.prod(t_p[:i])
                 ts = np.prod(t_s[:i])
-                t_p_ex = tp * e_x0
-                t_p_ez = tp * e_z0
-                t_s_ey = ts * e_y0
-                all_E_x_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_ex
-                all_E_x_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_ex
-                all_E_z_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_ez
-                all_E_z_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_ez
-                all_E_y_amps[i, 0] = all_D_s_mat[i, 0, 0]/all_D_s_mat[0, 0, 0]*t_s_ey
-                all_E_y_amps[i, 1] = all_D_s_mat[i, 1, 0]/all_D_s_mat[0, 0, 0]*t_s_ey
-
+                t_p_ep = tp * e_p0
+                t_s_es = ts * e_s0
+                all_E_p_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_ep if self.theta != np.pi/2 else 0
+                all_E_p_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_ep if self.theta != np.pi/2 else 0
+                all_E_s_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
+                all_E_s_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
             # kz in all blocks of the sample:
             kz_in_sample = 2*np.pi/wave_length*n_comp_arr[1:-1]*np.cos(theta_arr[1:-1])
 
             # electric field in all layers of sample and proportionality factor for absorptance:
-            e_x_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
-            e_y_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
-            e_z_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
+            e_p_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
+            e_s_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
             q_prop = np.empty(self.Sam.len)
 
             first_layer = 0
@@ -244,36 +238,55 @@ class SimPulse:
                 last_layer += first_layer
                 phase = 1j*kz_in_sample[i]*penetration_from_interface[first_layer:last_layer]
                 phase = np.array([np.exp(phase), np.exp(-phase)]).T
-                e_x_in_sample[first_layer: last_layer] = phase * all_E_x_amps[i+1, :]
-                e_y_in_sample[first_layer: last_layer] = phase * all_E_y_amps[i+1, :]
-                e_z_in_sample[first_layer: last_layer] = phase * all_E_z_amps[i+1, :]
+                e_s_in_sample[first_layer: last_layer] = phase * all_E_s_amps[i+1, :]
+                e_p_in_sample[first_layer: last_layer] = phase * all_E_p_amps[i+1, :]
                 q_prop[first_layer: last_layer] = np.real(np.divide(n_comp_arr[i+1]*np.cos(theta_arr[i+1]), np.cos(self.theta)))\
                 * 4*np.pi/wave_length*np.imag(n_comp_arr[i+1]*np.cos(theta_arr[i+1]))
                 first_layer = last_layer
 
+            e_x_in_sample = np.diff(e_p_in_sample, axis=-1) * np.cos(theta_arr[1:-1])
+            e_z_in_sample = np.sum(e_p_in_sample, axis=-1) * np.sin(theta_arr[1:-1])
+            e_y_in_sample = np.sum(e_s_in_sample, axis=-1)
+
             # from the E-field we get the normalized intensity:
-            p_s_ratio = e_p0**2
 
-            F_z = p_s_ratio*(np.abs(np.sum(e_x_in_sample, axis=-1)**2)+np.abs(np.sum(e_z_in_sample, axis=-1))**2)/e_p0**2 \
-                  + (1-p_s_ratio)*(np.abs(np.sum(e_y_in_sample))**2)/e_s0**2
-
+            F_z_p = np.abs(np.sum(e_x_in_sample, axis=-1)**2) + np.abs(np.sum(e_z_in_sample, axis=-1)**2)
+            F_z_s = np.abs(np.sum(e_y_in_sample, axis=-1)**2)
+            F_z = F_z_p + F_z_s
             # and finally the absorbed power densities:
             powers = self.peak_intensity*q_prop*F_z
+            abs_flu = np.sum(powers * self.Sam.get_params('dz'))*np.sqrt(2*np.pi)*self.pulse_width*10
+            ref_flu = self.fluence * (e_p0**2 * r_p_tot**2 + e_s0**2 * r_s_tot)
+            trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
+            print(self.fluence)
+            print(ref_flu)
+            print(trans_flu)
+            print(self.fluence-trans_flu-ref_flu)
+            print()
+            print(abs_flu)
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 
-            ### FIX: for phi, theta = [0, pi/2] things crash. add exceptions!!!
             ### ADD: assertion for absorption but no ce defined!!
             ### CHANGE: pen_dep and layer_thickness to sample class, not materials
 
             return excitation_map
 
     def visualize(self, key):
+        # This methods plots the spaital/temporal/both dependencies of the pump pulse.
+
+        # Input:
+        # self (object). The pulse object in use
+        # key (String). Chose wheather to plot the temporal profile ('t'), the spatial profile of absorption ('z')
+        # or both ('both').
+
+        # Returns:
+        # None. It is void function that only plots.
 
         assert key == 't' or key == 'z' or key == 'both', 'Please select one of the three plotting options \'t\' ' \
                                                         '(to see time dependence), \'z\' (to see depth dependence),' \
                                                         '\'both\' (to see the pulse map in time and depth).'
-        plt.figure(figsize=(8,6))
+        plt.figure(figsize=(8, 6))
 
         if key == 't':
             norm = np.amax(self.pulse_map)
@@ -283,9 +296,6 @@ class SimPulse:
                 if self.pulse_map[:, layer_index].any() > max:
                     max = np.amax(self.pulse_map[:, layer_index])
                     j = layer_index
-            print(norm)
-            print(self.pulse_time_grid)
-            print(self.pulse_map[:,0])
             plt.plot(self.pulse_time_grid, self.pulse_map[:, j]/norm)
             plt.xlabel(r'delay [ps]', fontsize=16)
             plt.ylabel(r'S(t)/S$_{max}$', fontsize=16)
@@ -308,7 +318,7 @@ class SimPulse:
             cbar.set_label(r'absorbed pump power density [W/m$^3$]', rotation=270, labelpad=15)
             plt.show()
 
-        ### CHANGES: s to ps, m to nm
+        ### CHANGES: s to ps, m to nm, full power
         ### ADD: Documentation
 
         return

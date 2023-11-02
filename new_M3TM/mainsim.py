@@ -118,7 +118,7 @@ class SimDynamics:
                                                                  s_up_eig_sq_sam=s_up_eig_sq_sam,
                                                                  s_dn_eig_sq_sam=s_dn_eig_sq_sam, ms_sam=ms_sam,
                                                                  el_mag_mask=el_mag_mask, mag_num=mag_num),
-                                                                 t_span=(0, 5e-12), y0=fss0.flatten(), method='RK23')
+                                                                 t_span=(0, 10e-12), y0=fss0.flatten(), method='RK23')
         # get the last spin configuration after equilibration:
         fs_eq = eq_sol.y.T[-1]
 
