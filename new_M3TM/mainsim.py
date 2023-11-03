@@ -520,4 +520,6 @@ class SimDynamics:
         params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + '[W/m/K]' + '\n')
         params_file.close()
 
+        ### INCLUDE NEW PULSE METHOD
+
         return

@@ -24,6 +24,7 @@ class SimSample:
         # el_mag_mask (boolean array). Array of the length of numbers of layers that hold free electrons, True if
         # also magnetic, False if not
         # n_comp_arr (numpy array). 1d-array of the complex refractive indices of the sample constituents (blocks)
+        # pen_dep_arr (numpy array). 1d-array of the penetration depths of sample consituents (blocks)
 
         self.mat_arr = np.array([])
         self.len = self.get_len()
@@ -37,8 +38,9 @@ class SimSample:
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
         self.n_comp_arr = np.array([])
+        self.pen_dep_arr = np.array([])
 
-    def add_layers(self, material, layers, kappap_int=None, kappae_int=None, n_comp=None):
+    def add_layers(self, material, layers, kappap_int=None, kappae_int=None, n_comp=None, pen_dep=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
 
         # Input:
@@ -110,8 +112,21 @@ class SimSample:
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
         self.n_comp_arr = np.append(self.n_comp_arr, n_comp)
+        self.pen_dep_arr = np.append(self.pen_dep_arr, pen_dep)
 
         return self.mat_arr
+
+    def get_params_from_blocks(self, param):
+        # This method returns parameters defined for blocks of the sample for each layer within (e.g. pen_dep, n_comp_arr)
+
+        # Input:
+        # self (object). The sample object in use
+        # param (Str). The parameter to be given for all layers of the sample
+
+        # Returns:
+        # params (numpy array). 1d-array of the parameters requested
+        if param == 'pen_dep':
+            return np.concatenate(np.array([[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
 
     def get_params(self, param):
         # This method lets us read out the parameters of all layers in the sample
