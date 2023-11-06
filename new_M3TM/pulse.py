@@ -120,7 +120,6 @@ class SimPulse:
             abs_flu = np.sum(powers*self.Sam.get_params('dz')) * (np.sqrt(2*np.pi)*self.pulse_width*10)
             trans_flu = self.fluence-abs_flu
             ref_flu = 0
-            print(powers[powers != 0])
             excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
 
             return excitation_map
@@ -130,7 +129,7 @@ class SimPulse:
             assert self.Sam.n_comp_arr.any() is not None, 'Please define a refractive index for every constituent'\
                                                                'of the sample within the definition of the sample.'
             assert self.energy is not None and self.theta is not None and self.phi is not None, \
-                'For the chosen method, make sure energy, theta and phi are defined.'
+                'For the chosen method, make sure photon energy, theta and phi are defined.'
 
             # N is the number of blocks/constituents in the sample, so all in all we have N+2 blocks in the system,
             # considering vacuum before and after the sample:
@@ -138,9 +137,8 @@ class SimPulse:
 
             # frequency in 1/s of laser pulse from photon energy:
             wave_length = sp.h*sp.c/sp.physical_constants['electron volt'][0]/self.energy
-            print(wave_length)
 
-            # compute the normalized electric field amplitudes from the given angles:
+            # compute the normalized electric field amplitudes from the given angle phi:
 
             # find s and p polarizations from it:
             e_p0 = np.cos(self.phi)
@@ -173,7 +171,7 @@ class SimPulse:
             for end in self.Sam.mat_blocks:
                 end += start
                 penetration_from_interface = np.append(penetration_from_interface, np.cumsum(dzs[start:end])-dzs[start])
-                block_thicknesses = np.append(block_thicknesses, sum(dzs[start:end]))
+                block_thicknesses = np.append(block_thicknesses, np.sum(dzs[start:end]))
                 start = end
 
             # now the propagation matrices, for N+1 blocks:
@@ -199,30 +197,31 @@ class SimPulse:
             all_D_p_mat[-1] = np.identity(2)
 
             for i in range(len(all_D_p_mat)-2, -1, -1):
-                all_D_s_mat[i] = np.matmul(all_D_s_mat[i+1], all_C_s_mat[i])
-                all_D_p_mat[i] = np.matmul(all_D_p_mat[i+1], all_C_p_mat[i])
+                all_D_s_mat[i] = np.matmul(all_C_s_mat[i], all_D_s_mat[i+1])
+                all_D_p_mat[i] = np.matmul(all_C_p_mat[i], all_D_p_mat[i+1])
 
             # total reflection, transmission:
-            t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1]*cos_theta_next[-1]),
-                              np.conj(n_comp_arr[0]*cos_theta_last[0])))* np.abs(np.prod(t_p)/all_D_p_mat[-1, 0, 0])**2
+            t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1])*cos_theta_next[-1],
+                              np.conj(n_comp_arr[0])*cos_theta_last[0]))\
+                      * np.abs(np.prod(t_p)/all_D_p_mat[0, 0, 0])**2
             t_s_tot = np.real(np.divide(n_comp_arr[-1]*cos_theta_next[-1], n_comp_arr[0]*cos_theta_last[0]))\
                       * np.abs(np.prod(t_s)/all_D_s_mat[0, 0, 0])**2
             r_s_tot = np.abs(all_D_s_mat[0, 1, 0] / all_D_s_mat[0, 0, 0])**2
             r_p_tot = np.abs(all_D_p_mat[0, 1, 0] / all_D_p_mat[0, 0, 0])**2 if self.theta != 1/2 else None
 
             # electric field in all N+2 blocks, for +(-) propagating waves of layer j indexed [j,0(1)]:
-            all_E_s_amps = np.empty((N+2, 2), dtype=complex)
-            all_E_p_amps = np.empty((N+2, 2), dtype=complex)
+            all_E_s_amps = np.empty((N+1, 2), dtype=complex)
+            all_E_p_amps = np.empty((N+1, 2), dtype=complex)
 
             for i in range(N+1):
-                tp = np.prod(t_p[:i])
-                ts = np.prod(t_s[:i])
+                tp = np.prod(t_p[:i+1])
+                ts = np.prod(t_s[:i+1])
                 t_p_ep = tp * e_p0
                 t_s_es = ts * e_s0
                 all_E_p_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_ep if self.theta != np.pi/2 else 0
                 all_E_p_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_ep if self.theta != np.pi/2 else 0
-                all_E_s_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
-                all_E_s_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
+                all_E_s_amps[i, 0] = all_D_s_mat[i, 0, 0]/all_D_s_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
+                all_E_s_amps[i, 1] = all_D_s_mat[i, 1, 0]/all_D_s_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
 
             # kz in all blocks of the sample:
             kz_in_sample = 2*np.pi/wave_length*n_comp_arr[1:-1]*np.cos(theta_arr[1:-1])
@@ -236,21 +235,17 @@ class SimPulse:
             for i, last_layer in enumerate(self.Sam.mat_blocks):
                 last_layer += first_layer
                 phase = 1j*kz_in_sample[i]*penetration_from_interface[first_layer:last_layer]
+                print(penetration_from_interface[first_layer:last_layer])
                 phase = np.array([np.exp(phase), np.exp(-phase)]).T
                 e_s_in_sample[first_layer: last_layer] = phase * all_E_s_amps[i+1, :]
                 e_p_in_sample[first_layer: last_layer] = phase * all_E_p_amps[i+1, :]
                 q_prop[first_layer: last_layer] = np.real(np.divide(n_comp_arr[i+1]*np.cos(theta_arr[i+1]), np.cos(self.theta)))\
-                * 4*np.pi/wave_length*np.imag(n_comp_arr[i+1]*np.cos(theta_arr[i+1]))
+                                                  * 2*np.imag(kz_in_sample[i])
                 first_layer = last_layer
 
             e_x_in_sample = np.concatenate(-np.diff(e_p_in_sample, axis=-1)) * np.cos(self.get_for_all_layers(theta_arr[1:-1]))
             e_z_in_sample = -np.sum(e_p_in_sample, axis=-1) * np.sin(self.get_for_all_layers(theta_arr[1:-1]))
             e_y_in_sample = np.sum(e_s_in_sample, axis=-1)
-
-            print(all_E_p_amps[2])
-            plt.plot(np.cumsum(self.Sam.get_params('dz')), np.real(e_p_in_sample[:, 0]))
-            plt.plot(np.cumsum(self.Sam.get_params('dz')), np.real(e_p_in_sample[:, 1]))
-            plt.show()
 
             # from the E-field we get the normalized intensity:
 
@@ -260,14 +255,13 @@ class SimPulse:
 
             # and finally the absorbed power densities:
             powers = self.peak_intensity*q_prop*F_z
-            abs_flu = np.sum(F_z * self.Sam.get_params('dz')*q_prop)*self.fluence
+            abs_flu = self.fluence * np.sum(F_z * self.Sam.get_params('dz')*q_prop)
             ref_flu = self.fluence * (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
             trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
 
-            excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
+            print(ref_flu)
 
-            print(abs_flu)
-            print(self.fluence-ref_flu-trans_flu)
+            excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 
             ### ADD: assertion for absorption but no ce defined!!
             ### CHANGE: pen_dep and layer_thickness to sample class, not materials
@@ -280,7 +274,7 @@ class SimPulse:
         # Input:
         # self (object). The pulse object in use
         # axis (String). Chose wheather to plot the temporal profile ('t'), the spatial profile of absorption ('z')
-        # or both ('both').
+        # or both ('tz').
 
         # Returns:
         # None. It is void function that only plots.
