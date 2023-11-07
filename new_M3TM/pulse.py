@@ -91,13 +91,17 @@ class SimPulse:
         # and for the whole sample (second dimension)
 
         dz_sam = self.Sam.get_params('dz')
-        pendep_sam = self.Sam.get_params_from_blocks('pen_dep')
         mat_blocks = self.Sam.mat_blocks
 
         max_intensity = self.peak_intensity
         powers = np.array([])
 
         if self.method == 'LB':
+
+            pendep_sam = self.Sam.get_params_from_blocks('pen_dep')
+            assert pendep_sam.any() is not None, 'Define penetration depths for all blocks of the sample within the' \
+                                                 'SimSample.add_layers() method when choosing Lambert-Beer absorption '\
+                                                 'profile.'
 
             first_layer = 0
             last_layer = 0
@@ -138,9 +142,7 @@ class SimPulse:
             # frequency in 1/s of laser pulse from photon energy:
             wave_length = sp.h*sp.c/sp.physical_constants['electron volt'][0]/self.energy
 
-            # compute the normalized electric field amplitudes from the given angle phi:
-
-            # find s and p polarizations from it:
+            # compute the normalized electric field amplitudes of p/s waves from the given angle phi:
             e_p0 = np.cos(self.phi)
             e_s0 = np.sin(self.phi)
 
@@ -235,7 +237,6 @@ class SimPulse:
             for i, last_layer in enumerate(self.Sam.mat_blocks):
                 last_layer += first_layer
                 phase = 1j*kz_in_sample[i]*penetration_from_interface[first_layer:last_layer]
-                print(penetration_from_interface[first_layer:last_layer])
                 phase = np.array([np.exp(phase), np.exp(-phase)]).T
                 e_s_in_sample[first_layer: last_layer] = phase * all_E_s_amps[i+1, :]
                 e_p_in_sample[first_layer: last_layer] = phase * all_E_p_amps[i+1, :]
@@ -259,7 +260,10 @@ class SimPulse:
             ref_flu = self.fluence * (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
             trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
 
+            print(abs_flu)
             print(ref_flu)
+            print(trans_flu)
+            print(self.fluence-trans_flu-ref_flu)
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 

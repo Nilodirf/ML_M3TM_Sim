@@ -124,9 +124,10 @@ class SimSample:
         # param (Str). The parameter to be given for all layers of the sample
 
         # Returns:
-        # params (numpy array). 1d-array of the parameters requested
+        # params (numpy array). 1d-array of the parameters requested for all layers in the sample
+
         if param == 'pen_dep':
-            return np.concatenate(np.array([[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
+            return np.concatenate(np.array([[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))]))
 
     def get_params(self, param):
         # This method lets us read out the parameters of all layers in the sample
