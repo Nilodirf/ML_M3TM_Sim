@@ -9,21 +9,24 @@ class SimMaterials:
     def __init__(self, name, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
         # Input:
         # name (String). Name of the material
-        # tdeb (float). Debye temperature of the material in K
+        # tdeb (list). List of Debye temperatures in K of all phononic subsystems of the material.
         # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
-        # vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
-        # kappap (float). Phononic heat diffusion constant in W/m/K
-        # kappae (float). Electronic heat diffusion constant in W/m/K (set to 0 if no itinerant electrons)
-        # gep (float). Electron-phonon coupling constant in W/m**3/K (set to 0 if no itinerant electrons)
-        # spin (float). Effective spin of the material (set to 0 if no itinerant spin-full electrons)
+        # and pump pulse.
+        # vat (float). Magnetic atomic volumes in m**3.
+        # kappap (list). List of phononic heat diffusion constants in W/m/K for all phononic subsystems in the material.
+        # kappae (list). List of electronic heat diffusion constants in W/m/K for all electronic subsystems
+        # of the material.
+        # gep (list of lists). Matrix Electron(i)-phonon(j) coupling constants g(ij) in W/m**3/K for interactions
+        # between all electronic and phononic subsystems.
+        # spin (list). List of effective spins of all magnetic subsystems in the material.
         # tc (float). Curie temperature of the material (set to 0 if not magnetic)
-        # muat (float). Atomic magnetic moment in unit of mu_bohr. (set to 0 if not magnetic)
-        # asf (float). Electron-phonon-scattering induced spin flip probability
-        # of the material (set to 0 if no itinerant spin-full electrons)
-        # ce_gamma (float). Sommerfeld constant of electronic heat capacity
-        # in J/m**3/K (set to 0 if no itinerant electrons)
-        # cp_max (float). Maximal phononic heat capacity in W/m**3/K. Temperature dependence
-        # is computed with Einstein model
+        # muat (list). List of atomic magnetic moments in units of mu_bohr for all magnetic subsystems in the material.
+        # asf (list). List of electron-phonon-scattering induced spin flip probabilities for all magnetic subsystems
+        # of the material.
+        # ce_gamma (list). List of Sommerfeld constants of electronic heat capacity of all electronic subsystems
+        # in J/m**3/K (set to 0 if no itinerant electrons).
+        # cp_max (list). List of maximum phononic heat capacities in W/m**3/K for all phononic subsystems
+        # of the material.
 
         # Also returns:
         # tein (float). The approximate Einstein temperature in relation to the Debye temperature.
@@ -38,18 +41,18 @@ class SimMaterials:
         # for all spin sublevels
 
         self.name = name
-        self.tdeb = tdeb
+        self.tdeb = np.array(tdeb)
         self.dz = dz
         self.vat = vat
-        self.kappap = kappap
-        self.kappae = kappae
-        self.gep = gep
-        self.spin = spin
+        self.kappap = np.array(kappap)
+        self.kappae = np.array(kappae)
+        self.gep = np.array(gep)
+        self.spin = np.array(spin)
         self.tc = tc
-        self.muat = muat
-        self.asf = asf
-        self.ce_gamma = ce_gamma
-        self.cp_max = cp_max
+        self.muat = np.array(muat)
+        self.asf = np.array(asf)
+        self.ce_gamma = np.array(ce_gamma)
+        self.cp_max = np.array(cp_max)
         self.tein = 0.75*tdeb
         self.cp_T_grid, self.cp_T = self.create_cp_T()
         if muat == 0:
