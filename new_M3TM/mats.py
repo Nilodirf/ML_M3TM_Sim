@@ -6,7 +6,7 @@ class SimMaterials:
     # The material class holds mostly parameters of the materials in the sample to be constructed.
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
-    def __init__(self, name, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
+    def __init__(self, name, tdeb, dz, cp_max, kappap, ce_gamma, kappae, gep, spin, tc, asf, vat, muat=0):
         # Input:
         # name (String). Name of the material
         # tdeb (list). List of Debye temperatures in K of all phononic subsystems of the material.
@@ -53,12 +53,12 @@ class SimMaterials:
         self.asf = np.array(asf)
         self.ce_gamma = np.array(ce_gamma)
         self.cp_max = np.array(cp_max)
-        self.tein = 0.75*tdeb
+        self.tein = 0.75*self.tdeb
         self.cp_T_grid, self.cp_T = self.create_cp_T()
         if muat == 0:
-            self.R = 0
-            self.J = 0
-            self.arbsc = 0
+            self.R = None
+            self.J = None
+            self.arbsc = None
             self.ms = None
             self.s_up_eig_squared = None
             self.s_dn_eig_squared = None
@@ -71,9 +71,8 @@ class SimMaterials:
             self.s_dn_eig_squared = -np.power(self.ms, 2) + self.ms + self.spin ** 2 + self.spin
 
     def create_cp_T(self):
-        # This method constructs a temperature grid (fine-grained until tdeb, course-grained until 3*tdeb).
-        # It computes the Einstein lattice heat capacity on this temperature grid.
-        # Later we can use this grid to read out the proper heat capacity at every lattice temperature
+        # This method constructs a temperature grid, and the Einstein lattice heat capacity on this temperature grid.
+        # Later we can use this grid to read out the proper heat capacity at any lattice temperature
 
         # Input:
         # self (object). A pointer to the material in use
