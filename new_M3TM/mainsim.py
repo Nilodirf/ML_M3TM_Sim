@@ -290,6 +290,78 @@ class SimDynamics:
         return de_dt, dp_dt
 
     @staticmethod
+    def p_p_coup(pp_coup_sam, tp):
+        # This method computes the phonon-phonon coupling of all phonon subsystems and is called in the solver only if
+        # more than one phonon subsystem is defined.
+
+        # Input:
+        # pp_coup_sam (numpy array). 2d-array of all coupling constants between phonon subsystems
+        # tp (numpy array), 2d-array of phonon temperatures of all subsystems and layers
+
+        # Returns:
+        # dep_dt (numpy array). 2d-array of energy increments caused by phonon-phonon coupling for all  phononic
+        # subsystems and layers
+
+        dep_dt = np.zeros_like(tp)
+
+        for i in range(len(tp)):
+            for j in range(i+1, len(tp)):
+                e_trans_i_j = pp_coup_sam[i, j] * (tp[i] - tp[j])
+                dep_dt[i] -= e_trans_i_j
+                dep_dt[j] += e_trans_i_j
+
+        return dep_dt
+
+    @staticmethod
+    def e_e_coup(ee_coup_sam, te):
+        # This method computes the electron-electron coupling of all phonon subsystems and is called in the solver only
+        # if more than one electron subsystem is defined.
+
+        # Input:
+        # ee_coup_sam (numpy array). 2d-array of all coupling constants between electron subsystems
+        # te (numpy array), 2d-array of electron temperatures of all subsystems and layers
+
+        # Returns:
+        # dee_dt (numpy array). 2d-array of energy increments caused by electron-electron coupling for all electronic
+        # subsystems and layers
+
+        dee_dt = np.zeros_like(te)
+
+        for i in range(len(te)):
+            for j in range(i+1, len(te)):
+                e_trans_i_j = ee_coup_sam[i, j] * (te[i]-te[j])
+                dee_dt[i] -= e_trans_i_j
+                dee_dt[j] += e_trans_i_j
+
+        return dee_dt
+
+    @staticmethod
+    def e_p_coup(ep_coup_sam, te, tp):
+        # This method computes the electron-phonon coupling of all phonon subsystems and is called in the solver only if
+        # more than one electron OR phonon subsystem is defined.
+
+        # Input:
+        # ep_coup_sam (numpy array). 2d-array of all coupling constants between electron and phonon subsystems
+        # te (numpy array), 2d-array of electron temperatures of all subsystems and layers
+        # tp (numpy array), 2d-array of phonon temperatures of all subsystems and layers
+
+        # Returns:
+        # deep_dt (numpy array). 2d-array of energy increments caused by electron-phonon coupling for all electronic
+        # subsystems and layers
+        # depe_dt (numpy array). 2d-array of energy increments caused by electron-phonon coupling for all phononic
+        # subsystems and layers
+
+        deep_dt = np.zeros_like(te)
+        depe_dt = np.zeros_like(tp)
+
+        for i in range(len(te)):
+            for j in range(len(tp)):
+                e_trans_i_j = ep_coup_sam[i,j] * (te[i]-tp[j])
+                deep_dt[i] -= e_trans_i_j
+                depe_dt[j] += e_trans_i_j
+
+        return deep_dt, depe_dt
+    @staticmethod
     def electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp):
         # This method computes the electron heat diffusion in the layers where there is an electron bath.
         # dte_dt = kappa_e * te / tp * (laplace(te)) + kappa_e * grad(te / tp) * grad(te)
@@ -310,6 +382,7 @@ class SimDynamics:
 
         term_1 = (np.multiply(kappa_e_dz_pref[:, 1], te_diff_right)
                   + np.multiply(kappa_e_dz_pref[:, 0], te_diff_left)) * np.divide(te, tp)
+
         term_2 = 0.25 * kappa_e_dz_pref[:, 0] * te_tp_double_diff * te_double_diff
 
         dte_dt_diff = np.divide(term_1 + term_2, ce_sam_t)
