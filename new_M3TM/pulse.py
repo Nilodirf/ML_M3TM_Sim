@@ -249,7 +249,6 @@ class SimPulse:
             e_y_in_sample = np.sum(e_s_in_sample, axis=-1)
 
             # from the E-field we get the normalized intensity:
-
             F_z_p = np.abs(e_x_in_sample)**2 + np.abs(e_z_in_sample)**2
             F_z_s = np.abs(e_y_in_sample)**2
             F_z = F_z_p + F_z_s
