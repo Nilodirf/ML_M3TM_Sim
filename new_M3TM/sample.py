@@ -27,16 +27,16 @@ class SimSample:
         # pen_dep_arr (numpy array). 1d-array of the penetration depths of sample consituents (blocks)
 
         self.mat_arr = np.array([])
-        self.len = self.get_len()
-        self.mat_blocks = self.get_material_changes()
-        self.el_mask = self.get_free_electron_mask()
-        self.mag_mask = self.get_magdyn_mask()
-        self.mats, self.mat_ind = self.get_mat_positions()
-        self.mag_num = self.get_num_mag_mat()
+        self.len = 0
+        self.mat_blocks = np.array([])
+        self.el_mask = np.array([])
+        self.mag_mask = np.array([])
+        self.mats, self.mat_ind = np.array([]), np.array([])
+        self.mag_num = 0
         self.kappa_p_int = np.array([])
         self.kappa_e_int = np.array([])
-        self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
-        self.el_mag_mask = self.get_el_mag_mask()
+        self.len_te = 0
+        self.el_mag_mask = np.array([])
         self.n_comp_arr = np.array([])
         self.pen_dep_arr = np.array([])
 
@@ -103,13 +103,13 @@ class SimSample:
                 self.kappa_e_int = np.append(self.kappa_e_int, kappae_int)
 
         self.mat_arr = np.append(self.mat_arr, np.array([material for _ in range(layers)]))
+        self.mats, self.mat_ind = self.get_mat_positions()
         self.len = self.get_len()
         self.mat_blocks = self.get_material_changes()
         self.el_mask = self.get_free_electron_mask()
         self.mag_mask = self.get_magdyn_mask()
-        self.mats, self.mat_ind = self.get_mat_positions()
         self.mag_num = self.get_num_mag_mat()
-        self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
+        self.len_te = np.sum(self.el_mask.astype(int), axis=0)
         self.el_mag_mask = self.get_el_mag_mask()
         self.n_comp_arr = np.append(self.n_comp_arr, n_comp)
         self.pen_dep_arr = np.append(self.pen_dep_arr, pen_dep)
@@ -223,8 +223,7 @@ class SimSample:
 
         # Returns:
         # free_electron_mask (boolean array). 1d-array holding True for all layers where gamma_e!=0
-
-        free_electron_mask = self.get_params('ce_gamma') != 0
+        free_electron_mask = ~np.ma.masked_equal(self.get_params('ce_gamma'), 0).mask
 
         return free_electron_mask
 
@@ -237,8 +236,7 @@ class SimSample:
 
         # Returns:
         # mag_dyn_mask (boolean array). 1d-array selecting the layers where magnetization dynamics shall be computed
-
-        magdyn_mask = self.get_params('muat') != 0
+        magdyn_mask = ~np.ma.masked_equal(self.get_params('muat'), 0).mask
 
         return magdyn_mask
 
@@ -253,7 +251,7 @@ class SimSample:
         # el_mag_mask (boolean array). 1d-array of length self.len_te, with entries True for magnetic layers, False for
         # nonmagnetic layers.
 
-        el_mag_mask = np.array([mat.muat for mat in self.mat_arr[self.el_mask]]) != 0
+        el_mag_mask = ~np.ma.masked_equal(self.get_params('muat')[self.el_mask], 0.).mask
 
         return el_mag_mask
 
@@ -292,7 +290,7 @@ class SimSample:
 
         mag_counter = 0
         for mat in self.mat_arr:
-            if mat.muat != 0:
+            if mat.muat.any() != 0:
                 mag_counter += 1
 
         return mag_counter

@@ -91,6 +91,7 @@ class SimPulse:
         # and for the whole sample (second dimension)
 
         dz_sam = self.Sam.get_params('dz')
+        print(dz_sam)
         mat_blocks = self.Sam.mat_blocks
 
         max_intensity = self.peak_intensity
@@ -166,14 +167,13 @@ class SimPulse:
             t_p = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
 
             # we need the thicknesses of blocks and the distance from previous interfaces:
-            dzs = self.Sam.get_params('dz')
             penetration_from_interface = np.array([])
             block_thicknesses = np.array([])
             start = 0
             for end in self.Sam.mat_blocks:
                 end += start
-                penetration_from_interface = np.append(penetration_from_interface, np.cumsum(dzs[start:end])-dzs[start])
-                block_thicknesses = np.append(block_thicknesses, np.sum(dzs[start:end]))
+                penetration_from_interface = np.append(penetration_from_interface, np.cumsum(dz_sam[start:end])-dz_sam[start])
+                block_thicknesses = np.append(block_thicknesses, np.sum(dz_sam[start:end]))
                 start = end
 
             # now the propagation matrices, for N+1 blocks:
@@ -256,14 +256,14 @@ class SimPulse:
 
             # and finally the absorbed power densities:
             powers = self.peak_intensity*q_prop*F_z
-            abs_flu = self.fluence * np.sum(F_z * self.Sam.get_params('dz')*q_prop)
-            ref_flu = self.fluence * (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
-            trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
+            abs_flu = np.sum(F_z * dz_sam*q_prop)
+            ref_flu = (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
+            trans_flu = (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
 
-            print(abs_flu)
-            print(ref_flu)
-            print(trans_flu)
-            print(self.fluence-trans_flu-ref_flu)
+            print('norm. simulated absorbed fluence:', abs_flu)
+            print('norm. reflected fluence:', ref_flu)
+            print('norm. transmitted fluence:', trans_flu)
+            print('check of norm. absorbed fluence:', 1-trans_flu-ref_flu)
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 

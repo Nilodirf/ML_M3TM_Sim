@@ -1,12 +1,12 @@
 import numpy as np
 from scipy import constants as sp
-
+from matplotlib import pyplot as plt
 
 class SimMaterials:
     # The material class holds mostly parameters of the materials in the sample to be constructed.
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
-    def __init__(self, name, tdeb, dz, cp_max, kappap, ce_gamma, kappae, gep, spin, tc, asf, vat, muat=0):
+    def __init__(self, name, tdeb, dz, cp_max, kappap, ce_gamma, kappae, gep, spin, tc, asf, vat, muat=np.array([0])):
         # Input:
         # name (String). Name of the material
         # tdeb (list). List of Debye temperatures in K of all phononic subsystems of the material.
@@ -63,10 +63,11 @@ class SimMaterials:
             self.s_up_eig_squared = None
             self.s_dn_eig_squared = None
         else:
-            self.R = 8 * self.asf * self.vat * self.tc**2 / self.tdeb**2 / sp.k / self.muat * self.gep
+            self.R = (8 * self.asf * self.vat * self.tc**2 / self.muat / self.tdeb[..., np.newaxis]**2).T / sp.k * self.gep
+            print(self.R)
             self.J = 3 * sp.k * self.tc * self.spin / (self.spin + 1)
             self.arbsc = self.R / self.tc**2 / sp.k
-            self.ms = (np.arange(2 * self.spin + 1) + np.array([-self.spin for i in range(int(2 * self.spin) + 1)]))
+            self.ms = np.array([(np.arange(2 * s + 1) + np.array([-s for i in range(int(2 * s) + 1)])) for s in self.spin])
             self.s_up_eig_squared = -np.power(self.ms, 2) - self.ms + self.spin ** 2 + self.spin
             self.s_dn_eig_squared = -np.power(self.ms, 2) + self.ms + self.spin ** 2 + self.spin
 
@@ -78,14 +79,30 @@ class SimMaterials:
         # self (object). A pointer to the material in use
 
         # Returns:
-        # t_grid (numpy array). 1d-array of temperature grid between 0 and 3*tdeb+1 K
-        # cp_t_grid (numpy array). 1d-array of Einstein lattice capacity for the above temperature grid,
-        # the last value being cp_max for every temperature above 3*tdeb+1 K
+        # t_grid (numpy array). Nd-array of temperature grid between 0 and 2*tein K for N phononic subsystems
+        # cp_t_grid (numpy array). Nd-array of Einstein lattice capacity for the above temperature grid,
+        # the last value being cp_max for every temperature above 2*tein K
 
-        t_grid = np.arange(1., 2*self.tein, 0.1)
-        t_red = np.divide(self.tein, t_grid)
-        cp_t_grid = self.cp_max*(t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2))
+        t_fine = np.arange(0.01, 1.5, 0.001)
+        t_mid = np.arange(1.5, 3., 0.01)
+        t_course = np.arange(3., 6., 0.1)
+        t_grid = np.concatenate((np.concatenate((t_fine, t_mid)), t_course))
+        t_red = 1/t_grid
+        cp_t_grid = self.cp_max[..., np.newaxis]*(t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2))
+        t_grid = np.append(t_grid, 6.)
+        cp_t_grid = np.append(cp_t_grid.T, np.array([self.cp_max]), axis=0).T
+        return self.tein[..., np.newaxis]*t_grid, list(cp_t_grid)
 
-        t_grid = np.append(t_grid, 2*self.tein+1)
-        cp_t_grid = np.append(cp_t_grid, self.cp_max)
-        return t_grid, list(cp_t_grid)
+    def visualize_cp(self):
+        plt.figure(figsize=(8, 6))
+
+        plt.scatter(self.cp_T_grid.T, np.array(self.cp_T).T, s=1.5)
+
+        plt.title(self.name, fontsize=18)
+        plt.xlabel(r'Temperature [K]', fontsize=16)
+        plt.ylabel(r'Lattice specific heat [J/m^3/K]', fontsize=16)
+        plt.show()
+
+        return
+
+
