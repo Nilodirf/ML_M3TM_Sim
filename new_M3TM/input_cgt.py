@@ -27,11 +27,11 @@ sample.add_layers(material=CGT, layers=7, kappap_int='av')
 sample.add_layers(material=SiO2, layers=149, kappap_int='av')
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=0.5, delay=1e-12, pulse_dt=1e-16)
+pulse = SimPulse(sample=sample, pulse_width=60e-15, fluence=0.5, delay=1e-12, pulse_dt=1e-17)
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=1e-9, ini_temp=15., constant_cp=False, ep_eq_dt=1e-16,
-                  long_time_dt=1e-14, solver='RK23', max_step=1e-13, atol=1, rtol=1)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-13, ini_temp=15., constant_cp=False, ep_eq_dt=1e-16,
+                  long_time_dt=1e-14, solver='RK23', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()

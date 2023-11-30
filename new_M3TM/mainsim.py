@@ -24,7 +24,7 @@ class SimDynamics:
         # scipy.integrate.solve_ivp
         # max_step (float). Maximum step size in s of the solver for the whole simulation
         # atol (float). Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver.
-        # rtol (float). Relative tolerance of solve_ivp solver. Default is 1e-3 as the defaulkt of the solver.
+        # rtol (float). Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver.
 
         # Also returns:
         # self.time_grid (numpy array). 1d-array of the time-grid to be used in simulations.
@@ -239,8 +239,7 @@ class SimDynamics:
             cp_sam_t = np.zeros(len_sam)
             for i, ind_list in enumerate(mat_ind):
                 cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
-                cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t] # APPLY THE SAME THING TO THE PLOT FILE TO SAVE TIMESTEPS IN .DAT FORMAT!!
-
+                cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
         ce_sam_t = np.multiply(ce_gamma_sam, te)
