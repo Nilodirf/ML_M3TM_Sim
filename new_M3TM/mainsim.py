@@ -7,7 +7,8 @@ import os
 
 class SimDynamics:
     # This is the main Simulation class that holds all methods to compute dynamics of the extended M3TM.
-    def __init__(self, sample, pulse, end_time, ini_temp, constant_cp, ep_eq_dt, long_time_dt, solver, max_step):
+    def __init__(self, sample, pulse, end_time, ini_temp, constant_cp, ep_eq_dt, long_time_dt, solver, max_step,
+                 atol=1e-6, rtol=1e-3):
         # Input:
         # sample (object). The sample in use
         # pulse (object). The pulse excitation in use
@@ -22,6 +23,8 @@ class SimDynamics:
         # solver (String). The solver used to evaluate the differential equation. See documentation of
         # scipy.integrate.solve_ivp
         # max_step (float). Maximum step size in s of the solver for the whole simulation
+        # atol (float). Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver.
+        # rtol (float). Relative tolerance of solve_ivp solver. Default is 1e-3 as the defaulkt of the solver.
 
         # Also returns:
         # self.time_grid (numpy array). 1d-array of the time-grid to be used in simulations.
@@ -36,6 +39,8 @@ class SimDynamics:
         self.time_grid = self.get_time_grid()
         self.solver = solver
         self.max_step = max_step
+        self.atol = atol
+        self.rtol = rtol
 
     def get_time_grid(self):
         # This method creates a time-grid for the simulation on the basis of the pulse-time-grid defined
@@ -195,7 +200,7 @@ class SimDynamics:
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
                             t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method=self.solver,
-                            max_step=self.max_step)
+                            max_step=self.max_step, atol=self.atol, rtol=self.rtol)
 
         # return the simulation results:
         return all_sol
