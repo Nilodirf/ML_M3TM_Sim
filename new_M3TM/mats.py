@@ -78,9 +78,9 @@ class SimMaterials:
         # self (object). A pointer to the material in use
 
         # Returns:
-        # t_grid (numpy array). 1d-array of temperature grid between 0 and 3*tdeb+1 K
+        # t_grid (numpy array). 1d-array of temperature grid between 0 and 2*tein+1 K
         # cp_t_grid (numpy array). 1d-array of Einstein lattice capacity for the above temperature grid,
-        # the last value being cp_max for every temperature above 3*tdeb+1 K
+        # the last value being cp_max for every temperature above 2*tein+1 K
 
         t_grid = np.arange(1., 2*self.tein, 0.1)
         t_red = np.divide(self.tein, t_grid)
