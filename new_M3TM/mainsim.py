@@ -126,9 +126,12 @@ class SimDynamics:
 
         te0, tp0 = self.initialize_temperature()
         fss0 = self.initialize_spin_configuration().flatten()
-        ts = np.concatenate((te0, tp0))
 
-        config0 = np.concatenate((ts, fss0))
+        fss_eq = self.equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fss0, te0, tp0,
+                                      el_mag_mask, ms_sam, mag_num)
+
+        ts = np.concatenate((te0, tp0))
+        config0 = np.concatenate((ts, fss_eq))
 
         all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, len_sam_te,
                                                                                 mat_ind, el_mag_mask,
@@ -149,12 +152,28 @@ class SimDynamics:
 
         return all_sol
 
-    def equilibrate_mag(self, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs0, te0, tp0,
-                        el_mag_mask, ms_sam):
-        eq_sol = solve_ivp(lambda t, fs: SimDynamics.get_m_eq_increments(t, fs, j_sam, spin_sam, arbsc_sam,
+    def equilibrate_mag(self, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fs0, te0, tp0,
+                        el_mag_mask, ms_sam, mag_num):
+        arbsc_sam_eq = arbsc_sam*1e5
+        eq_sol = solve_ivp(lambda t, fs: SimDynamics.get_m_eq_increments(fs, j_sam, spin_sam, arbsc_sam_eq,
                                                                          s_up_eig_sq_sam, s_dn_eig_sq_sam, mag,
-                                                                         te0, tp0, el_mag_mask, ms_sam), y0=fs0,
-                           t_span=0, 5e-12)
+                                                                         te0, tp0, el_mag_mask, ms_sam, mag_num),
+                           y0=fs0, t_span=(0, 5e-12), solver='RK23')
+
+        fs_eq = eq_sol.y.T[-1]
+        return fs_eq
+
+    @staticmethod
+    def get_m_eq_increments(fs, j_sam, spin_sam, arbsc_sam_eq, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, te0, tp0,
+                            el_mag_mask, ms_sam, mag_num):
+
+        fss = np.reshape(fs, (mag_num, (int(2 * spin_sam[0] + 1))))
+        mag = SimDynamics.get_mag(fs, ms_sam, spin_sam)
+        dfs_dt = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam_eq, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs,
+                                         te0, tp0, el_mag_mask)
+        return dfs_dt.flatten()
+
+
     @staticmethod
     def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, el_mag_mask,
                            mag_mask, el_mask, ce_gamma_sam,
