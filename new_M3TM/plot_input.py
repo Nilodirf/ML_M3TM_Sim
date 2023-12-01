@@ -4,7 +4,7 @@ from plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='new_version_test')
+plotter = SimPlot(file='old_version_test')
 
 # plotter.convert_to_dat()
 

@@ -8,8 +8,7 @@ import time
 
 class SimDynamics:
     # This is the main Simulation class that holds all methods to compute dynamics of the extended M3TM.
-    def __init__(self, sample, pulse, end_time, ini_temp, constant_cp, ep_eq_dt, long_time_dt, solver, max_step,
-                 atol=1e-6, rtol=1e-3):
+    def __init__(self, sample, pulse, end_time, ini_temp, constant_cp):
         # Input:
         # sample (object). The sample in use
         # pulse (object). The pulse excitation in use
@@ -17,15 +16,6 @@ class SimDynamics:
         # ini_temp (float). Initial temperature of electron and phonon baths in the whole sample in K
         # constant_cp (boolean). If set True, cp_max is used for phonon heat capacity. If False, Einstein model is
         # computed. Note that this takes very long at low temperatures
-        # ep_eq_dt (float). The timestep in s of evaluation of the differential equation
-        # after pulse excitation until 5 ps
-        # long_time_dt (float). The timestep in s of evaluation of the differential equation after 5 ps
-        # until end of sim
-        # solver (String). The solver used to evaluate the differential equation. See documentation of
-        # scipy.integrate.solve_ivp
-        # max_step (float). Maximum step size in s of the solver for the whole simulation
-        # atol (float). Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver.
-        # rtol (float). Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver.
 
         # Also returns:
         # self.time_grid (numpy array). 1d-array of the time-grid to be used in simulations.
@@ -35,19 +25,12 @@ class SimDynamics:
         self.end_time = end_time
         self.ini_temp = ini_temp
         self.constant_cp = constant_cp
-        self. ep_eq_dt = ep_eq_dt
-        self.long_time_dt = long_time_dt
         self.time_grid = self.get_time_grid()
-        self.solver = solver
-        self.max_step = max_step
-        self.atol = atol
-        self.rtol = rtol
 
     def get_time_grid(self):
         # This method creates a time-grid for the simulation on the basis of the pulse-time-grid defined
         # in SimPulse class. Basically, after the pulse has been completely injected with a timestep of 0.1 fs,
-        # use 10 fs as time-steps. This helps the solver find a proper temporal resolution. The minimum simulation time
-        # is defined by the pulse time grid.
+        # use 10 fs as time-steps. This helps the solver as it does not have to recalculate new time-steps all the time.
 
         # Input:
         # self (object). The simulation to be run
@@ -57,13 +40,13 @@ class SimDynamics:
 
         start_time_grid = self.Pulse.pulse_time_grid
         if self.end_time < 5e-12:
-            rest_time_grid = np.arange(start_time_grid[-1] + self.ep_eq_dt, np.round(self.end_time, 15), self.ep_eq_dt)
+            rest_time_grid = np.arange(start_time_grid[-1] + 1e-15, np.round(self.end_time, 15), 1e-15)
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
         else:
-            ep_time_grid = np.arange(start_time_grid[-1] + self.ep_eq_dt, 5e-12, self.ep_eq_dt)
-            rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + self.long_time_dt,
-                                                                     self.end_time, self.long_time_dt)))
+            ep_time_grid = np.arange(start_time_grid[-1] + 1e-15, 5e-12, 1e-15)
+            rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-14, self.end_time, 1e-14)))
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
+
 
         return time_grid
 
@@ -84,13 +67,13 @@ class SimDynamics:
 
     def initialize_spin_configuration(self):
         # This method initializes fully polarized spins in all magnetic layers (selected by whether mu_at > 0)
-        # The maximum spin-level is being fully occupied, while the rest are empty.
+        # The maximal spin-level is being fully occupied, while the rest are empty.
 
         # Input:
         # self (object). The simulation to be run
 
         # Returns:
-        # fss0 (numpy array). 2d-array of the initial spin configuration in each magnetic layer
+        # fss0 (numpy array). 1d-array of the initial spin configuration in reach magnetic layer
 
         fss0 = []
 
@@ -102,43 +85,6 @@ class SimDynamics:
         fss0[:, 0] = 1
 
         return fss0
-
-    @staticmethod
-    def equilibrate_mag(fss0, te0, tp0, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                        el_mag_mask, mag_num, ms_sam):
-        # This method equilibrates the magnetization to its mean field equilibrium value at the initial temperature.
-
-        # Input:
-        # A bunch of parameters from the sample class, initialized in SimDynamics.get_t_m_maps()
-
-        # Returns:
-        # fss_eq (numpy array). 2d-array (position_in_magnetic_part_of_sample x occupation_of_spin_z_components). The
-        # occupation of the spin-z-components for the whole magnetic sample in equilibrium
-        # with the initial temperature profile (for now only uniform)
-
-        # increase the damping to speed up the equilibration process
-        arbsc_sam_eq = arbsc_sam*1e5
-
-        # Call the solver to equilibrate the system for 5 ps
-        eq_sol = solve_ivp(lambda t, fs: SimDynamics.mag_occ_dyn(fs=fs, te=te0, tp=tp0, j_sam=j_sam, spin_sam=spin_sam,
-                                                                 arbsc_sam=arbsc_sam_eq,
-                                                                 s_up_eig_sq_sam=s_up_eig_sq_sam,
-                                                                 s_dn_eig_sq_sam=s_dn_eig_sq_sam, ms_sam=ms_sam,
-                                                                 el_mag_mask=el_mag_mask, mag_num=mag_num),
-                                                                 t_span=(0, 5e-12), y0=fss0.flatten(), method='RK23')
-        # get the last spin configuration after equilibration:
-        fs_eq = eq_sol.y.T[-1]
-
-        del eq_sol
-
-        m_eq = SimDynamics.get_mag(fs_eq, ms_sam, spin_sam, mag_num)
-
-        print('Magnetization equilibrated.')
-        print('m = ', str(m_eq))
-        print('T_0 = ', str(te0[el_mag_mask]), ' [K]')
-
-        # return it to run the main simulation:
-        return fs_eq
 
     def get_t_m_maps(self):
         # This method initiates all parameters needed for the dynamical simulation
@@ -152,7 +98,6 @@ class SimDynamics:
 
         start_time = time.time()
 
-        # initialize all necessary parameters from the SimSample and SimPulse classes:
         len_sam = self.Sam.len
         len_sam_te = self.Sam.len_te
         el_mask = self.Sam.el_mask
@@ -179,22 +124,12 @@ class SimDynamics:
         ms_sam = self.Sam.get_params('ms')
         vat_sam = self.Sam.get_params('vat')[mag_mask]
 
-        # initialize the starting temperature profile, spin occupations and magnetization:
         te0, tp0 = self.initialize_temperature()
         fss0 = self.initialize_spin_configuration().flatten()
-
-        # equilibrate the spin occupations according to the starting temperature profile:
-        # (Here, the temperature does not change and there is no energy-transfer from the spin system)
-        fss_eq = SimDynamics.equilibrate_mag(fss0, te0, tp0[mag_mask], j_sam, spin_sam, arbsc_sam,
-                                             s_up_eig_sq_sam, s_dn_eig_sq_sam, el_mag_mask, mag_num, ms_sam)
-
-        # Concatenate the initial temperatures and spin occupations to pass to the solver:
         ts = np.concatenate((te0, tp0))
+
         config0 = np.concatenate((ts, fss0))
 
-        eq_time = time.time()
-
-        # Call the solver to run the dynamical simulation:
         all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, len_sam_te,
                                                                                 mat_ind, el_mag_mask,
                                                                                 mag_mask, el_mask, ce_gamma_sam,
@@ -205,16 +140,13 @@ class SimDynamics:
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
-                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method=self.solver,
-                            max_step=self.max_step, atol=self.atol, rtol=self.rtol)
+                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK45',
+                            max_step=1e-13)
 
         end_time = time.time()
-        time_exp = end_time-start_time
-        main_time = end_time-eq_time
-        print('Simulation done. Total time expired: ' + str(time_exp) + ' s')
-        print('Main simulation loop duration: ' + str(main_time) + ' s')
+        exp_time = end_time-start_time
+        print('Simulation done. Time expired: ' + str(exp_time) + ' s')
 
-        # return the simulation results:
         return all_sol
 
 
@@ -237,14 +169,14 @@ class SimDynamics:
         te = te_tp_fs_flat[:len_sam_te]
         tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
         fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
-        # fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
+        fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
 
-        dfs_dt_flat = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                                              fss_flat, te, tp[mag_mask], el_mag_mask, mag_num, ms_sam)
-        dm_dt = SimDynamics.get_mag(dfs_dt_flat, ms_sam, spin_sam, mag_num)
-        mag = SimDynamics.get_mag(fss_flat, ms_sam, spin_sam, mag_num)
+        mag = SimDynamics.get_mag(fss, ms_sam, spin_sam)
+        dfs_dt = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
+                                         mag, fss, te, tp[mag_mask], el_mag_mask)
+        dm_dt = SimDynamics.get_mag(dfs_dt, ms_sam, spin_sam)
+
         mag_en_t = SimDynamics.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
-
         if constant_cp:
             cp_sam_t = cp_max_sam
         else:
@@ -265,6 +197,7 @@ class SimDynamics:
         dte_dt += dte_dt_diff
         dtp_dt += dtp_dt_diff
 
+        dfs_dt_flat = dfs_dt.flatten()
         dtep_dt = np.concatenate((dte_dt, dtp_dt))
         all_increments_flat = np.concatenate((dtep_dt, dfs_dt_flat))
 
@@ -354,8 +287,7 @@ class SimDynamics:
         return dtp_dt_diff
 
     @staticmethod
-    def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                    fs, te, tp, el_mag_mask, mag_num, ms_sam):
+    def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs, te, tp, el_mag_mask):
         # This method computes the increments of spin-level occupation for the whole magnetic part of the sample.
 
         # Input:
@@ -369,20 +301,12 @@ class SimDynamics:
         # in all magnetic layers (first dimension).
         # te (numpy array). 1d-array of the current electron temperatures.
         # tp (numpy array). 1d-array of the current phonon temperatures.
-        # el_mag_mask (boolean array). 1d-array of the length of number of layers with free electron behaviour,
-        # with True for magnetic behaviour and False if non-magnetic
-        # mag_num (int). Number of magnetic layers
-        # ms_sam (numpy array). 2-d array of the spin-z-levels of magnetic materials in their respective layer.
 
         # Returns:
         # dfs_dt (numpy array). 2d-array of the increments in spin-level occupation in all magnetic layers
 
-        fs = np.reshape(fs, (mag_num, (int(2 * spin_sam[0] + 1))))
-
-        mag = SimDynamics.get_mag(fs, ms_sam, spin_sam, mag_num)
-
         h_mf = np.multiply(j_sam, mag)
-        eta = np.divide(h_mf, np.multiply(2 * spin_sam * sp.k, te[el_mag_mask])).astype(float)
+        eta = np.divide(h_mf, np.multiply(2 * spin_sam * sp.k, te[el_mag_mask]))
         incr_pref = arbsc_sam*tp*h_mf/4/spin_sam/np.sinh(eta)
 
         fs_up = np.multiply(s_up_eig_sq_sam, fs)
@@ -397,11 +321,10 @@ class SimDynamics:
         rate_dn_gain = np.roll(rate_dn_loss, -1)
 
         dfs_dt = rate_up_gain + rate_dn_gain - rate_up_loss - rate_dn_loss
-
-        return dfs_dt.flatten()
+        return dfs_dt
 
     @staticmethod
-    def get_mag(fss_flat, ms_sam, spin_sam, mag_num):
+    def get_mag(fs, ms_sam, spin_sam):
         # This method computes magnetization (increments) on the basis of the spin-level occupation (increments)
         # in all magnetic layers
 
@@ -414,9 +337,7 @@ class SimDynamics:
         # Returns:
         # mag (numpy array). 1d-array of the magnetization (increments) of all magnetic layers
 
-        fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
-
-        mag = -np.divide(np.sum(ms_sam * fss, axis=-1), spin_sam)
+        mag = -np.divide(np.sum(ms_sam * fs, axis=-1), spin_sam)
 
         return mag
 
@@ -455,8 +376,7 @@ class SimDynamics:
         tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len]
 
         fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
-        fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num,
-                                    int(2*self.Sam.get_params('spin')[self.Sam.mag_mask][0]+1)))
+        fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num, 4))
         mags = self.get_mag_results(fss)
 
         return sim_delay, tes, tps, mags
@@ -488,10 +408,8 @@ class SimDynamics:
         # Returns:
         # None. After saving the data in the proper format and folder, the method closes without output.
 
-        # define the output path:
         sim_path = 'Results/' + str(save_file)
 
-        # get the data to be saved from the one
         sim_delay, sim_tes, sim_tps, sim_mags = self.seperate_data(sim_results)
 
         if not os.path.exists(sim_path):
@@ -508,9 +426,9 @@ class SimDynamics:
 
         params_file = open(sim_path + '/params.dat', 'w+')
 
-        params_file.write('### Simulation parameters' + '\n')
+        params_file.write('##Simulation parameters' + '\n')
         params_file.write('initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
-        params_file.write('### Sample parameters' + '\n')
+        params_file.write('##Sample parameters' + '\n')
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
         params_file.write('Material positions in order: ' + str(self.Sam.mat_ind) + '\n')
         params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
@@ -531,7 +449,7 @@ class SimDynamics:
         params_file.write('Sigma =' + str(self.Pulse.pulse_width) + '[s]' + '\n')
         params_file.write('Delay =' + str(self.Pulse.delay) + '[s]' + '\n')
         params_file.write('Penetration depth = ' + str([mat.pen_dep for mat in mats]) + '[m]' + '\n')
-        params_file.write('### Interface parameters' + '\n')
+        params_file.write('##Interface paramters' + '\n')
         params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + '[W/m/K]' + '\n')
         params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + '[W/m/K]' + '\n')
         params_file.close()

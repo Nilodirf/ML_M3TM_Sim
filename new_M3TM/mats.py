@@ -10,7 +10,7 @@ class SimMaterials:
         # Input:
         # name (String). Name of the material
         # pen_dep (float). Penetration depth of the layers of the material in m
-        # tdeb (float). Debye temperature of the material in K
+        # tdeb (float). Debye temperature of the material
         # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
         # vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
         # kappap (float). Phononic heat diffusion constant in W/m/K
@@ -78,14 +78,16 @@ class SimMaterials:
         # self (object). A pointer to the material in use
 
         # Returns:
-        # t_grid (numpy array). 1d-array of temperature grid between 0 and 2*tein+1 K
+        # t_grid (numpy array). 1d-array of temperature grid between 0 and 3*tdeb+1 K
         # cp_t_grid (numpy array). 1d-array of Einstein lattice capacity for the above temperature grid,
-        # the last value being cp_max for every temperature above 2*tein+1 K
+        # the last value being cp_max for every temperature above 3*tdeb+1 K
 
-        t_grid = np.arange(1., 2*self.tein, 0.1)
+        t_grid_fine = np.arange(1, self.tein, 0.1)
+        t_grid_course = np.arange(self.tein+1, 3*self.tein)
+        t_grid = np.append(t_grid_fine, t_grid_course)
         t_red = np.divide(self.tein, t_grid)
-        cp_t_grid = self.cp_max*(t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2))
+        cp_t_grid = self.cp_max*((t_red**2*np.divide(np.exp(t_red), (np.exp(t_red)-1)**2))+0.1)
 
-        t_grid = np.append(t_grid, 2*self.tein+1)
+        t_grid = np.append(t_grid, 3*self.tdeb+1)
         cp_t_grid = np.append(cp_t_grid, self.cp_max)
         return t_grid, list(cp_t_grid)
