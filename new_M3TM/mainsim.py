@@ -8,7 +8,7 @@ import time
 
 class SimDynamics:
     # This is the main Simulation class that holds all methods to compute dynamics of the extended M3TM.
-    def __init__(self, sample, pulse, end_time, ini_temp, constant_cp):
+    def __init__(self, sample, pulse, end_time, ini_temp, solver, max_step, atol=1e-6, rtol=1e-3):
         # Input:
         # sample (object). The sample in use
         # pulse (object). The pulse excitation in use
@@ -16,6 +16,11 @@ class SimDynamics:
         # ini_temp (float). Initial temperature of electron and phonon baths in the whole sample in K
         # constant_cp (boolean). If set True, cp_max is used for phonon heat capacity. If False, Einstein model is
         # computed. Note that this takes very long at low temperatures
+        # solver (String). The solver used to evaluate the differential equation. See documentation of
+        # scipy.integrate.solve_ivp
+        # max_step (float). Maximum step size in s of the solver for the whole simulation
+        # atol (float). Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver.
+        # rtol (float). Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver.
 
         # Also returns:
         # self.time_grid (numpy array). 1d-array of the time-grid to be used in simulations.
@@ -24,8 +29,11 @@ class SimDynamics:
         self.Pulse = pulse
         self.end_time = end_time
         self.ini_temp = ini_temp
-        self.constant_cp = constant_cp
         self.time_grid = self.get_time_grid()
+        self.solver = solver
+        self.max_step = max_step
+        self.atol = atol
+        self.rtol = rtol
 
     def get_time_grid(self):
         # This method creates a time-grid for the simulation on the basis of the pulse-time-grid defined
@@ -209,13 +217,10 @@ class SimDynamics:
         dm_dt = SimDynamics.get_mag(dfs_dt, ms_sam, spin_sam)
 
         mag_en_t = SimDynamics.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
-        if constant_cp:
-            cp_sam_t = cp_max_sam
-        else:
-            cp_sam_t = np.zeros(len_sam)
-            for i, ind_list in enumerate(mat_ind):
-                cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
-                cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
+        cp_sam_t = np.zeros(len_sam)
+        for i, ind_list in enumerate(mat_ind):
+            cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
+            cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
         ce_sam_t = np.multiply(ce_gamma_sam, te)
