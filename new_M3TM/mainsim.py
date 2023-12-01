@@ -149,7 +149,12 @@ class SimDynamics:
 
         return all_sol
 
-
+    def equilibrate_mag(self, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs0, te0, tp0,
+                        el_mag_mask, ms_sam):
+        eq_sol = solve_ivp(lambda t, fs: SimDynamics.get_m_eq_increments(t, fs, j_sam, spin_sam, arbsc_sam,
+                                                                         s_up_eig_sq_sam, s_dn_eig_sq_sam, mag,
+                                                                         te0, tp0, el_mag_mask, ms_sam), y0=fs0,
+                           t_span=0, 5e-12)
     @staticmethod
     def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, el_mag_mask,
                            mag_mask, el_mask, ce_gamma_sam,
