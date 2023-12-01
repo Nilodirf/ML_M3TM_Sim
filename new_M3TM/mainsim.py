@@ -161,14 +161,20 @@ class SimDynamics:
                                                                          te0, tp0, el_mag_mask, ms_sam, mag_num),
                            y0=fs0, t_span=(0, 5e-12), method='RK23')
 
-        fs_eq = eq_sol.y.T[-1]
-        return fs_eq
+        fs_eq_flat = eq_sol.y.T[-1]
+        fs_eq = np.reshape(fs_eq_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
+        mag_eq = SimDynamics.get_mag(fs_eq, ms_sam, spin_sam)
+        print('Equilibration phase done.')
+        print('Equilibrium magnetization: ' + str(mag_eq))
+        print('at initial temperature: ' + str(tp0) + ' K')
+
+        return fs_eq_flat
 
     @staticmethod
-    def get_m_eq_increments(fs, j_sam, spin_sam, arbsc_sam_eq, s_up_eig_sq_sam, s_dn_eig_sq_sam, te0, tp0,
+    def get_m_eq_increments(fss_flat, j_sam, spin_sam, arbsc_sam_eq, s_up_eig_sq_sam, s_dn_eig_sq_sam, te0, tp0,
                             el_mag_mask, ms_sam, mag_num):
 
-        fss = np.reshape(fs, (mag_num, (int(2 * spin_sam[0] + 1))))
+        fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
         mag = SimDynamics.get_mag(fss, ms_sam, spin_sam)
         dfs_dt = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam_eq, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fss,
                                          te0, tp0, el_mag_mask)
