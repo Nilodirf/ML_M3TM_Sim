@@ -3,6 +3,7 @@ from scipy import constants as sp
 from finderb import finderb
 from scipy.integrate import solve_ivp
 import os
+import time
 
 
 class SimDynamics:
@@ -95,6 +96,8 @@ class SimDynamics:
         # Returns:
         # all_sol (object). The solution and details of the simulation run by solve_ivp
 
+        start_time = time.time()
+
         len_sam = self.Sam.len
         len_sam_te = self.Sam.len_te
         el_mask = self.Sam.el_mask
@@ -137,7 +140,12 @@ class SimDynamics:
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
                                                                                 vat_sam, self.constant_cp),
-                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK45')
+                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK45',
+                            max_step=1e-13)
+
+        end_time = time.time()
+        exp_time = end_time-start_time
+        print('Simulation done. Time expired: ' + str(exp_time) + ' s')
 
         return all_sol
 
@@ -220,7 +228,7 @@ class SimDynamics:
         de_dt = np.zeros_like(te)
         dp_dt = np.zeros_like(tp)
 
-        e_p_coupling = np.multiply(gep_sam, (tp- te))
+        e_p_coupling = np.multiply(gep_sam, (tp - te))
 
         de_dt += e_p_coupling + pulse_t
         de_dt[el_mag_mask] += mag_en_t

@@ -43,7 +43,7 @@ class SimPulse:
         # and for the whole sample (second dimension)
         p_del = self.delay
         sigma = self.pulse_width
-        timestep = self.pulse_width
+        timestep = self.pulse_dt
 
         start_pump_time = p_del-10*sigma
         end_pump_time = p_del+10*sigma

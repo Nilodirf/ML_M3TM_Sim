@@ -3,6 +3,7 @@ from scipy import constants as sp
 from finderb import finderb
 from scipy.integrate import solve_ivp
 import os
+import time
 
 
 class SimDynamics:
@@ -45,7 +46,8 @@ class SimDynamics:
     def get_time_grid(self):
         # This method creates a time-grid for the simulation on the basis of the pulse-time-grid defined
         # in SimPulse class. Basically, after the pulse has been completely injected with a timestep of 0.1 fs,
-        # use 10 fs as time-steps. This helps the solver as it does not have to recalculate new time-steps all the time.
+        # use 10 fs as time-steps. This helps the solver find a proper temporal resolution. The minimum simulation time
+        # is defined by the pulse time grid.
 
         # Input:
         # self (object). The simulation to be run
@@ -148,6 +150,8 @@ class SimDynamics:
         # Returns:
         # all_sol (object). The solution and details of the simulation run by solve_ivp
 
+        start_time = time.time()
+
         # initialize all necessary parameters from the SimSample and SimPulse classes:
         len_sam = self.Sam.len
         len_sam_te = self.Sam.len_te
@@ -186,7 +190,9 @@ class SimDynamics:
 
         # Concatenate the initial temperatures and spin occupations to pass to the solver:
         ts = np.concatenate((te0, tp0))
-        config0 = np.concatenate((ts, fss_eq))
+        config0 = np.concatenate((ts, fss0))
+
+        eq_time = time.time()
 
         # Call the solver to run the dynamical simulation:
         all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, len_sam_te,
@@ -201,6 +207,12 @@ class SimDynamics:
                                                                                 vat_sam, self.constant_cp),
                             t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method=self.solver,
                             max_step=self.max_step, atol=self.atol, rtol=self.rtol)
+
+        end_time = time.time()
+        time_exp = end_time-start_time
+        main_time = end_time-eq_time
+        print('Simulation done. Total time expired: ' + str(time_exp) + ' s')
+        print('Main simulation loop duration: ' + str(main_time) + ' s')
 
         # return the simulation results:
         return all_sol
@@ -283,7 +295,7 @@ class SimDynamics:
         de_dt = np.zeros_like(te)
         dp_dt = np.zeros_like(tp)
 
-        e_p_coupling = np.multiply(gep_sam, (tp- te))
+        e_p_coupling = np.multiply(gep_sam, (tp - te))
 
         de_dt += e_p_coupling + pulse_t
         de_dt[el_mag_mask] += mag_en_t
