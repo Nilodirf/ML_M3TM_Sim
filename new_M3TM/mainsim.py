@@ -114,7 +114,6 @@ class SimDynamics:
         ce_gamma_sam = self.Sam.get_params('ce_gamma')[el_mask]
         mats, mat_ind = self.Sam.mats, self.Sam.mat_ind
         cp_sam_grid, cp_sam = self.Sam.get_params('cp_T')
-        cp_max_sam = self.Sam.get_params('cp_max')
         cp_sam = [np.array(i) for i in cp_sam]
         gep_sam = self.Sam.get_params('gep')[el_mask]
         pulse_time_grid, pulse_map = self.Pulse.pulse_time_grid, self.Pulse.pulse_map
@@ -144,15 +143,15 @@ class SimDynamics:
         all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, len_sam_te,
                                                                                 mat_ind, el_mag_mask,
                                                                                 mag_mask, el_mask, ce_gamma_sam,
-                                                                                cp_sam_grid, cp_sam, cp_max_sam,
+                                                                                cp_sam_grid, cp_sam,
                                                                                 gep_sam, pulse_map,
                                                                                 pulse_time_grid, kappa_e_dz_pref,
                                                                                 kappa_p_dz_pref, j_sam, spin_sam,
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
-                                                                                vat_sam, self.constant_cp),
-                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method='RK45',
-                            max_step=1e-13)
+                                                                                vat_sam),
+                            t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method=self.solver,
+                            max_step=self.max_step)
 
         end_time = time.time()
         exp_time = end_time-start_time
@@ -163,25 +162,48 @@ class SimDynamics:
     @staticmethod
     def equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fs0, te0, tp0,
                         el_mag_mask, ms_sam, mag_num):
+        # This method equilibrates the magnetization to its mean field equilibrium value at the initial temperature.
+
+        # Input:
+        # A bunch of parameters from the sample class, initialized in SimDynamics.get_t_m_maps()
+
+        # Returns:
+        # fss_eq_flat (numpy array). 1d-array of the occupation of the spin-z-components for the whole magnetic sample
+        # in equilibrium with the initial temperature profile (for now only uniform) in a flattened format
+
+        # increase the damping to speed up the equilibration process:
         arbsc_sam_eq = arbsc_sam*1e5
 
+        # call solver to equilibrate magnetization:
         eq_sol = solve_ivp(lambda t, fs: SimDynamics.get_m_eq_increments(fs, j_sam, spin_sam, arbsc_sam_eq,
                                                                          s_up_eig_sq_sam, s_dn_eig_sq_sam,
                                                                          te0, tp0, el_mag_mask, ms_sam, mag_num),
                            y0=fs0, t_span=(0, 5e-12), method='RK23')
 
+        # flatten the output for further calculation:
         fs_eq_flat = eq_sol.y.T[-1]
+
+        # the following only to inform the user about the state:
         fs_eq = np.reshape(fs_eq_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
         mag_eq = SimDynamics.get_mag(fs_eq, ms_sam, spin_sam)
         print('Equilibration phase done.')
         print('Equilibrium magnetization: ' + str(mag_eq))
         print('at initial temperature: ' + str(tp0) + ' K')
 
+        # return the equilibrium spin occupation:
         return fs_eq_flat
 
     @staticmethod
     def get_m_eq_increments(fss_flat, j_sam, spin_sam, arbsc_sam_eq, s_up_eig_sq_sam, s_dn_eig_sq_sam, te0, tp0,
                             el_mag_mask, ms_sam, mag_num):
+        # This method handles the computation of increments of the spin occupations in the equilibration process.
+        # It is the equivalent of get_t_m_increments.
+
+        # Input:
+        # A bunch of parameters from the sample and pulse objects. See documentation in the respective methods
+
+        # Returns:
+        # dfs_dt.flatten() (numpy array). 1d-array of the flattened equilibrium spin occupations.
 
         fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
         mag = SimDynamics.get_mag(fss, ms_sam, spin_sam)
@@ -193,9 +215,9 @@ class SimDynamics:
     @staticmethod
     def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, el_mag_mask,
                            mag_mask, el_mask, ce_gamma_sam,
-                           cp_sam_grid, cp_sam, cp_max_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
+                           cp_sam_grid, cp_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
                            kappa_p_dz_pref, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                           ms_sam, mag_num, vat_sam, constant_cp):
+                           ms_sam, mag_num, vat_sam):
         # This method joins other static methods to compute the increments of all three subsystems. It gets passed to
         # solve_ivp in the self.get_mag_map() method.
 
@@ -472,14 +494,13 @@ class SimDynamics:
         params_file.write('Atomic volumes = ' + str([mat.vat for mat in mats]) + '[m^3]' + '\n')
         params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
         params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
-        params_file.write('asf =' + str([mat.asf for mat in mats]) + '\n')
-        params_file.write('gep =' + str([mat.gep for mat in mats]) + '[W/m^3/K]' + '\n')
+        params_file.write('a_sf =' + str([mat.asf for mat in mats]) + '\n')
+        params_file.write('g_ep =' + str([mat.gep for mat in mats]) + '[W/m^3/K]' + '\n')
         params_file.write('gamma_el =' + str([mat.ce_gamma for mat in mats]) + '[J/m^3/K^2]' + '\n')
         params_file.write('cv_ph_max =' + str([mat.cp_max for mat in mats]) + '[J/m^3/K]' + '\n')
-        params_file.write('assumed constant cp:' + str(self.constant_cp) + '\n')
         params_file.write('kappa_el =' + str([mat.kappae for mat in mats]) + '[W/mK]' + '\n')
         params_file.write('kappa_ph =' + str([mat.kappap for mat in mats]) + '[W/mK]' + '\n')
-        params_file.write('Tc =' + str([mat.tc for mat in mats]) + '[K]' + '\n')
+        params_file.write('T_C =' + str([mat.tc for mat in mats]) + '[K]' + '\n')
         params_file.write('T_Deb =' + str([mat.tdeb for mat in mats]) + '[K]' + '\n')
         params_file.write('### Pulse parameters' + '\n')
         params_file.write('Estimated fluence:' + str(self.Pulse.fluence) + '[mJ/cm^2]' + '\n')
