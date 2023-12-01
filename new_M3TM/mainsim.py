@@ -127,8 +127,8 @@ class SimDynamics:
         te0, tp0 = self.initialize_temperature()
         fss0 = self.initialize_spin_configuration().flatten()
 
-        fss_eq = self.equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                                      fss0, te0, tp0[mag_mask], el_mag_mask, ms_sam, mag_num)
+        fss_eq = SimDynamics.equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
+                                             fss0, te0, tp0[mag_mask], el_mag_mask, ms_sam, mag_num)
 
         ts = np.concatenate((te0, tp0))
         config0 = np.concatenate((ts, fss_eq))
@@ -152,7 +152,8 @@ class SimDynamics:
 
         return all_sol
 
-    def equilibrate_mag(self, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fs0, te0, tp0,
+    @staticmethod
+    def equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fs0, te0, tp0,
                         el_mag_mask, ms_sam, mag_num):
         arbsc_sam_eq = arbsc_sam*1e5
 
