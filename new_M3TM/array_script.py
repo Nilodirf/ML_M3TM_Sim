@@ -28,7 +28,7 @@ for cp in cp_list:
         # The first material to be added will be closest to the laser pulse and so on.
         sample = SimSample()
         sample.add_layers(material=hBN, layers=7)
-        sample.add_layers(material=CGT, layers=7, kappap_int='av')
+        sample.add_layers(material=CGT, layers=75, kappap_int='av')
         sample.add_layers(material=SiO2, layers=149, kappap_int='av')
 
         # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
@@ -41,4 +41,4 @@ for cp in cp_list:
         solution = sim.get_t_m_maps()
 
         # Save the data in a file with the desired name
-        sim.save_data(solution, save_file='sub/cp_' + str(cp) + '_kp_' + str(kp))
+        sim.save_data(solution, save_file='sub/thick_CGT/cp_' + str(cp) + '_kp_' + str(kp))

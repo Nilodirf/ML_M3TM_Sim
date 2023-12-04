@@ -21,6 +21,8 @@ class SimSample:
         # kappa_e_int (numpy array). 1d-array of the interface constants of electronic heat diffusion. Starts empty,
         # recalculated after adding of layers
         # len_te (int). Number of layers that have free electrons (determined with el_mask)
+        # el_mag_mask (numpy array). 1D-boolean array of the length of number of layers with itinerant electrons,
+        # boolean for whether they are magnetic (True) or not (False).
 
         self.mat_arr = np.array([])
         self.len = self.get_len()

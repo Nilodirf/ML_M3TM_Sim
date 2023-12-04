@@ -197,7 +197,7 @@ class SimDynamics:
     def get_m_eq_increments(fss_flat, j_sam, spin_sam, arbsc_sam_eq, s_up_eig_sq_sam, s_dn_eig_sq_sam, te0, tp0,
                             el_mag_mask, ms_sam, mag_num):
         # This method handles the computation of increments of the spin occupations in the equilibration process.
-        # It is the equivalent of get_t_m_increments.
+        # It is the equivalent of get_t_m_increments in the equilibration phase.
 
         # Input:
         # A bunch of parameters from the sample and pulse objects. See documentation in the respective methods
@@ -435,7 +435,8 @@ class SimDynamics:
         tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len]
 
         fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
-        fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num, 4))
+        fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num,
+                                    2*self.Sam.get_params('spin')[self.Sam.mag_mask][0]+1))
         mags = self.get_mag_results(fss)
 
         return sim_delay, tes, tps, mags
@@ -489,7 +490,7 @@ class SimDynamics:
         params_file.write('initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
         params_file.write('##Sample parameters' + '\n')
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
-        params_file.write('Material positions in order: ' + str(self.Sam.mat_ind) + '\n')
+        params_file.write('Material positions at layer in sample: ' + str(self.Sam.mat_ind) + '\n')
         params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
         params_file.write('Atomic volumes = ' + str([mat.vat for mat in mats]) + '[m^3]' + '\n')
         params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
@@ -507,7 +508,7 @@ class SimDynamics:
         params_file.write('Sigma =' + str(self.Pulse.pulse_width) + '[s]' + '\n')
         params_file.write('Delay =' + str(self.Pulse.delay) + '[s]' + '\n')
         params_file.write('Penetration depth = ' + str([mat.pen_dep for mat in mats]) + '[m]' + '\n')
-        params_file.write('##Interface paramters' + '\n')
+        params_file.write('##Interface parameters' + '\n')
         params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + '[W/m/K]' + '\n')
         params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + '[W/m/K]' + '\n')
         params_file.close()
