@@ -9,8 +9,8 @@ from sample import SimSample
 from pulse import SimPulse
 from mainsim import SimDynamics
 
-cp_list = [1.5e6, 1.6e6, 1.7e6, 1.8e6, 1.9e6, 2e6, 2.1e6, 2.2e6, 2.3e6, 2.4e6, 2.5e6, 2.6e6, 2.7e6, 2.8e6, 2.9e6, 3e6]
-kp_list = [1., 1.5, 1.6, 1.7, 1.8, 1.9, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10.]
+cp_list = [1.5e6, 1.8e6, 2.1e6, 2.4e6, 2.7e6, 3e6]
+kp_list = [0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
 
 for cp in cp_list:
     for kp in kp_list:
