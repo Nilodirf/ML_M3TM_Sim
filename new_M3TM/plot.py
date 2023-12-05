@@ -21,8 +21,8 @@ class SimPlot:
         # depth_labels_te(mag) (numpy arrays). Depth labels for electronic (magnetic) layers in the sample
 
         self.file = file
-        self.delay, self.tes, self.tps, self.mags,\
-            self.layer_labels, self.layer_labels_te, self.layer_labels_muat,\
+        self.delay, self.tes, self.tps, self.mags, \
+            self.layer_labels, self.layer_labels_te, self.layer_labels_muat, \
             self.depth_labels, self.depth_labels_te, self.depth_labels_mag = self.get_data()
 
     def get_data(self):
@@ -400,10 +400,12 @@ class SimComparePlot:
         path = 'Results/' + str(file) + '/'
         delay = np.load(path + 'delay.npy')
         mags = np.load(path + 'ms.npy')
+        tes = np.load(path + 'tes.npy')
+        tps = np.load(path + 'tps.npy')
 
-        return delay, mags
+        return delay, mags, tes, tps
 
-    def kerr_plot(self, pen_dep, layer_thickness, min_time, max_time, save_fig=False, norm=False):
+    def kerr_plot(self, pen_dep, layer_thickness, min_time, max_time, save_fig=False, norm=False, filename=None):
         # This method plots a Kerr-signal, exponentially weighting the magnetization of each layer in the dataset,
         # normalizing the data and plotting several data on top of each other.
 
@@ -416,6 +418,7 @@ class SimComparePlot:
         # max_time (float). The maximal time that should be plotted in ps
         # save_fig (boolean). If True, the plot will be saved with the according title denoting the files that are
         # being plotted in the Results folder. Default is False
+        # filename (str). Name the file if save_fig=True. It will be saved in .pdf format automatically
 
         # Returns:
         # None. After creating the plot and possibly saving it, the functions returns nothing
@@ -423,7 +426,7 @@ class SimComparePlot:
         plt.figure(figsize=(8, 6))
 
         for file in self.files:
-            delay, mags = SimComparePlot.get_data(file)
+            delay, mags = SimComparePlot.get_data(file)[0:2]
 
             delay = delay*1e12
 
@@ -442,7 +445,7 @@ class SimComparePlot:
                 norm_kerr_signal = (kerr_in_time-kerr_signal[zero_time])\
                                     / np.abs(np.amin(kerr_signal-kerr_signal[zero_time]))
             else:
-                norm_kerr_signal = kerr_in_time
+                norm_kerr_signal = kerr_in_time/kerr_in_time[zero_time]
 
             plt.plot(delay, norm_kerr_signal, label=str(file))
 
@@ -452,8 +455,26 @@ class SimComparePlot:
         plt.legend(fontsize=14)
 
         if save_fig:
-            plt.savefig('Results/' + str(self.files) + '_Kerr/' + '.pdf')
+            assert type(filename) == str, ('Select a filename for the save_file if you wish'
+                                           ' saving the plot on the hard_drive.')
+            plt.savefig('Results/' + filename + '.pdf')
 
         plt.show()
 
         return
+
+    def parameter_2d_scan(self):
+
+        plt.figure(figsize=(8, 6))
+
+        for file in self.files:
+            delay, mags = SimComparePlot.get_data(file)[0:2]
+
+            delay = delay * 1e12
+
+            zero_time = finderb(0., delay)[0]
+
+
+
+
+        return None

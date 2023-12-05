@@ -415,7 +415,7 @@ class SimDynamics:
 
         return mag*dm_dt*j_sam/vat_sam
 
-    def seperate_data(self, sim_results):
+    def separate_data(self, sim_results):
         # This method takes the 2-dimensional output of the solver and separates it accordingly to the
         # given sample structure into, te, tp and mag maps.
 
@@ -436,7 +436,7 @@ class SimDynamics:
 
         fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
         fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num,
-                                    2*self.Sam.get_params('spin')[self.Sam.mag_mask][0]+1))
+                                    int(2*self.Sam.get_params('spin')[self.Sam.mag_mask][0]+1)))
         mags = self.get_mag_results(fss)
 
         return sim_delay, tes, tps, mags
@@ -470,7 +470,7 @@ class SimDynamics:
 
         sim_path = 'Results/' + str(save_file)
 
-        sim_delay, sim_tes, sim_tps, sim_mags = self.seperate_data(sim_results)
+        sim_delay, sim_tes, sim_tps, sim_mags = self.separate_data(sim_results)
 
         if not os.path.exists(sim_path):
             os.makedirs(sim_path)
