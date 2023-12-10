@@ -1,6 +1,8 @@
 import numpy as np
 from matplotlib import colors as mplcol
 from matplotlib import pyplot as plt
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
 from finderb import finderb
 import ast
 
@@ -57,8 +59,8 @@ class SimPlot:
         part_of_positions = False
 
         for i, line in enumerate(content):
-            if line.startswith('Material positions in order:'):
-                positions += line.replace('Material positions in order: ', '').replace('array(', '').replace(')', '')\
+            if line.startswith('Material positions at layer in sample:'):
+                positions += line.replace('Material positions at layer in sample: ', '').replace('array(', '').replace(')', '')\
                     .replace('\n', ' ')
                 part_of_positions = True
             elif line.startswith('Layer depth'):
@@ -112,13 +114,15 @@ class SimPlot:
         return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag,\
                depth_labels, depth_labels_te, depth_labels_mag
 
-    def map_plot(self, key, min_layer=None, max_layer=None, save_fig=False, min_time=None, max_time=None,
-                 color_scale='inferno', text_color='white', vmin=None, vmax=None):
+    def map_plot(self, key, kind, min_layer=None, max_layer=None, save_fig=False, filename=None, min_time=None,
+                 max_time=None, color_scale='inferno', text_color='white', vmin=None, vmax=None):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
 
         # Input:
         # key (string). Chose what you want to plot: `te`, `tp`, `mag` are possible
-        # save_fig (boolean). If True, the plot will be saved with the according title denoting the map that is
+        # kind (string). Chose 'colormap' or 'surface' to choose the method to show the data.
+        # save_fig (boolean). If True, the plot will be saved with the according title denoted by
+        # filename (String). Default is None
         # min_layer (int). first layer to be plotted. Default is None and then converted to the first layer
         # max_layer (max_layer). last layer to be plotted. Default is None and then converted to the last layer
         # being plotted in the simulation result folder. Default is False
@@ -163,7 +167,7 @@ class SimPlot:
             mat_sep_marks = y_axis[y_label_mask]
             mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
             text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
-            z_label = 'T_e [K]'
+            z_label = r'$T_e$ [K]'
         elif key == 'tp':
             z = self.tps
             (M0, N0) = z.shape
@@ -178,7 +182,7 @@ class SimPlot:
             mat_sep_marks = y_axis[y_label_mask]
             mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
             text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
-            z_label = 'T_p [K]'
+            z_label = r'$T_p$ [K]'
         elif key == 'mag':
             z = self.mags
             (M0, N0) = z.shape
@@ -198,8 +202,6 @@ class SimPlot:
             print('In SimPlot.map_plot(): Please enter a valid key: You can either plot ´te´, ´tp´ or ´mag´.')
             return
 
-        plt.figure(figsize=(8, 6))
-
         z = z[first_time_index:last_time_index, min_layer: max_layer]
 
         if vmin is None:
@@ -209,25 +211,75 @@ class SimPlot:
 
         norm = mplcol.Normalize(vmin=vmin, vmax=vmax)
 
-        plt.pcolormesh(x, y_axis, z.T, cmap=color_scale, norm=norm)
+        if kind == 'colormap':
 
-        plt.xlabel(r'time [ps]', fontsize=16)
-        plt.ylabel(r'sample depth [nm]', fontsize=16)
-        plt.title(str(title), fontsize=20)
-        cbar = plt.colorbar(label=str(z_label), norm=norm)
-        cbar.set_label(str(z_label), rotation=270, labelpad=15)
+            plt.figure(figsize=(8, 6))
 
-        for i, mat_sep in enumerate(mat_sep_marks):
-            if y_axis[0] < mat_sep < y_axis[-1]:
-                plt.hlines(float(mat_sep), x[0], x[-1], color=text_color)
-            plt.text((x[-1]-x[0])*0.5/10, float(mat_sep) + 13, text_above[i], fontsize=14, color=text_color)
+            plt.pcolormesh(x, y_axis, z.T, cmap=color_scale, norm=norm)
 
-        plt.gca().invert_yaxis()
+            plt.xlabel(r'time [ps]', fontsize=16)
+            plt.ylabel(r'sample depth [nm]', fontsize=16)
+            plt.title(str(title), fontsize=20)
+            cbar = plt.colorbar(label=str(z_label), norm=norm)
+            cbar.set_label(str(z_label), rotation=270, labelpad=15)
+
+            for i, mat_sep in enumerate(mat_sep_marks):
+                if y_axis[0] < mat_sep < y_axis[-1]:
+                    plt.hlines(float(mat_sep), x[0], x[-1], color=text_color)
+                plt.text((x[-1]-x[0])*0.5/10, float(mat_sep) + 13, text_above[i], fontsize=14, color=text_color)
+
+            plt.gca().invert_yaxis()
+
+
+        if kind == 'surface':
+
+            fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8,6))
+            x_mesh, y_axis_mesh = np.meshgrid(x, y_axis)
+            surf = ax.plot_surface(x_mesh, y_axis_mesh, z.T, cmap=color_scale,
+                                   linewidth=0, antialiased=True)
+
+            ax.set_zlim(vmin, vmax)
+            ax.set_ylim(y_axis[0], y_axis[-1])
+            plt.gca().invert_yaxis()
+            plt.colorbar(surf, label=str(z_label), shrink=0.5, aspect=5, norm=norm)
+
+            plt.title(str(title), fontsize=20)
+            ax.set_xlabel(r'delay [ps]', fontsize=14)
+            ax.set_ylabel(r'sample depth [nm]', fontsize=14)
+
+            # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
+            colors = [[77 / 255, 77 / 255, 159 / 255], [159 / 255, 77 / 255, 92 / 255], [89 / 255, 159 / 255, 77 / 255]]
+            mat_sep_marks = np.append(mat_sep_marks, y_axis[-1])
+            for i, mark in enumerate(mat_sep_marks[1:]):
+                x_mesh, y_mesh = np.meshgrid(range(int(x[-1])+3), range(int(mat_sep_marks[i]), int(mark)))
+                z_mesh = np.ones_like(x_mesh)*np.amin(z)
+                ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[i], alpha=0.5)
+
+            # add lines of the average of tp in each sample constituent:
+            if key == 'tp':
+                ym, yM = y_axis.min(), y_axis.max()
+                yg = yM * np.ones(x.shape)
+                block_separator = np.where(np.array(y_label_mask))[0]
+                for i, pos in enumerate(block_separator[:-1]):
+                    z_block_av = np.sum(z[:, pos:pos+1], axis=1)/(pos+1-pos)
+                    ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i])
+                z_block_av = np.sum(z[:, block_separator[-1]:], axis=1) / len(y_label_mask[block_separator[-1]:])
+                ax.plot(x, yg, z_block_av, color=colors[-1], label=text_above[-1])
+
+                # add line at T_C and the text (T_c manual at 65 K):
+                ax.plot(x, yg, np.ones_like(x)*65, color='grey', alpha=0.5)
+                ax.text(x[-1], yM, 75, r'$T_C$', color='grey', size=14)
+
+            ax.view_init(20, 30)
+
+            plt.legend()
 
         if save_fig:
-            plt.savefig('Results/' + str(self.file) + '/' + str(title) + '.png')
+            assert type(filename) == str, 'Denote a filename (path from Results/sim_file) to save the plot.'
+            plt.savefig('Results/' + str(self.file) + '/' + str(filename) + '.png')
 
         plt.show()
+
 
         return
 
