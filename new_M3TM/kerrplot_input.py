@@ -35,5 +35,3 @@ compare_plotter_thinthick = SimComparePlot(thin_thick_files)
 #                               filename='cap_thick/thin_CGT/different_thicks', norm=False)
 compare_plotter_thinthick.kerr_plot(pen_dep=5e-9, layer_thickness=2.0e-9, min_time=0, max_time=3000, save_fig=True,
                                     filename='thin_thick_compare', norm=True)
-
-
