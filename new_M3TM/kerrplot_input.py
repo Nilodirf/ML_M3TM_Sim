@@ -3,7 +3,7 @@ import numpy as np
 from plot import SimComparePlot
 
 # THIS SETUP IS TO look at cp/kp changes in cap/substrate:
-cp_string = 'sub/thin_CGT/cp_1800000.0_kp_'
+cp_string = 'sub/thin_CGT/cp_1500000.0_kp_'
 kp_string_list = np.arange(0, 11, dtype=float).astype(str)
 kp_string = '_kp_2.0'
 cp_string_default = 'sub/thin_CGT/cp_'

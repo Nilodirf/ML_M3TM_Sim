@@ -1,8 +1,6 @@
 import numpy as np
 from matplotlib import colors as mplcol
 from matplotlib import pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
 from finderb import finderb
 import ast
 
