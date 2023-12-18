@@ -21,7 +21,7 @@ sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=2e-9, vat=1e-28, ce_gam
 # The first material to be added will be closest to the laser pulse and so on.
 sample = SimSample()
 sample.add_layers(material=hbn, layers=8)
-sample.add_layers(material=cgt, layers=8, kappap_int='av')
+sample.add_layers(material=cgt, layers=76, kappap_int='av')
 sample.add_layers(material=sio2, layers=150, kappap_int='av')
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
@@ -34,4 +34,4 @@ sim = SimDynamics(sample=sample, pulse=pulse, end_time=3e-9, ini_temp=6., solver
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='fit/thin_kp2')
+sim.save_data(solution, save_file='fit/thick_kp2')
