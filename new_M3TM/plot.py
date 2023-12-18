@@ -74,6 +74,9 @@ class SimPlot:
             elif line.startswith('mu_at'):
                 mu_ats = line.replace('mu_at = ', '').replace('[mu_Bohr]', '')
                 mu_ats = ast.literal_eval(mu_ats)
+            elif line.startswith('Delay'):
+                delay_0 = line.replace('Delay =', '').replace('[s]', '')
+                delay_0 = ast.literal_eval(delay_0)
             else:
                 if part_of_positions:
                     positions += line.replace('array(', '').replace(')', '').replace('       ', '').replace('\n', ' ')
@@ -81,6 +84,8 @@ class SimPlot:
         positions = positions.split('], [')
         positions = [mat.split(',') for mat in positions]
         positions = [[str(int(pos)-int(pos_line[0]) + 1) for pos in pos_line] for pos_line in positions]
+
+        delay -= delay_0
 
         layer_labels = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                                  for position in positions_line]
@@ -103,17 +108,70 @@ class SimPlot:
         layer_thicknesses_mag = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
                                                for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))*1e9
 
-        depth_labels = np.array([np.sum(layer_thicknesses[:i+1]) for i in range(len(layer_thicknesses))])
+        cap_thickness_te = 0.
+        for i, l in enumerate(positions):
+            if gamma_els[i] == 0:
+                cap_thickness_te += thicknesses[i]*len(l)*1e9
+            else:
+                break
 
-        depth_labels_te = np.array([np.sum(layer_thicknesses_te[:i+1]) for i in range(len(layer_thicknesses_te))])
+        cap_thickness_mag = 0.
+        for i, l in enumerate(positions):
+            if mu_ats[i] == 0:
+                cap_thickness_mag += thicknesses[i]*len(l)*1e9
+            else:
+                break
 
-        depth_labels_mag = np.array([np.sum(layer_thicknesses_mag[:i + 1]) for i in range(len(layer_thicknesses_mag))])
+        depth_labels = np.cumsum(layer_thicknesses)-layer_thicknesses[0]
 
-        return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag,\
+        depth_labels_te = np.cumsum(layer_thicknesses_te) + cap_thickness_te - layer_thicknesses_te[0]
+
+        depth_labels_mag = np.cumsum(layer_thicknesses_mag) + cap_thickness_mag - layer_thicknesses_mag[0]
+
+        return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag, \
                depth_labels, depth_labels_te, depth_labels_mag
 
+    def te_tp_plot(self, tp_layers, min_time=None, max_time=None, average=True, save_fig=False, filename=None):
+
+        x = self.delay * 1e12
+
+        if min_time is None:
+            min_time = x[0]
+        if max_time is None:
+            max_time = x[-1]
+
+        first_time_index = finderb(min_time, x)[0]
+        last_time_index = finderb(max_time, x)[0]
+        x = x[first_time_index: last_time_index]
+
+        tes = self.tes[first_time_index: last_time_index]
+        tps = self.tps[first_time_index: last_time_index, tp_layers[0]:tp_layers[1]]
+
+        if average:
+            tes = np.sum(tes, axis=1)/len(tes[0])
+            tps = np.sum(tps, axis=1)/len(tps[0])
+
+        color = [159 / 255, 77 / 255, 92 / 255]
+        plt.figure(figsize=(8, 6))
+        plt.plot(x, tes, color=color, linestyle='dashed', label=r'$T_e$', lw=3.0)
+        plt.plot(x, tps, color=color, label=r'$T_p$', lw=3.0)
+
+        plt.xlabel(r'delay [ps]', fontsize=16)
+        plt.ylabel(r'Temperature [K]', fontsize=16)
+        plt.legend(fontsize=14)
+
+        plt.xlim(x[0], x[-1])
+
+        if save_fig:
+            assert type(filename) == str, 'Denote a filename (path from Results/sim_file) to save the plot.'
+            plt.savefig('Results/' + str(self.file) + '/' + str(filename) + '.png')
+
+        plt.show()
+
+
+
     def map_plot(self, key, kind, min_layer=None, max_layer=None, save_fig=False, filename=None, min_time=None,
-                 max_time=None, color_scale='inferno', text_color='white', vmin=None, vmax=None):
+                 max_time=None, color_scale='inferno', text_color='white', vmin=None, vmax=None, show_title=True):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
 
         # Input:
@@ -135,6 +193,7 @@ class SimPlot:
         # and will be converted to the minimum temperature (or magnetization) in the selected dataset to be plotted.
         # vmax (float). The maximum z-value to which the color map will be scaled. If not specified, default is None
         # and will be converted to the maximum temperature (or magnetization) in the selected dataset to be plotted.
+        # show_title (boolean). If True, automized title depending on the observable will be shown
 
 
         # Returns:
@@ -200,6 +259,7 @@ class SimPlot:
             print('In SimPlot.map_plot(): Please enter a valid key: You can either plot ´te´, ´tp´ or ´mag´.')
             return
 
+        z_all_layers = z[first_time_index:last_time_index, :]
         z = z[first_time_index:last_time_index, min_layer: max_layer]
 
         if vmin is None:
@@ -217,7 +277,8 @@ class SimPlot:
 
             plt.xlabel(r'time [ps]', fontsize=16)
             plt.ylabel(r'sample depth [nm]', fontsize=16)
-            plt.title(str(title), fontsize=20)
+            if show_title:
+                plt.title(str(title), fontsize=20)
             cbar = plt.colorbar(label=str(z_label), norm=norm)
             cbar.set_label(str(z_label), rotation=270, labelpad=15)
 
@@ -236,37 +297,56 @@ class SimPlot:
             surf = ax.plot_surface(x_mesh, y_axis_mesh, z.T, cmap=color_scale,
                                    linewidth=0, antialiased=True)
 
+            ym, yM = y_axis.min(), y_axis.max()
+
             ax.set_zlim(vmin, vmax)
-            ax.set_ylim(y_axis[0], y_axis[-1])
+            ax.set_ylim(ym, yM)
+            ax.set_xlim(x[0], x[-1])
             plt.gca().invert_yaxis()
             plt.colorbar(surf, label=str(z_label), shrink=0.5, aspect=5, norm=norm)
 
-            plt.title(str(title), fontsize=20)
+            if show_title:
+                plt.title(str(title), fontsize=20)
             ax.set_xlabel(r'delay [ps]', fontsize=14)
             ax.set_ylabel(r'sample depth [nm]', fontsize=14)
 
             # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
             colors = [[77 / 255, 77 / 255, 159 / 255], [159 / 255, 77 / 255, 92 / 255], [89 / 255, 159 / 255, 77 / 255]]
             mat_sep_marks = np.append(mat_sep_marks, y_axis[-1])
-            for i, mark in enumerate(mat_sep_marks[1:]):
-                x_mesh, y_mesh = np.meshgrid(range(int(x[-1])+3), range(int(mat_sep_marks[i]), int(mark)))
-                z_mesh = np.ones_like(x_mesh)*np.amin(z)
-                ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[i], alpha=0.5)
 
-            # add lines of the average of tp in each sample constituent:
             if key == 'tp':
-                ym, yM = y_axis.min(), y_axis.max()
-                yg = yM * np.ones(x.shape)
+                # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
+                for i, mark in enumerate(mat_sep_marks[1:]):
+                    x_mesh, y_mesh = np.meshgrid(range(int(x[-1])+3), range(int(mat_sep_marks[i]), int(mark)))
+                    z_mesh = np.ones_like(x_mesh)*np.amin(z)
+                    ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[i], alpha=0.5)
+
+                # add lines of the average of tp in each sample constituent, projected onto xz-plane:
+                yg = np.ones(x.shape) * yM
                 block_separator = np.where(np.array(y_label_mask))[0]
                 for i, pos in enumerate(block_separator[:-1]):
-                    z_block_av = np.sum(z[:, pos:pos+1], axis=1)/(pos+1-pos)
+                    z_block_av = np.sum(z_all_layers[:, pos:pos+1], axis=1)/(pos+1-pos)
                     ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i])
-                z_block_av = np.sum(z[:, block_separator[-1]:], axis=1) / len(y_label_mask[block_separator[-1]:])
+                # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
+                z_block_av = np.sum(z_all_layers[:, block_separator[-1]:], axis=1) / len(z_all_layers.T[block_separator[-1]:])
                 ax.plot(x, yg, z_block_av, color=colors[-1], label=text_above[-1])
 
                 # add line at T_C and the text (T_c manual at 65 K):
-                ax.plot(x, yg, np.ones_like(x)*65, color='grey', alpha=0.5)
-                ax.text(x[-1], yM, 75, r'$T_C$', color='grey', size=14)
+                ax.plot(x, yg, np.ones_like(x)*65, color='black', alpha=0.8)
+                ax.text(x[-1], yM, 75, r'$T_C$', color='black', size=14)
+
+            if key == 'mag' or key == 'te':
+                x_mesh, y_mesh = np.meshgrid(range(int(x[-1])+3), (y_axis[0], y_axis[-1]))
+                z_mesh = np.ones_like(x_mesh)*np.amin(z)
+                ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[1], alpha=0.5)
+
+                if key == 'mag':
+                    yg = yM * np.ones(x.shape)
+                    layer_thickness = 2e-9
+                    pen_dep = 30e-9
+                    exp_decay = np.exp(-np.arange(len(z.T)) * layer_thickness / pen_dep)
+                    kerr = np.sum(z*exp_decay, axis=1)/len(z.T)
+                    ax.plot(x, yg, kerr, color=colors[1])
 
             ax.view_init(20, 30)
 
@@ -407,7 +487,7 @@ class SimPlot:
                     times_to_write.append(entry)
                     write_time_indices.append(write_time_indices_unfiltered[i])
                 else:
-                    if entry*1e13 % 1 ==0:
+                    if entry*1e13 % 1 == 0:
                         times_to_write.append(entry)
                         write_time_indices.append(write_time_indices_unfiltered[i])
 
