@@ -295,7 +295,7 @@ class SimPlot:
             fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
             x_mesh, y_axis_mesh = np.meshgrid(x, y_axis)
             surf = ax.plot_surface(x_mesh, y_axis_mesh, z.T, cmap=color_scale,
-                                   linewidth=0, antialiased=True)
+                                   linewidth=0, antialiased=True, alpha=0.8)
 
             ym, yM = y_axis.min(), y_axis.max()
 
@@ -346,7 +346,8 @@ class SimPlot:
                     pen_dep = 30e-9
                     exp_decay = np.exp(-np.arange(len(z.T)) * layer_thickness / pen_dep)
                     kerr = np.sum(z*exp_decay, axis=1)/len(z.T)
-                    ax.plot(x, yg, kerr, color=colors[1])
+                    kerr /= kerr[first_time_index]
+                    ax.plot(x, yg, kerr, color=colors[1], label=r'CGT')
 
             ax.view_init(20, 30)
 
