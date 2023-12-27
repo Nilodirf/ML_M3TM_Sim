@@ -13,8 +13,13 @@ from mainsim import SimDynamics
 hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=2e-9, vat=1e-28, ce_gamma=0., cp_max=2.645e6, kappap=5.0,
                    kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
 cgt = SimMaterials(name='CGT', pen_dep=30e-9, tdeb=200, dz=2e-9, vat=1e-28, ce_gamma=737., cp_max=1.4e6,
+<<<<<<< Updated upstream
                    kappap=1., kappae=0.0013, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05)
 sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=2e-9, vat=1e-28, ce_gamma=0., cp_max=1.9e6, kappap=1.5,
+=======
+                   kappap=2., kappae=0.0013, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.04)
+sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=403, dz=2e-9, vat=1e-28, ce_gamma=0., cp_max=1.9e6, kappap=2.,
+>>>>>>> Stashed changes
                     kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
 
 # Create a sample, then add desired layers of the materials you want to simulate.

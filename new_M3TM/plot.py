@@ -168,8 +168,6 @@ class SimPlot:
 
         plt.show()
 
-
-
     def map_plot(self, key, kind, min_layer=None, max_layer=None, save_fig=False, filename=None, min_time=None,
                  max_time=None, color_scale='inferno', text_color='white', vmin=None, vmax=None, show_title=True):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
@@ -194,7 +192,6 @@ class SimPlot:
         # vmax (float). The maximum z-value to which the color map will be scaled. If not specified, default is None
         # and will be converted to the maximum temperature (or magnetization) in the selected dataset to be plotted.
         # show_title (boolean). If True, automized title depending on the observable will be shown
-
 
         # Returns:
         # None. After creating the plot and possibly saving it, the functions returns nothing
@@ -289,7 +286,6 @@ class SimPlot:
 
             plt.gca().invert_yaxis()
 
-
         if kind == 'surface':
 
             fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
@@ -358,7 +354,6 @@ class SimPlot:
             plt.savefig('Results/' + str(self.file) + '/' + str(filename) + '.png')
 
         plt.show()
-
 
         return
 
