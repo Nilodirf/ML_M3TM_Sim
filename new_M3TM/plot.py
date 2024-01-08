@@ -131,7 +131,8 @@ class SimPlot:
         return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag, \
                depth_labels, depth_labels_te, depth_labels_mag
 
-    def te_tp_plot(self, tp_layers, min_time=None, max_time=None, average=True, save_fig=False, filename=None):
+    def te_tp_plot(self, tp_layers, average, color_scales=['Blues', 'inferno'], min_time=None, max_time=None,
+                   save_fig=False, filename=None):
 
         x = self.delay * 1e12
 
@@ -147,20 +148,67 @@ class SimPlot:
         tes = self.tes[first_time_index: last_time_index]
         tps = self.tps[first_time_index: last_time_index, tp_layers[0]:tp_layers[1]]
 
+        color = [159 / 255, 77 / 255, 92 / 255]
+
         if average:
             tes = np.sum(tes, axis=1)/len(tes[0])
             tps = np.sum(tps, axis=1)/len(tps[0])
 
-        color = [159 / 255, 77 / 255, 92 / 255]
-        plt.figure(figsize=(8, 6))
-        plt.plot(x, tes, color=color, linestyle='dashed', label=r'$T_e$', lw=3.0)
-        plt.plot(x, tps, color=color, label=r'$T_p$', lw=3.0)
 
-        plt.xlabel(r'delay [ps]', fontsize=16)
-        plt.ylabel(r'Temperature [K]', fontsize=16)
-        plt.legend(fontsize=14)
+            plt.figure(figsize=(8, 6))
+            plt.plot(x, tes, color=color, linestyle='dashed', label=r'$T_e$', lw=3.0)
+            plt.plot(x, tps, color=color, label=r'$T_p$', lw=3.0)
 
-        plt.xlim(x[0], x[-1])
+            plt.xlabel(r'delay [ps]', fontsize=16)
+            plt.ylabel(r'Temperature [K]', fontsize=16)
+            plt.legend(fontsize=14)
+
+            plt.xlim(x[0], x[-1])
+
+        else:
+
+            y_axis = self.depth_labels_te
+            fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
+            x_mesh, y_axis_mesh = np.meshgrid(x, y_axis)
+
+            surf_te = ax.plot_surface(x_mesh, y_axis_mesh, tes.T, cmap=color_scales[0],
+                                      linewidth=0, antialiased=True, alpha=0.8)
+            surf_tp = ax.plot_surface(x_mesh, y_axis_mesh, tps.T, cmap=color_scales[1],
+                                      linewidth=0, antialiased=True, alpha=0.8)
+
+            ym, yM = y_axis.min(), y_axis.max()
+            tem, teM = tes.min(), tes.max()
+            tpm, tpM = tps.min(), tps.max()
+
+            ax.set_zlim(tpm, teM)
+            ax.set_ylim(ym, yM)
+            ax.set_xlim(x[0], x[-1])
+            plt.gca().invert_yaxis()
+            cbar_te = plt.colorbar(surf_te, shrink=0.5, aspect=10)
+            cbar_tp = plt.colorbar(surf_tp, shrink=0.5, aspect=10)
+            cbar_te.set_label(label=r'$T_e$ [K]', fontsize=16)
+            cbar_tp.set_label(label=r'$T_p$ [K]', fontsize=16)
+
+            ax.set_xlabel(r'delay [ps]', fontsize=16)
+            ax.set_ylabel(r'sample depth [nm]', fontsize=16)
+
+            # add color surface at bottom denoting CGT:
+            x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), (y_axis[0], y_axis[-1]))
+            z_mesh = np.ones_like(x_mesh)*tpm
+            ax.plot_surface(x_mesh, y_mesh, z_mesh, color=color, alpha=0.5)
+
+            # add plots of average temperatures in xz-plane:
+            dz = 2e-9
+            pen_dep = 30e-9
+            exp_decay = np.exp(-np.arange(len(tes.T)) * dz / pen_dep)
+            te_av = np.sum(tes * exp_decay, axis=1) / np.sum(exp_decay)
+            tp_av = np.sum(tps * exp_decay, axis=1) / np.sum(exp_decay)
+            ax.plot(x, yM*np.ones_like(x), te_av, color=color, label=r'$T_e$', ls='dashed')
+            ax.plot(x, yM*np.ones_like(x), tp_av, color=color, label=r'$T_p$')
+
+            plt.legend(fontsize=14)
+
+            ax.view_init(20, 30)
 
         if save_fig:
             assert type(filename) == str, 'Denote a filename (path from Results/sim_file) to save the plot.'
@@ -291,7 +339,7 @@ class SimPlot:
             fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
             x_mesh, y_axis_mesh = np.meshgrid(x, y_axis)
             surf = ax.plot_surface(x_mesh, y_axis_mesh, z.T, cmap=color_scale,
-                                   linewidth=0, antialiased=True, alpha=0.8)
+                                   linewidth=0, antialiased=True, alpha=0.8, norm=norm)
 
             ym, yM = y_axis.min(), y_axis.max()
 
@@ -299,8 +347,8 @@ class SimPlot:
             ax.set_ylim(ym, yM)
             ax.set_xlim(x[0], x[-1])
             plt.gca().invert_yaxis()
-            plt.colorbar(surf, label=str(z_label), shrink=0.5, aspect=5, norm=norm)
-
+            cbar = plt.colorbar(surf, shrink=0.5, aspect=10, norm=norm)
+            cbar.set_label(label=str(z_label), fontsize=16)
             if show_title:
                 plt.title(str(title), fontsize=20)
             ax.set_xlabel(r'delay [ps]', fontsize=14)
@@ -314,14 +362,20 @@ class SimPlot:
                 # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
                 for i, mark in enumerate(mat_sep_marks[1:]):
                     x_mesh, y_mesh = np.meshgrid(range(int(x[-1])+3), range(int(mat_sep_marks[i]), int(mark)))
-                    z_mesh = np.ones_like(x_mesh)*np.amin(z)
+                    z_mesh = np.ones_like(x_mesh)*vmin
                     ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[i], alpha=0.5)
 
                 # add lines of the average of tp in each sample constituent, projected onto xz-plane:
                 yg = np.ones(x.shape) * yM
                 block_separator = np.where(np.array(y_label_mask))[0]
                 for i, pos in enumerate(block_separator[:-1]):
-                    z_block_av = np.sum(z_all_layers[:, pos:pos+1], axis=1)/(pos+1-pos)
+                    if i == 1:
+                        dz = 2e-9
+                        pen_dep=30e-9
+                        exp_decay = np.exp(-np.arange(block_separator[i+1]-pos) * dz / pen_dep)
+                        z_block_av = np.sum(z[:, pos:block_separator[i+1]] * exp_decay, axis=1) / np.sum(exp_decay)
+                    else:
+                        z_block_av = np.sum(z_all_layers[:, pos:block_separator[i+1]], axis=1)/(block_separator[i+1]-pos)
                     ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i])
                 # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
                 z_block_av = np.sum(z_all_layers[:, block_separator[-1]:], axis=1) / len(z_all_layers.T[block_separator[-1]:])
@@ -331,9 +385,30 @@ class SimPlot:
                 ax.plot(x, yg, np.ones_like(x)*65, color='black', alpha=0.8)
                 ax.text(x[-1], yM, 75, r'$T_C$', color='black', size=14)
 
+                # add grey box at fixed time for zoom effect (for paper):
+                if max_time >100:
+                    cube_max_x = 15
+                elif max_time >10:
+                    cube_max_x = 6
+                    ym = mat_sep_marks[1]
+                    yM = mat_sep_marks[2]
+                else:
+                    cube_max_x = 0
+
+                x_surf_y, x_surf_z = np.meshgrid((ym, yM), (vmin, vmax))
+                x_surf_x = cube_max_x*np.ones_like(x_surf_y)
+                y_surf_x, y_surf_z = np.meshgrid((0, cube_max_x), (vmin, vmax))
+                y_surf_y = ym * np.ones_like(y_surf_z)
+                z_surf_x, z_surf_y = np.meshgrid((0, cube_max_x), (ym, yM))
+                z_surf_z = vmax*np.ones_like(z_surf_x)
+
+                ax.plot_surface(x_surf_x, x_surf_y, x_surf_z, color='grey', alpha=0.2)
+                ax.plot_surface(y_surf_x, y_surf_y, y_surf_z, color='grey', alpha=0.4)
+                ax.plot_surface(z_surf_x, z_surf_y, z_surf_z, color='grey', alpha=0.6)
+
             if key == 'mag' or key == 'te':
-                x_mesh, y_mesh = np.meshgrid(range(int(x[-1])+3), (y_axis[0], y_axis[-1]))
-                z_mesh = np.ones_like(x_mesh)*np.amin(z)
+                x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), (y_axis[0], y_axis[-1]))
+                z_mesh = np.ones_like(x_mesh)*vmin
                 ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[1], alpha=0.5)
 
                 if key == 'mag':
