@@ -336,6 +336,8 @@ class SimPlot:
 
         if kind == 'surface':
 
+            x = np.log10(x)
+
             fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
             x_mesh, y_axis_mesh = np.meshgrid(x, y_axis)
             surf = ax.plot_surface(x_mesh, y_axis_mesh, z.T, cmap=color_scale,
@@ -346,7 +348,10 @@ class SimPlot:
             ax.set_zlim(vmin, vmax)
             ax.set_ylim(ym, yM)
             ax.set_xlim(x[0], x[-1])
+
+            # ax.set_xscale('log')
             plt.gca().invert_yaxis()
+
             cbar = plt.colorbar(surf, shrink=0.5, aspect=10, norm=norm)
             cbar.set_label(label=str(z_label), fontsize=16)
             if show_title:
@@ -361,7 +366,7 @@ class SimPlot:
             if key == 'tp':
                 # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
                 for i, mark in enumerate(mat_sep_marks[1:]):
-                    x_mesh, y_mesh = np.meshgrid(range(int(x[-1])+3), range(int(mat_sep_marks[i]), int(mark)))
+                    x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), range(int(mat_sep_marks[i]), int(mark)))
                     z_mesh = np.ones_like(x_mesh)*vmin
                     ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[i], alpha=0.5)
 
@@ -371,7 +376,7 @@ class SimPlot:
                 for i, pos in enumerate(block_separator[:-1]):
                     if i == 1:
                         dz = 2e-9
-                        pen_dep=30e-9
+                        pen_dep = 30e-9
                         exp_decay = np.exp(-np.arange(block_separator[i+1]-pos) * dz / pen_dep)
                         z_block_av = np.sum(z[:, pos:block_separator[i+1]] * exp_decay, axis=1) / np.sum(exp_decay)
                     else:
@@ -385,26 +390,26 @@ class SimPlot:
                 ax.plot(x, yg, np.ones_like(x)*65, color='black', alpha=0.8)
                 ax.text(x[-1], yM, 75, r'$T_C$', color='black', size=14)
 
-                # add grey box at fixed time for zoom effect (for paper):
-                if max_time >100:
-                    cube_max_x = 15
-                elif max_time >10:
-                    cube_max_x = 6
-                    ym = mat_sep_marks[1]
-                    yM = mat_sep_marks[2]
-                else:
-                    cube_max_x = 0
-
-                x_surf_y, x_surf_z = np.meshgrid((ym, yM), (vmin, vmax))
-                x_surf_x = cube_max_x*np.ones_like(x_surf_y)
-                y_surf_x, y_surf_z = np.meshgrid((0, cube_max_x), (vmin, vmax))
-                y_surf_y = ym * np.ones_like(y_surf_z)
-                z_surf_x, z_surf_y = np.meshgrid((0, cube_max_x), (ym, yM))
-                z_surf_z = vmax*np.ones_like(z_surf_x)
-
-                ax.plot_surface(x_surf_x, x_surf_y, x_surf_z, color='grey', alpha=0.2)
-                ax.plot_surface(y_surf_x, y_surf_y, y_surf_z, color='grey', alpha=0.4)
-                ax.plot_surface(z_surf_x, z_surf_y, z_surf_z, color='grey', alpha=0.6)
+                # # add grey box at fixed time for zoom effect (for paper):
+                # if max_time >100:
+                #     cube_max_x = np.log10(15)
+                # elif max_time >10:
+                #     cube_max_x = np.log10(6)
+                #     ym = mat_sep_marks[1]
+                #     yM = mat_sep_marks[2]
+                # else:
+                #     cube_max_x = 0
+                #
+                # x_surf_y, x_surf_z = np.meshgrid((ym, yM), (vmin, vmax))
+                # x_surf_x = cube_max_x*np.ones_like(x_surf_y)
+                # y_surf_x, y_surf_z = np.meshgrid((x[0], cube_max_x), (vmin, vmax))
+                # y_surf_y = ym * np.ones_like(y_surf_z)
+                # z_surf_x, z_surf_y = np.meshgrid((x[0], cube_max_x), (ym, yM))
+                # z_surf_z = vmax*np.ones_like(z_surf_x)
+                #
+                # ax.plot_surface(x_surf_x, x_surf_y, x_surf_z, color='grey', alpha=0.2)
+                # ax.plot_surface(y_surf_x, y_surf_y, y_surf_z, color='grey', alpha=0.4)
+                # ax.plot_surface(z_surf_x, z_surf_y, z_surf_z, color='grey', alpha=0.6)
 
             if key == 'mag' or key == 'te':
                 x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), (y_axis[0], y_axis[-1]))
