@@ -336,7 +336,7 @@ class SimPlot:
 
         if kind == 'surface':
 
-            x = np.log10(x)
+            # x = np.log10(x)
 
             fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
             x_mesh, y_axis_mesh = np.meshgrid(x, y_axis)
@@ -349,7 +349,6 @@ class SimPlot:
             ax.set_ylim(ym, yM)
             ax.set_xlim(x[0], x[-1])
 
-            # ax.set_xscale('log')
             plt.gca().invert_yaxis()
 
             cbar = plt.colorbar(surf, shrink=0.5, aspect=10, norm=norm)
@@ -360,7 +359,7 @@ class SimPlot:
             ax.set_ylabel(r'sample depth [nm]', fontsize=14)
 
             # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
-            colors = [[77 / 255, 77 / 255, 159 / 255], [159 / 255, 77 / 255, 92 / 255], [89 / 255, 159 / 255, 77 / 255]]
+            colors = [[76 / 255, 159 / 255, 152 / 255], [159 / 255, 76 / 255, 76 / 255], [159 / 255, 76 / 255, 152 / 255]]
             mat_sep_marks = np.append(mat_sep_marks, y_axis[-1])
 
             if key == 'tp':
@@ -390,26 +389,26 @@ class SimPlot:
                 ax.plot(x, yg, np.ones_like(x)*65, color='black', alpha=0.8)
                 ax.text(x[-1], yM, 75, r'$T_C$', color='black', size=14)
 
-                # # add grey box at fixed time for zoom effect (for paper):
-                # if max_time >100:
-                #     cube_max_x = np.log10(15)
-                # elif max_time >10:
-                #     cube_max_x = np.log10(6)
-                #     ym = mat_sep_marks[1]
-                #     yM = mat_sep_marks[2]
-                # else:
-                #     cube_max_x = 0
-                #
-                # x_surf_y, x_surf_z = np.meshgrid((ym, yM), (vmin, vmax))
-                # x_surf_x = cube_max_x*np.ones_like(x_surf_y)
-                # y_surf_x, y_surf_z = np.meshgrid((x[0], cube_max_x), (vmin, vmax))
-                # y_surf_y = ym * np.ones_like(y_surf_z)
-                # z_surf_x, z_surf_y = np.meshgrid((x[0], cube_max_x), (ym, yM))
-                # z_surf_z = vmax*np.ones_like(z_surf_x)
-                #
-                # ax.plot_surface(x_surf_x, x_surf_y, x_surf_z, color='grey', alpha=0.2)
-                # ax.plot_surface(y_surf_x, y_surf_y, y_surf_z, color='grey', alpha=0.4)
-                # ax.plot_surface(z_surf_x, z_surf_y, z_surf_z, color='grey', alpha=0.6)
+                # add grey box at fixed time for zoom effect (for paper):
+                if max_time >100:
+                    cube_max_x = np.log10(15)
+                elif max_time >10:
+                    cube_max_x = np.log10(6)
+                    ym = mat_sep_marks[1]
+                    yM = mat_sep_marks[2]
+                else:
+                    cube_max_x = 0
+
+                x_surf_y, x_surf_z = np.meshgrid((ym, yM), (vmin, vmax))
+                x_surf_x = cube_max_x*np.ones_like(x_surf_y)
+                y_surf_x, y_surf_z = np.meshgrid((x[0], cube_max_x), (vmin, vmax))
+                y_surf_y = ym * np.ones_like(y_surf_z)
+                z_surf_x, z_surf_y = np.meshgrid((x[0], cube_max_x), (ym, yM))
+                z_surf_z = vmax*np.ones_like(z_surf_x)
+
+                ax.plot_surface(x_surf_x, x_surf_y, x_surf_z, color='grey', alpha=0.2)
+                ax.plot_surface(y_surf_x, y_surf_y, y_surf_z, color='grey', alpha=0.4)
+                ax.plot_surface(z_surf_x, z_surf_y, z_surf_z, color='grey', alpha=0.6)
 
             if key == 'mag' or key == 'te':
                 x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), (y_axis[0], y_axis[-1]))

@@ -12,7 +12,7 @@ plotter = SimPlot(file='fit/thin')
 # plotter.map_plot(key='tp',  save_fig=False)
 
 # plotter.map_plot(key='mag', kind='surface', max_time=5, save_fig=True, filename='thin_eptime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
-plotter.map_plot(key='tp', kind='surface', min_time=0.1, max_time=2000, save_fig=False, filename='thick_smalltime', show_title=False, color_scale='Greens_r')
+plotter.map_plot(key='tp', kind='surface', min_time=0.1, max_time=2000, save_fig=True, filename='thick_smalltime', show_title=False, color_scale='Greens_r')
 
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
