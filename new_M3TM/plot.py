@@ -203,8 +203,8 @@ class SimPlot:
             exp_decay = np.exp(-np.arange(len(tes.T)) * dz / pen_dep)
             te_av = np.sum(tes * exp_decay, axis=1) / np.sum(exp_decay)
             tp_av = np.sum(tps * exp_decay, axis=1) / np.sum(exp_decay)
-            ax.plot(x, yM*np.ones_like(x), te_av, color=color, label=r'$T_e$', ls='dashed')
-            ax.plot(x, yM*np.ones_like(x), tp_av, color=color, label=r'$T_p$')
+            ax.plot(x, yM*np.ones_like(x), te_av, color=color, label=r'$T_e$', ls='dashed', lw=3.0)
+            ax.plot(x, yM*np.ones_like(x), tp_av, color=color, label=r'$T_p$', lw=3.0)
 
             plt.legend(fontsize=14)
 
@@ -378,12 +378,12 @@ class SimPlot:
                         pen_dep = 30e-9
                         exp_decay = np.exp(-np.arange(block_separator[i+1]-pos) * dz / pen_dep)
                         z_block_av = np.sum(z[:, pos:block_separator[i+1]] * exp_decay, axis=1) / np.sum(exp_decay)
-                    else:
-                        z_block_av = np.sum(z_all_layers[:, pos:block_separator[i+1]], axis=1)/(block_separator[i+1]-pos)
-                    ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i])
+                    # else:
+                    z_block_av = np.sum(z_all_layers[:, pos:block_separator[i+1]], axis=1)/(block_separator[i+1]-pos)
+                    ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i], lw=3.0)
                 # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
                 z_block_av = np.sum(z_all_layers[:, block_separator[-1]:], axis=1) / len(z_all_layers.T[block_separator[-1]:])
-                ax.plot(x, yg, z_block_av, color=colors[-1], label=text_above[-1])
+                ax.plot(x, yg, z_block_av, color=colors[-1], label=text_above[-1], lw=3.0)
 
                 # add line at T_C and the text (T_c manual at 65 K):
                 ax.plot(x, yg, np.ones_like(x)*65, color='black', alpha=0.8)
@@ -422,7 +422,7 @@ class SimPlot:
                     exp_decay = np.exp(-np.arange(len(z.T)) * layer_thickness / pen_dep)
                     kerr = np.sum(z*exp_decay, axis=1)/len(z.T)
                     kerr /= kerr[first_time_index]
-                    ax.plot(x, yg, kerr, color=colors[1], label=r'CGT')
+                    ax.plot(x, yg, kerr, color=colors[1], label=r'CGT', lw=3.0)
 
             ax.view_init(20, 30)
 

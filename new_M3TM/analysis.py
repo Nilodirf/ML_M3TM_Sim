@@ -41,27 +41,33 @@ class SimAnalysis(SimComparePlot):
         plt.show()
         return
 
-    def plot_dmdt(self, tc):
+    def plot_dmdt(self):
         m = np.linspace(0, 1, num=100)
-        tem = np.arange(0, 2*tc)
+        tem = np.arange(0, 300)
 
-        R = SimAnalysis.get_R(asf=0.05, gep=15e16, Tdeb=200, Tc=65, Vat=1e-28, mu_at=4)
+        R_CGT = SimAnalysis.get_R(asf=0.05, gep=15e16, Tdeb=200, Tc=65, Vat=1e-28, mu_at=4)
+        R_FGT = SimAnalysis.get_R(asf=0.04, gep=1.33e18, Tdeb=190, Tc=220, Vat=1.7e-29, mu_at=2)
+        R_CrI3 = SimAnalysis.get_R(asf=0.175, gep=4.05e16, Tdeb=134, Tc=61, Vat=1.35e-28, mu_at=3.87)
 
-        mag_av = np.sum(self.mags, axis=1) / len(self.mags[0])
-        te_av = np.sum(self.tes, axis=1) / len(self.mags[0])
-        start_plot = np.where(mag_av == np.amin(mag_av))[0][0]
-        te_rec = te_av[start_plot:]
-        mag_rec = mag_av[start_plot:]
+        # mag_av = np.sum(self.mags, axis=1) / len(self.mags[0])
+        # te_av = np.sum(self.tes, axis=1) / len(self.mags[0])
+        # start_plot = np.where(mag_av == np.amin(mag_av))[0][0]
+        # te_rec = te_av[start_plot:]
+        # mag_rec = mag_av[start_plot:]
 
-        dm_dt = R*m*tem[:, np.newaxis]/tc*(1-m/SimAnalysis.Brillouin(tem, m, 1.5, 65))
+        dm_dt_CGT = R_CGT*m*tem[:, np.newaxis]/65*(1-m/SimAnalysis.Brillouin(tem, m, 1.5, 65))
+        dm_dt_FGT = R_FGT * m * tem[:, np.newaxis] / 220 * (1 - m / SimAnalysis.Brillouin(tem, m, 2, 220))
+        dm_dt_CrI3 = R_CrI3 * m * tem[:, np.newaxis] / 61 * (1 - m / SimAnalysis.Brillouin(tem, m, 1.5, 61))
 
         tem_mesh, m_mesh = np.meshgrid(tem, m)
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
-        surf = ax.plot_surface(m_mesh, tem_mesh, dm_dt.T, cmap='inferno',
+        surf = ax.plot_surface(m_mesh, tem_mesh, dm_dt_CGT.T, cmap='inferno',
+                               linewidth=0, antialiased=True, alpha=0.3)
+        surf = ax.plot_surface(m_mesh, tem_mesh, dm_dt_FGT.T, cmap='Blues',
                                linewidth=0, antialiased=True, alpha=0.3)
         plt.colorbar(surf, label=r'dm/dt', shrink=0.5, aspect=10)
 
-        ax.plot(mag_rec, te_rec, color='black', lw=3.0)
+        # ax.plot(mag_rec, te_rec, color='black', lw=3.0)
 
         ax.set_xlabel(r'magnetization', fontsize=16)
         ax.set_ylabel(r'temperature', fontsize=16)
@@ -72,6 +78,8 @@ class SimAnalysis(SimComparePlot):
 
     @staticmethod
     def get_R(asf, gep, Tdeb, Tc, Vat, mu_at):
+        R = 8*asf*gep/sp.k*Tc**2*Vat/mu_at/Tdeb**2
+        print('R = ', R*1e-12 , '1/ps')
         return 8*asf*gep*sp.k*Tc**2*Vat/mu_at/Tdeb**2
 
     @staticmethod

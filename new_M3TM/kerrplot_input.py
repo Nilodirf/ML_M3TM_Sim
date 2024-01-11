@@ -16,6 +16,8 @@ switch_files = ['fit/thin', 'switch/thin']
 # THIS SETUP IS TO look at changes in cap thickness
 cap_thick_string = 'cap_thick/thin_CGT/cap_layers_'
 
+FGT_tests = ['FGT/thin_free', 'FGT/thin_free_Sumit']
+
 # THIS compares thick and thin CGT
 cap_thick_list = np.array([3, 7, 10, 15, 20, 30]).astype(str)
 
@@ -24,7 +26,8 @@ cap_thick_list = np.array([3, 7, 10, 15, 20, 30]).astype(str)
 # compare_plotter_cp = SimComparePlot([cp_string_default + i + kp_string for i in cp_string_list])
 # compare_plotter_capthick = SimComparePlot([cap_thick_string + i for i in cap_thick_list])
 # compare_plotter_thinthick = SimComparePlot(thin_thick_files)
-compare_plotter_switch = SimComparePlot(switch_files)
+# compare_plotter_switch = SimComparePlot(switch_files)
+compare_plotter_FGT = SimComparePlot(FGT_tests)
 
 
 
@@ -36,7 +39,9 @@ compare_plotter_switch = SimComparePlot(switch_files)
 #                              filename='cap/thin_CGT/different_cp', norm=False)
 # compare_plotter_capthick.kerr_plot(pen_dep=30e-9, layer_thickness=2.0e-9, min_time=0, max_time=3000, save_fig=True,
 #                               filename='cap_thick/thin_CGT/different_thicks', norm=False)
-# compare_plotter_thinthick.kerr_plot(pen_dep=15e-9, layer_thickness=2.0e-9, min_time=0, max_time=3000, save_fig=False,
-#                               filename='thin_thick_compare', norm=True)
-compare_plotter_switch.kerr_plot(pen_dep=15e-9, layer_thickness=2.0e-9, min_time=0, max_time=3000, save_fig=False,
-                                    filename='thin_thick_compare', norm=True)
+# compare_plotter_thinthick.kerr_plot(pen_dep=13.5e-9, layer_thickness=2.0e-9, min_time=0, max_time=3000, save_fig=False,
+#                                     filename='thin_thick_compare', norm=False)
+# compare_plotter_switch.kerr_plot(pen_dep=15e-9, layer_thickness=2.0e-9, min_time=0, max_time=3000, save_fig=False,
+#                                    filename='thin_thick_compare', norm=True)
+compare_plotter_FGT.kerr_plot(pen_dep=30e-9, layer_thickness=1.0e-9, min_time=0, max_time=400, save_fig=False,
+                                    filename='FGT_compare', norm=False)
