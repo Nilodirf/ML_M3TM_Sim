@@ -378,8 +378,8 @@ class SimPlot:
                         pen_dep = 30e-9
                         exp_decay = np.exp(-np.arange(block_separator[i+1]-pos) * dz / pen_dep)
                         z_block_av = np.sum(z[:, pos:block_separator[i+1]] * exp_decay, axis=1) / np.sum(exp_decay)
-                    # else:
-                    z_block_av = np.sum(z_all_layers[:, pos:block_separator[i+1]], axis=1)/(block_separator[i+1]-pos)
+                    else:
+                        z_block_av = np.sum(z_all_layers[:, pos:block_separator[i+1]], axis=1)/(block_separator[i+1]-pos)
                     ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i], lw=3.0)
                 # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
                 z_block_av = np.sum(z_all_layers[:, block_separator[-1]:], axis=1) / len(z_all_layers.T[block_separator[-1]:])
@@ -390,14 +390,9 @@ class SimPlot:
                 ax.text(x[-1], yM, 75, r'$T_C$', color='black', size=14)
 
                 # add grey box at fixed time for zoom effect (for paper):
-                if max_time >100:
-                    cube_max_x = np.log10(15)
-                elif max_time >10:
-                    cube_max_x = np.log10(6)
-                    ym = mat_sep_marks[1]
-                    yM = mat_sep_marks[2]
-                else:
-                    cube_max_x = 0
+                cube_max_x = 6
+                ym = mat_sep_marks[1]
+                yM = mat_sep_marks[2]
 
                 x_surf_y, x_surf_z = np.meshgrid((ym, yM), (vmin, vmax))
                 x_surf_x = cube_max_x*np.ones_like(x_surf_y)
