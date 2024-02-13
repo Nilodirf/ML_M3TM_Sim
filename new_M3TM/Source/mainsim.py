@@ -1,11 +1,10 @@
 import numpy as np
-from scipy import constants as sp
-from finderb import finderb
 from scipy.integrate import solve_ivp
 import os
 import time
+from scipy import constants as sp
 
-
+from .finderb import finderb
 class SimDynamics:
     # This is the main Simulation class that holds all methods to compute dynamics of the extended M3TM.
     def __init__(self, sample, pulse, end_time, ini_temp, solver, max_step, atol=1e-6, rtol=1e-3):
@@ -172,13 +171,13 @@ class SimDynamics:
         # in equilibrium with the initial temperature profile (for now only uniform) in a flattened format
 
         # increase the damping to speed up the equilibration process:
-        arbsc_sam_eq = arbsc_sam*1e5
+        arbsc_sam_eq = arbsc_sam*1e6
 
         # call solver to equilibrate magnetization:
         eq_sol = solve_ivp(lambda t, fs: SimDynamics.get_m_eq_increments(fs, j_sam, spin_sam, arbsc_sam_eq,
                                                                          s_up_eig_sq_sam, s_dn_eig_sq_sam,
                                                                          te0, tp0, el_mag_mask, ms_sam, mag_num),
-                           y0=fs0, t_span=(0, 5e-12), method='RK23')
+                           y0=fs0, t_span=(0, 10e-12), method='RK45')
 
         # flatten the output for further calculation:
         fs_eq_flat = eq_sol.y.T[-1]

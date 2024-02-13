@@ -3,11 +3,11 @@
 # Unless explicitly stated otherwise, all parameters are to be put in SI units.
 # Short documentation of the simulation setup is given before each block here.
 
-# Import classes from other files to set up materials, sample and pulse:
-from mats import SimMaterials
-from sample import SimSample
-from pulse import SimPulse
-from mainsim import SimDynamics
+# Import classes from other files to set up materials, sample, pulse and the dynamical functions:
+from ..Source.mats import SimMaterials
+from ..Source.sample import SimSample
+from ..Source.pulse import SimPulse
+from ..Source.mainsim import SimDynamics
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
 hbn = SimMaterials(name='hBN', pen_dep=1, tdeb=400, dz=2e-9, vat=1e-28, ce_gamma=0., cp_max=2.645e6, kappap=5.0,
@@ -25,18 +25,18 @@ cri3 = SimMaterials(name='CrI3', pen_dep=30e-9, tdeb=134, dz=1e-9, vat=1.35e-28,
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
 sample = SimSample()
-#sample.add_layers(material=hbn, layers=8)
-sample.add_layers(material=fgt, layers=16, kappap_int='av')
-#sample.add_layers(material=sio2, layers=75, kappap_int='av')
+sample.add_layers(material=hbn, layers=8)
+sample.add_layers(material=cgt, layers=75, kappap_int='av')
+sample.add_layers(material=sio2, layers=75, kappap_int='av')
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, pulse_width=60e-15, fluence=1.5, delay=1e-12)
+pulse = SimPulse(sample=sample, pulse_width=60e-15, fluence=0.1, delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, then run the solve function:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=2e-9, ini_temp=80., solver='RK45', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=2e-9, ini_temp=5., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='FGT/thin_free')
+sim.save_data(solution, save_file='CGT/small_flu/thick')

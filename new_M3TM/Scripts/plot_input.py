@@ -1,6 +1,6 @@
 # Here you can call some plot functions, plot and save plots
 
-from plot import SimPlot
+from Source.plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':

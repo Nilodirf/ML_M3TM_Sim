@@ -1,12 +1,11 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors as mplcol
-from finderb import finderb
 from scipy import constants as sp
 from scipy import interpolate as ip
 
-from plot import SimPlot
-from plot import SimComparePlot
+from .plot import SimComparePlot
+from .plot import SimPlot
 
 
 class SimAnalysis(SimComparePlot):
@@ -122,7 +121,7 @@ class SimAnalysis(SimComparePlot):
 
         # Define a function to find the intersection of m and B(m, T) for given T with scipy:
         def find_intersection_sp(m, Bm, m0):
-            return op.fsolve(lambda x: m(x) - Bm(x), m0)
+            return ip.fsolve(lambda x: m(x) - Bm(x), m0)
 
         # Find meq for every temperature, starting point for the search being (1-T/Tc)^(1/2), fill the list
         for i, T in enumerate(temp_grid[1:]):
@@ -132,8 +131,7 @@ class SimAnalysis(SimComparePlot):
 
             # Get meq:
             meq = find_intersection_sp(mag, Brillouin_2, np.sqrt(1 - T))
-            if meq[
-                0] < 0:  # This is a comletely unwarranted fix for values of meq<0 at temperatures very close to Tc, that fsolve produces. It seems to work though, as the interpolated function plotted by plot_mean_mags() seems clean.
+            if meq[0] < 0:  # This is a comletely unwarranted fix for values of meq<0 at temperatures very close to Tc, that fsolve produces. It seems to work though, as the interpolated function plotted by plot_mean_mags() seems clean.
                 meq[0] *= -1
             # Append it to list me(T)
             meq_list.append(meq[0])
@@ -141,6 +139,24 @@ class SimAnalysis(SimComparePlot):
             -1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
         return ip.interp1d(temp_grid, meq_list)
 
+    @staticmethod
+    def get_umd_data(mat):
 
+        assert mat == 'cri3' or 'cgt' or 'fgt', 'Choose cri3, cgt or fgt'
 
+        if mat == 'cri3':
+            data = np.loadtxt('C:/Users/Theodor Griepe/Desktop/ultrafast mag dynamics/CrI3_dat.txt')
+        elif mat == 'cgt':
+            data = np.loadtxt('C:/Users/Theodor Griepe/Desktop/ultrafast mag dynamics/CGT_dat.txt')
+        elif mat == 'fgt':
+            data = np.loadtxt('C:/Users/Theodor Griepe/Documents/GitHub/FGT/plot/exp/mag.txt')
 
+        delay = data[:, 0]
+        mag = data[:, 1]
+        return delay, mag
+
+    @staticmethod
+    def fit_umd_data(mat, file):
+        exp_data = SimAnalysis.get_umd_data(mat)
+        sim_data = SimPlot(file)
+        delay, tes, tps, mags = sim_data.get_data()[:3]
