@@ -145,9 +145,10 @@ class SimAnalysis(SimComparePlot):
         assert mat == 'cri3' or 'cgt' or 'fgt', 'Choose cri3, cgt or fgt'
 
         if mat == 'cri3':
-            data = np.loadtxt('C:/Users/Theodor Griepe/Desktop/ultrafast mag dynamics/CrI3_dat.txt')
+            data = np.loadtxt('ultrafast mag dynamics/CrI3_dat.txt')
         elif mat == 'cgt':
-            data = np.loadtxt('C:/Users/Theodor Griepe/Desktop/ultrafast mag dynamics/CGT_dat.txt')
+            data = np.loadtxt('ultrafast mag dynamics/CGT_dat.txt')
+            data[:, 1] = -data[:, 1] - 1
         elif mat == 'fgt':
             data = np.loadtxt('C:/Users/Theodor Griepe/Documents/GitHub/FGT/plot/exp/mag.txt')
 
@@ -160,3 +161,12 @@ class SimAnalysis(SimComparePlot):
         exp_data = SimAnalysis.get_umd_data(mat)
         sim_data = SimPlot(file)
         delay, tes, tps, mags = sim_data.get_data()[:4]
+
+        plt.figure(figsize=(8, 6))
+        plt.scatter(exp_data[0], exp_data[1])
+        plt.plot(delay*1e12, mags[:, 0]-1)
+
+        plt.xlabel(r'delay [ps]', fontsize=16)
+        plt.ylabel(r'magnetization [ps]', fontsize=16)
+        plt.show()
+        return
