@@ -167,6 +167,6 @@ class SimAnalysis(SimComparePlot):
         plt.plot(delay*1e12, mags[:, 0]-1)
 
         plt.xlabel(r'delay [ps]', fontsize=16)
-        plt.ylabel(r'magnetization [ps]', fontsize=16)
+        plt.ylabel(r'magnetization', fontsize=16)
         plt.show()
         return
