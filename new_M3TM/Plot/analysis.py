@@ -150,7 +150,8 @@ class SimAnalysis(SimComparePlot):
             data = np.loadtxt('ultrafast mag dynamics/CGT_dat.txt')
             data[:, 1] = -data[:, 1] - 1
         elif mat == 'fgt':
-            data = np.loadtxt('C:/Users/Theodor Griepe/Documents/GitHub/FGT/plot/exp/mag.txt')
+            data = np.loadtxt('ultrafast mag dynamics/FGT_dat.txt')
+            data[:, 1] = data[:, 1]/data[0, 1] - 1
 
         delay = data[:, 0]
         mag = data[:, 1]
@@ -161,6 +162,7 @@ class SimAnalysis(SimComparePlot):
         exp_data = SimAnalysis.get_umd_data(mat)
         sim_data = SimPlot(file)
         delay, tes, tps, mags = sim_data.get_data()[:4]
+        mags /= mags[0, 0]
 
         plt.figure(figsize=(8, 6))
         plt.scatter(exp_data[0], exp_data[1])
