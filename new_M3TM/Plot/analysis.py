@@ -159,4 +159,4 @@ class SimAnalysis(SimComparePlot):
     def fit_umd_data(mat, file):
         exp_data = SimAnalysis.get_umd_data(mat)
         sim_data = SimPlot(file)
-        delay, tes, tps, mags = sim_data.get_data()[:3]
+        delay, tes, tps, mags = sim_data.get_data()[:4]

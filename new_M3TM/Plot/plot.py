@@ -3,7 +3,7 @@ from matplotlib import colors as mplcol
 from matplotlib import pyplot as plt
 from ..Source.finderb import finderb
 import ast
-import os
+
 
 
 class SimPlot:
@@ -41,8 +41,6 @@ class SimPlot:
         # depth_labels (numpy array). 1d-array of labels for map-plots, containing the depth of the sample in m.
         # depth_labels_te(mag) (numpy arrays). Depth labels for electronic (magnetic) layers in the sample
 
-        path = os.getcwd()
-        print(path)
         path = 'Results/' + str(self.file) + '/'
         delay = np.load(path + 'delay.npy')
         tes = np.load(path + 'tes.npy')
