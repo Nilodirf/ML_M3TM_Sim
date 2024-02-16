@@ -153,7 +153,12 @@ class SimAnalysis(SimComparePlot):
         elif mat == 'fgt':
             data = np.loadtxt('ultrafast mag dynamics/FGT_dat.txt')
             data[:, 1] = data[:, 1]/data[0, 1] - 1
-
+        elif mat == 'cgt_thin':
+            data = np.loadtxt('ultrafast mag dynamics/CGT_thin_dat.txt')
+            data[:, 0] += 4
+        elif mat == 'cgt_thick':
+            data = np.loadtxt('ultrafast mag dynamics/CGT_thick_dat.txt')
+            data[:, 0] += 4
         delay = data[:, 0]
         mag = data[:, 1]
         return delay, mag
@@ -175,13 +180,29 @@ class SimAnalysis(SimComparePlot):
                 plt.scatter(exp_data[0], exp_data[1])
                 plt.plot(delay * 1e12, mags[:, 0] - 1, label=loop_mat)
                 plt.legend(fontsize=14)
+
+        elif mat == 'cgt_long':
+            assert type(file) is list and len(file) == 2
+            mats = ['cgt_thin', 'cgt_thick']
+            for loop_mat, loop_file in zip(mats, file):
+                exp_data = SimAnalysis.get_umd_data(loop_mat)
+                sim_data = SimPlot(loop_file)
+                delay, tes, tps, mags = sim_data.get_data()[:4]
+                if loop_mat == 'cgt_thin':
+                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=2.5e-9, layer_thick=2e-9, norm=True)
+                else:
+                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=15e-9, layer_thick=2e-9, norm=True)
+
+                plt.scatter(exp_data[0], exp_data[1], s=4.0)
+                plt.plot(delay * 1e12, mags, label=loop_mat, lw=2.0)
+                plt.legend(fontsize=14)
+
         else:
             exp_data = SimAnalysis.get_umd_data(mat)
             sim_data = SimPlot(file)
             delay, tes, tps, mags = sim_data.get_data()[:4]
             mags /= mags[0, 0]
 
-            plt.figure(figsize=(8, 6))
             plt.scatter(exp_data[0], exp_data[1])
             plt.plot(delay*1e12, mags[:, 0]-1)
 
@@ -192,3 +213,13 @@ class SimAnalysis(SimComparePlot):
 
         plt.show()
         return
+
+    @staticmethod
+    def get_kerr(mags, pen_dep, layer_thick, norm):
+        exp_decay = np.exp(-np.arange(len(mags.T)) * layer_thick / pen_dep)
+        kerr_signal = np.sum(np.multiply(mags, exp_decay[np.newaxis, ...]), axis=1)
+        if norm:
+            kerr_signal = (kerr_signal - kerr_signal[0]) \
+                               / np.abs(np.amin(kerr_signal - kerr_signal[0]))
+        return kerr_signal
+
