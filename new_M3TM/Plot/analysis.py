@@ -149,6 +149,7 @@ class SimAnalysis(SimComparePlot):
         elif mat == 'cgt':
             data = np.loadtxt('ultrafast mag dynamics/CGT_dat.txt')
             data[:, 1] = -data[:, 1] - 1
+            data[:, 0] += 0.35
         elif mat == 'fgt':
             data = np.loadtxt('ultrafast mag dynamics/FGT_dat.txt')
             data[:, 1] = data[:, 1]/data[0, 1] - 1
@@ -159,16 +160,35 @@ class SimAnalysis(SimComparePlot):
 
     @staticmethod
     def fit_umd_data(mat, file):
-        exp_data = SimAnalysis.get_umd_data(mat)
-        sim_data = SimPlot(file)
-        delay, tes, tps, mags = sim_data.get_data()[:4]
-        mags /= mags[0, 0]
 
         plt.figure(figsize=(8, 6))
-        plt.scatter(exp_data[0], exp_data[1])
-        plt.plot(delay*1e12, mags[:, 0]-1)
+
+        if mat == 'all':
+            assert type(file) is list and len(file) == 3, 'Give three simulations as well'
+            mats = ['cgt', 'fgt', 'cri3']
+            for loop_mat, loop_file in zip(mats, file):
+                exp_data = SimAnalysis.get_umd_data(loop_mat)
+                sim_data = SimPlot(loop_file)
+                delay, tes, tps, mags = sim_data.get_data()[:4]
+                mags /= mags[0, 0]
+
+                plt.scatter(exp_data[0], exp_data[1])
+                plt.plot(delay * 1e12, mags[:, 0] - 1, label=loop_mat)
+                plt.legend(fontsize=14)
+        else:
+            exp_data = SimAnalysis.get_umd_data(mat)
+            sim_data = SimPlot(file)
+            delay, tes, tps, mags = sim_data.get_data()[:4]
+            mags /= mags[0, 0]
+
+            plt.figure(figsize=(8, 6))
+            plt.scatter(exp_data[0], exp_data[1])
+            plt.plot(delay*1e12, mags[:, 0]-1)
+
+        # plt.xlim(-1, 25)
 
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(r'magnetization', fontsize=16)
+
         plt.show()
         return

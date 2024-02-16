@@ -54,7 +54,6 @@ class SimDynamics:
             rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-14, self.end_time, 1e-14)))
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
 
-
         return time_grid
 
     def initialize_temperature(self):
@@ -102,6 +101,7 @@ class SimDynamics:
 
         # Returns:
         # all_sol (object). The solution and details of the simulation run by solve_ivp
+
 
         start_time = time.time()
 
@@ -171,13 +171,13 @@ class SimDynamics:
         # in equilibrium with the initial temperature profile (for now only uniform) in a flattened format
 
         # increase the damping to speed up the equilibration process:
-        arbsc_sam_eq = arbsc_sam*1e3
+        arbsc_sam_eq = arbsc_sam*1e5
 
         # call solver to equilibrate magnetization:
         eq_sol = solve_ivp(lambda t, fs: SimDynamics.get_m_eq_increments(fs, j_sam, spin_sam, arbsc_sam_eq,
                                                                          s_up_eig_sq_sam, s_dn_eig_sq_sam,
                                                                          te0, tp0, el_mag_mask, ms_sam, mag_num),
-                           y0=fs0, t_span=(0, 10e-12), method='RK23')
+                           y0=fs0, t_span=(0, 10e-12), method='RK45')
 
         # flatten the output for further calculation:
         fs_eq_flat = eq_sol.y.T[-1]
