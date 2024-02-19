@@ -4,7 +4,7 @@ from ..Plot.plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='fit/thin_new')
+plotter = SimPlot(file='cgt/thin_multilayer')
 
 # plotter.convert_to_dat()
 
@@ -13,7 +13,7 @@ plotter = SimPlot(file='fit/thin_new')
 
 # plotter.map_plot(key='mag', kind='surface', max_time=5, save_fig=False, filename='thin_eptime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
 # plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=True, filename='thick_alltime_mag', show_title=False, color_scale='inferno', vmin=0., vmax=1)
-# plotter.map_plot(key='tp', kind='surface', max_time=2000, save_fig=True, filename='thick_alltime', show_title=False, color_scale='Blues_r')
+plotter.map_plot(key='tp', kind='surface', max_time=150, save_fig=True, filename='thick_alltime', show_title=False, color_scale='Blues_r')
 
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:

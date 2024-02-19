@@ -1,10 +1,12 @@
 import numpy as np
+import scipy
 from matplotlib import pyplot as plt
 from scipy import constants as sp
 from scipy import interpolate as ip
 
 from .plot import SimComparePlot
 from .plot import SimPlot
+from ..Source.finderb import finderb
 
 
 class SimAnalysis(SimComparePlot):
@@ -147,6 +149,7 @@ class SimAnalysis(SimComparePlot):
             data = np.loadtxt('ultrafast mag dynamics/CrI3_dat.txt')
         elif mat == 'cgt':
             data = np.loadtxt('ultrafast mag dynamics/CGT_dat.txt')
+            data[:, 1] = -data[:, 1] - 1
             data[:, 0] += 0.35
         elif mat == 'fgt':
             data = np.loadtxt('ultrafast mag dynamics/FGT_dat.txt')
@@ -197,7 +200,7 @@ class SimAnalysis(SimComparePlot):
 
         else:
             exp_data = SimAnalysis.get_umd_data(mat)
-            sim_data = SimPlot(file)
+            sim_data = SimPlot(file).get_data()[:4]
             delay, tes, tps, mags = sim_data.get_data()[:4]
             mags /= mags[0, 0]
 
@@ -220,4 +223,50 @@ class SimAnalysis(SimComparePlot):
             kerr_signal = (kerr_signal - kerr_signal[0]) \
                                / np.abs(np.amin(kerr_signal - kerr_signal[0]))
         return kerr_signal
+
+    @staticmethod
+    def fit_phonon_decay(file, first_layer_index, last_layer_index, start_time, end_time=None):
+
+        # get the simulation data needed:
+        sim_data = SimPlot(file).get_data()
+        sim_delay = sim_data[0]
+        sim_tp = sim_data[2]
+
+        # if no end_time is chosen, set it at the last timestep:
+        if end_time is None:
+            end_time = sim_delay[-1]
+
+        # find the indices corresponding to the chosen time intervall:
+        first_time_index = finderb(start_time, sim_delay)[0]
+        last_time_index = finderb(end_time, sim_delay)[0]
+
+        # restrict the data to the time intervall:
+        sim_delay = sim_delay[first_time_index: last_time_index]
+        sim_tp = sim_tp[first_time_index: last_time_index, first_layer_index: last_layer_index+1]
+
+        # average the phonon temperature dynamics:
+        sim_tp_av = np.sum(sim_tp, axis=1)/(np.abs(first_layer_index-(last_layer_index+1)))
+
+        # define the fit function:
+        def phonon_exp_fit(t, T0, Teq, exponent):
+            return (T0-Teq)*np.exp(-1/exponent*(t-sim_delay[0]))+Teq
+
+        p0 = [sim_tp_av[0], sim_tp_av[0]/5, 1e-9]
+        popt, cv = scipy.optimize.curve_fit(phonon_exp_fit, sim_delay, sim_tp_av, p0)
+
+        print('T_0, T_eq, exponent [s] = ', popt)
+        print('standard deviation:', np.sqrt(np.diag(cv)))
+
+        plt.plot(sim_delay, sim_tp_av, label=r'simulation')
+        plt.plot(sim_delay, phonon_exp_fit(sim_delay, *popt), label=r'fit')
+
+        plt.legend(fontsize=14)
+        plt.xlabel(r'delay [ps]')
+        plt.ylabel(r'averaged phonon temperature [K]')
+        plt.show()
+
+        return popt, cv
+
+
+
 
