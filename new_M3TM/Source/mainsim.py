@@ -210,7 +210,6 @@ class SimDynamics:
                                          te0, tp0, el_mag_mask)
         return dfs_dt.flatten()
 
-
     @staticmethod
     def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, el_mag_mask,
                            mag_mask, el_mask, ce_gamma_sam,
@@ -249,9 +248,17 @@ class SimDynamics:
         dtp_dt = np.zeros(len_sam)
 
         dte_dt, dtp_dt[el_mask] = SimDynamics.loc_temp_dyn(ce_sam_t, cp_sam_t[el_mask], gep_sam, te,
-                                                                    tp[el_mask], pulse_t, mag_en_t, el_mag_mask)
-        dte_dt_diff = SimDynamics.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp[el_mask])
-        dtp_dt_diff = SimDynamics.phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp)
+                                                           tp[el_mask], pulse_t, mag_en_t, el_mag_mask)
+
+        if len(te) == 1:
+            dte_dt_diff = np.zeros(1)
+        else:
+            dte_dt_diff = SimDynamics.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp[el_mask])
+        if len(tp) == 1:
+            dtp_dt_diff = np.zeros(1)
+        else:
+            dtp_dt_diff = SimDynamics.phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp)
+
         dte_dt += dte_dt_diff
         dtp_dt += dtp_dt_diff
 
