@@ -5,7 +5,6 @@ from ..Source.finderb import finderb
 import ast
 
 
-
 class SimPlot:
     # This class can visualize already saved simulations.
     def __init__(self, file):
