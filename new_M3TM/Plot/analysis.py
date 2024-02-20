@@ -282,8 +282,6 @@ class SimAnalysis(SimComparePlot):
         first_time_index = finderb(t1, sim_delay)[0]
         second_time_index = finderb(np.amin(mag_av), mag_av)[0]
 
-        print(finderb(0.1, mag_av))
-
         # restrict the data to the time intervals:
         delay_phase_1 = sim_delay[first_time_index: second_time_index]
         mag_phase_1 = mag_av[first_time_index: second_time_index]
