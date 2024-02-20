@@ -210,7 +210,7 @@ class SimAnalysis(SimComparePlot):
         # plt.xlim(-1, 25)
 
         plt.xlabel(r'delay [ps]', fontsize=16)
-        plt.ylabel(r'magnetization', fontsize=16)
+        plt.ylabel(r'Kerr signal', fontsize=16)
 
         plt.show()
         return
@@ -267,6 +267,43 @@ class SimAnalysis(SimComparePlot):
 
         return popt, cv
 
+    @staticmethod
+    def fit_mag_data(file, t1):
 
+        # get the data to fit:
+        sim_data = SimPlot(file).get_data()
+        sim_delay = sim_data[0]
+        sim_mags = sim_data[3]
 
+        # average the magnetization:
+        mag_av = np.sum(sim_mags, axis=1)/len(sim_mags[0])
 
+        # sort out the time intervals
+        first_time_index = finderb(t1, sim_delay)[0]
+        second_time_index = finderb(np.amin(mag_av), mag_av)[0]
+
+        print(finderb(0.1, mag_av))
+
+        # restrict the data to the time intervals:
+        delay_phase_1 = sim_delay[first_time_index: second_time_index]
+        mag_phase_1 = mag_av[first_time_index: second_time_index]
+
+        delay_phase_2 = sim_delay[second_time_index:]
+        mag_phase_2 = mag_av[second_time_index:]
+
+        # define fit functions:
+        def exp_phase_1(t, m0, m_min, a):
+            return (m0-m_min) * np.exp(-a*t) + m_min
+
+        def exp_phase_2(t, t_mid, m_min, m_inf, a):
+            return (m_inf-m_min) * np.tanh(a*(t-t_mid)) + m_inf
+
+        popt_1, cv_1 = scipy.optimize.curve_fit(exp_phase_1, delay_phase_1, mag_phase_1)
+        popt_2, cv_2 = scipy.optimize.curve_fit(exp_phase_2, delay_phase_2, mag_phase_2)
+
+        plt.plot(sim_delay, mag_av, label='sim', ls='.', color='orange')
+        plt.plot(delay_phase_1, exp_phase_1(delay_phase_1, *popt_1), color='pink', label='exp')
+        plt.plot(delay_phase_2, exp_phase_1(delay_phase_2, *popt_2), color='purple', label='tanh')
+        plt.show()
+
+        return popt_1, cv_1, popt_2, cv_2

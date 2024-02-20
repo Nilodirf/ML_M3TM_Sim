@@ -89,7 +89,7 @@ class SimPlot:
 
         layer_labels = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                                  for position in positions_line]
-                                                 for i, positions_line in enumerate(positions)]))
+                                                 for i, positions_line in enumerate(positions)], dtype=object))
 
         layer_labels_te = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                          for position in positions_line]
@@ -100,7 +100,7 @@ class SimPlot:
                                           for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))
 
         layer_thicknesses = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
-                                           for i, positions_line in enumerate(positions)]))*1e9
+                                           for i, positions_line in enumerate(positions)], dtype=object))*1e9
 
         layer_thicknesses_te = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
                                               for i, positions_line in enumerate(positions) if gamma_els[i] != 0]))*1e9
