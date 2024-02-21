@@ -337,6 +337,13 @@ class SimAnalysis(SimComparePlot):
         # def exp_phase_2(t, t_mid, m_min, m_inf, a):
         #     return (m_inf-m_min) * np.tanh((t-t_mid)/a) + m_inf
 
+        mag_diff = np.diff(mag_av)
+        time_diff = np.diff(sim_delay)
+        dm_dt = mag_diff/time_diff
+
+        plt.plot(sim_delay[1:], mag_diff)
+        plt.show()
+
         def exp_tanh(t, offset, exp_scale, exp_offset, tau_1, tanh_scale, tanh_offset, tau_2):
 
             exp_part = exp_scale*np.exp(-(t-exp_offset)/tau_1)
