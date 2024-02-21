@@ -27,6 +27,7 @@ class SimAnalysis(SimComparePlot):
                 return np.real(np.sqrt(1-tem/tc))
 
             te_rec = te_av[start_plot:]
+
             mag_rec = mag_av[start_plot:]
 
             plt.plot(te_rec, mag_rec, label=str(file))
@@ -317,24 +318,24 @@ class SimAnalysis(SimComparePlot):
 
         # sort out the time intervals
         first_time_index = finderb(t1, sim_delay)[0]
-        second_time_index = finder_nosort(np.amin(mag_av), mag_av)[0]
+        # second_time_index = finder_nosort(np.amin(mag_av), mag_av)[0]
 
         # restrict the data to the time intervals:
-        delay_phase_1 = sim_delay[first_time_index: second_time_index]
-        mag_phase_1 = mag_av[first_time_index: second_time_index]
+        # delay_phase_1 = sim_delay[first_time_index: second_time_index]
+        # mag_phase_1 = mag_av[first_time_index: second_time_index]
 
-        delay_phase_2 = sim_delay[second_time_index:]
-        mag_phase_2 = mag_av[second_time_index:]
+        # delay_phase_2 = sim_delay[second_time_index:]
+        # mag_phase_2 = mag_av[second_time_index:]
 
         delay_phase_12 = sim_delay[first_time_index:]
         mag_phase_12 = mag_av[first_time_index:]
 
         # define fit functions:
-        def exp_phase_1(t, m0, m_min, a):
-            return (m0-m_min) * np.exp(-t/a) + m_min
+        # def exp_phase_1(t, m0, m_min, a):
+        #     return (m0-m_min) * np.exp(-t/a) + m_min
 
-        def exp_phase_2(t, t_mid, m_min, m_inf, a):
-            return (m_inf-m_min) * np.tanh((t-t_mid)/a) + m_inf
+        # def exp_phase_2(t, t_mid, m_min, m_inf, a):
+        #     return (m_inf-m_min) * np.tanh((t-t_mid)/a) + m_inf
 
         def exp_tanh(t, offset, exp_scale, exp_offset, tau_1, tanh_scale, tanh_offset, tau_2):
 
@@ -344,9 +345,9 @@ class SimAnalysis(SimComparePlot):
 
             return full_func
 
-        p0_1 = [0.8, 0.1, 1e-10]
-        p0_2 = [1e-9, 0.1, 1, 1e-9]
-        p0_all = [0.5, 0.3, 4e-12 ,1e-10, 0.3, 1e-9, 5e-10]
+        # p0_1 = [0.8, 0.1, 1e-10]
+        # p0_2 = [1e-9, 0.1, 1, 1e-9]
+        p0_all = [0.5, 0.3, 4e-12, 1e-10, 0.3, 1e-9, 5e-10]
 
         # popt_1, cv_1 = scipy.optimize.curve_fit(exp_phase_1, delay_phase_1, mag_phase_1, p0_1)
         # popt_2, cv_2 = scipy.optimize.curve_fit(exp_phase_2, delay_phase_2, mag_phase_2, p0_2)
@@ -362,10 +363,9 @@ class SimAnalysis(SimComparePlot):
         # plt.plot(delay_phase_2, exp_phase_2(delay_phase_2, *popt_2), color='purple', label='tanh')
         plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='combined')
 
-
         plt.legend(fontsize=14)
         plt.xlabel(r'delay [s]', fontsize=16)
         plt.ylabel(r'average magnetization', fontsize=16)
         plt.show()
 
-        return popt_1, cv_1, popt_2, cv_2
+        return popt_all, np.sqrt(np.diag(cv_all))
