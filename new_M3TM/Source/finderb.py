@@ -2,23 +2,7 @@ import numpy as np
 
 
 def finderb(key, array):
-    """finderb
 
-    Binary search algorithm for sorted array. Searches for the first index
-    ``i`` of array where ``key`` >= ``array[i]``. ``key`` can be a scalar or
-    a np.ndarray of keys. ``array`` must be a sorted np.ndarray.
-
-    Author: André Bojahr.
-    Licence: BSD.
-
-    Args:
-        key (float, ndarray[float]): single or multiple sorted keys.
-        array (ndarray[float]): sorted array.
-
-    Returns:
-        i (ndarray[float]): position indices for each key in the array.
-
-    """
     key = np.array(key, ndmin=1)
     n = len(key)
     i = np.zeros([n], dtype=int)
@@ -29,21 +13,7 @@ def finderb(key, array):
 
 
 def finderb_nest(key, array):
-    """finderb_nest
 
-    Nested sub-function of :func:`.finderb` for one single key.
-
-    Author: André Bojahr.
-    Licence: BSD.
-
-    Args:
-        key (float): single key.
-        array (ndarray[float]): sorted array.
-
-    Returns:
-        a (float): position index of key in the array.
-
-    """
     a = 0  # start of intervall
     b = len(array)  # end of intervall
 
@@ -62,3 +32,22 @@ def finderb_nest(key, array):
             a = c
 
     return a
+
+
+def finder_nosort(key, array):
+
+    key = np.array(key, ndmin=1)
+    n = len(key)
+    i = np.zeros([n], dtype=int)
+
+    for m in range(n):
+        i[m] = finder_nosort_nest(key[m], array)
+    return i
+
+
+def finder_nosort_nest(key_nest, array):
+
+    distances = np.abs(array-key_nest)
+    indices = np.where(distances == np.amin(distances))
+
+    return indices[0]
