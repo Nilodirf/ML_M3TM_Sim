@@ -337,13 +337,6 @@ class SimAnalysis(SimComparePlot):
         # def exp_phase_2(t, t_mid, m_min, m_inf, a):
         #     return (m_inf-m_min) * np.tanh((t-t_mid)/a) + m_inf
 
-        mag_diff = np.diff(mag_av)
-        time_diff = np.diff(sim_delay)
-        dm_dt = mag_diff/time_diff
-
-        plt.plot(sim_delay[1:], mag_diff)
-        plt.show()
-
         def exp_tanh(t, offset, exp_scale, exp_offset, tau_1, tanh_scale, tanh_offset, tau_2):
 
             exp_part = exp_scale*np.exp(-(t-exp_offset)/tau_1)
@@ -376,3 +369,45 @@ class SimAnalysis(SimComparePlot):
         plt.show()
 
         return popt_all, np.sqrt(np.diag(cv_all))
+
+    @staticmethod
+    def fit_dm_dt(file, start_time, initial_guess):
+
+        sim_data = SimPlot(file).get_data()
+        sim_delay = sim_data[0]
+        sim_mags = sim_data[3]
+
+        # average the magnetization:
+        mag_av = np.sum(sim_mags, axis=1) / len(sim_mags[0])
+
+        mag_diff = np.diff(mag_av)
+        time_diff = np.diff(sim_delay)
+        dm_dt = mag_diff / time_diff
+
+        start_index = finderb(start_time, sim_delay[1:])[0]
+
+        delay_res = sim_delay[1+start_index:]
+        dm_dt_res = dm_dt[start_index:]
+
+        def dm_dt_fit_func(t, exp_scale, exp_offset, tau_1, tanh_scale, tanh_offset, tau_2):
+            exp_term = -exp_scale/tau_1*np.exp(-(t-exp_offset)/tau_1)
+            tanh_term = tanh_scale/tau_2 * (1-np.tanh((t-tanh_offset)/tau_2)**2)
+            func = exp_term + tanh_term
+            return  func
+
+        p0 = initial_guess
+
+        popt, cv = scipy.optimize.curve_fit(dm_dt_fit_func, delay_res, dm_dt_res, p0)
+
+        plt.plot(delay_res, dm_dt_res, ls='dotted', color='orange', label='sim')
+        # plt.plot(delay_res, dm_dt_fit_func(delay_res, *popt), color='blue', label='fit')
+        plt.plot(delay_res, dm_dt_fit_func(delay_res, *p0), label='default')
+
+        plt.legend(fontsize=14)
+        plt.xlabel(r'delay [s]', fontsize=16)
+        plt.ylabel(r'dm/dt [1/s]', fontsize=16)
+        plt.show()
+
+
+
+
