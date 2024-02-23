@@ -25,18 +25,18 @@ cri3 = SimMaterials(name='CrI3', pen_dep=30e-9, tdeb=134, dz=1e-9, vat=1.35e-28,
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
 sample = SimSample()
-sample.add_layers(material=hbn, layers=8)
-sample.add_layers(material=cgt, layers=45, kappap_int=10.)
+# sample.add_layers(material=hbn, layers=8)
+sample.add_layers(material=fgt, layers=8, kappap_int='av')
 sample.add_layers(material=sio2, layers=150, kappap_int='av')
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, pulse_width=60e-15, fluence=0.35, delay=1e-12)
+pulse = SimPulse(sample=sample, pulse_width=60e-15, fluence=1.35, delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-9, ini_temp=6., solver='RK45', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=2e-9, ini_temp=100., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='cgt/multi_layer_longtime')
+sim.save_data(solution, save_file='fgt/thin_mulitlayer_nocap')

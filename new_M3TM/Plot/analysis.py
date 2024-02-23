@@ -295,7 +295,7 @@ class SimAnalysis(SimComparePlot):
         return popt, cv
 
     @staticmethod
-    def fit_mag_data(file, t1, p0_initial=[0.5, 0.3, 4e-12, 1e-10, 0.3, 1e-9, 5e-10]):
+    def fit_mag_data(file, t1, p0_initial=[0.7, 0.5, -4e-12, 5e-11, 0.2, 1e-10, 1e-10]):
         # This method fits the average of a simulation set of magnetization dynamics on long timescales after
         # e-p-equilibration to a function:
         # f(t) = const. + a*exp(-t/tau_1)+b*tanh((t-t_1)/tau_2)
@@ -332,17 +332,23 @@ class SimAnalysis(SimComparePlot):
 
             return full_func
 
-        popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
+        def exp_exp(t, offset, exp_1_scale, exp_1_offset, tau_1, exp_2_scale, exp_2_offset, tau_2):
+            exp_1_part = exp_1_scale*np.exp(-(t-exp_1_offset)/tau_1)
+            exp_2_part = exp_2_scale*np.exp(-(t-exp_2_offset)/tau_2)
+            full_func = offset + exp_1_part + exp_2_part
+            return full_func
+
+        # popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
 
         # print('m_0, m_min, tau_1 = ', popt_1)
         # print('t_mid, m_inf, tau_2 = ', popt_2[0], popt_2[2], popt_2[3])
-        print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
-        print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
+        # print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
+        # print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
 
         plt.plot(sim_delay, mag_av, label='sim', ls='dotted', color='orange')
 
         plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *p0_initial), color='purple', label='initial')
-        plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
+        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
 
         plt.legend(fontsize=14)
         plt.xlabel(r'delay [s]', fontsize=16)

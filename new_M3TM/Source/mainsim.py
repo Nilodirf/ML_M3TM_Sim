@@ -502,6 +502,7 @@ class SimDynamics:
         params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
         params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
         params_file.write('a_sf = ' + str([mat.asf for mat in mats]) + '\n')
+        params_file.write('R = ' + str([mat.R*1e-12 for mat in mats]) + '[1/ps]' + '\n')
         params_file.write('g_ep = ' + str([mat.gep for mat in mats]) + '[W/m^3/K]' + '\n')
         params_file.write('gamma_el = ' + str([mat.ce_gamma for mat in mats]) + '[J/m^3/K^2]' + '\n')
         params_file.write('cv_ph_max = ' + str([mat.cp_max for mat in mats]) + '[J/m^3/K]' + '\n')
