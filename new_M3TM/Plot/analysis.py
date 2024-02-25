@@ -228,7 +228,7 @@ class SimAnalysis(SimComparePlot):
         else:
             exp_data = SimAnalysis.get_umd_data(mat)
             sim_data = SimPlot(file).get_data()[:4]
-            delay, tes, tps, mags = sim_data.get_data()[:4]
+            delay, tes, tps, mags = sim_data[:4]
             mags /= mags[0, 0]
 
             plt.scatter(exp_data[0], exp_data[1])
@@ -295,7 +295,7 @@ class SimAnalysis(SimComparePlot):
         return popt, cv
 
     @staticmethod
-    def fit_mag_data(file, t1, p0_initial=[0.7, 0.5, -4e-12, 5e-11, 0.2, 1e-10, 1e-10]):
+    def fit_mag_data(file, t1, t_max=None, p0_initial=[0.4, 0.5, 4e-12, 5e-11, 0.3, 1e-9, 5e-10]):
         # This method fits the average of a simulation set of magnetization dynamics on long timescales after
         # e-p-equilibration to a function:
         # f(t) = const. + a*exp(-t/tau_1)+b*tanh((t-t_1)/tau_2)
@@ -318,10 +318,14 @@ class SimAnalysis(SimComparePlot):
 
         # sort out the time intervals
         first_time_index = finderb(t1, sim_delay)[0]
+        if t_max is None:
+            last_time_index = len(sim_delay) + 1
+        else:
+            last_time_index = finderb(t_max, sim_delay)[0]
 
 
-        delay_phase_12 = sim_delay[first_time_index:]
-        mag_phase_12 = mag_av[first_time_index:]
+        delay_phase_12 = sim_delay[first_time_index:last_time_index]
+        mag_phase_12 = mag_av[first_time_index:last_time_index]
 
 
         def exp_tanh(t, offset, exp_scale, exp_offset, tau_1, tanh_scale, tanh_offset, tau_2):
@@ -332,23 +336,16 @@ class SimAnalysis(SimComparePlot):
 
             return full_func
 
-        def exp_exp(t, offset, exp_1_scale, exp_1_offset, tau_1, exp_2_scale, exp_2_offset, tau_2):
-            exp_1_part = exp_1_scale*np.exp(-(t-exp_1_offset)/tau_1)
-            exp_2_part = exp_2_scale*np.exp(-(t-exp_2_offset)/tau_2)
-            full_func = offset + exp_1_part + exp_2_part
-            return full_func
+        popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
 
-        # popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
+        print('simulation file: ', file)
+        print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
+        print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
 
-        # print('m_0, m_min, tau_1 = ', popt_1)
-        # print('t_mid, m_inf, tau_2 = ', popt_2[0], popt_2[2], popt_2[3])
-        # print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
-        # print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
-
-        plt.plot(sim_delay, mag_av, label='sim', ls='dotted', color='orange')
+        plt.plot(delay_phase_12, mag_phase_12, label='sim', ls='dotted', color='orange')
 
         plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *p0_initial), color='purple', label='initial')
-        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
+        plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
 
         plt.legend(fontsize=14)
         plt.xlabel(r'delay [s]', fontsize=16)
@@ -358,7 +355,7 @@ class SimAnalysis(SimComparePlot):
         return popt_all, np.sqrt(np.diag(cv_all))
 
     @staticmethod
-    def fit_dm_dt(file, start_time, initial_guess):
+    def fit_dm_dt(file, t1, t_max=None, p0_initial=[0.4, 0.5, 4e-12, 5e-11, 0.3, 1e-9, 5e-10]):
 
         sim_data = SimPlot(file).get_data()
         sim_delay = sim_data[0]
@@ -371,10 +368,14 @@ class SimAnalysis(SimComparePlot):
         time_diff = np.diff(sim_delay)
         dm_dt = mag_diff / time_diff
 
-        start_index = finderb(start_time, sim_delay[1:])[0]
+        start_index = finderb(t1, sim_delay[1:])[0]
+        if t_max is None:
+            last_time_index = len(sim_delay) + 1
+        else:
+            last_time_index = finderb(t_max, sim_delay)[0]
 
-        delay_res = sim_delay[1+start_index:]
-        dm_dt_res = dm_dt[start_index:]
+        delay_res = sim_delay[1+start_index:last_time_index]
+        dm_dt_res = dm_dt[start_index:last_time_index]
 
         def dm_dt_fit_func(t, exp_scale, exp_offset, tau_1, tanh_scale, tanh_offset, tau_2):
             exp_term = -exp_scale/tau_1*np.exp(-(t-exp_offset)/tau_1)
@@ -382,15 +383,15 @@ class SimAnalysis(SimComparePlot):
             func = exp_term + tanh_term
             return func
 
-        p0 = initial_guess
+        p0 = p0_initial
 
-        popt, cv = scipy.optimize.curve_fit(dm_dt_fit_func, delay_res, dm_dt_res, p0)
+        # popt, cv = scipy.optimize.curve_fit(dm_dt_fit_func, delay_res, dm_dt_res, p0)
 
-        print('exp_scale, exp_offset, tau_1 = ', popt[:3])
-        print('tanh_scale, tanh_offset, tau_2 = ', popt[3:])
+        # print('exp_scale, exp_offset, tau_1 = ', popt[:3])
+        # print('tanh_scale, tanh_offset, tau_2 = ', popt[3:])
 
         plt.plot(delay_res, dm_dt_res, ls='dotted', color='orange', label='sim')
-        plt.plot(delay_res, dm_dt_fit_func(delay_res, *popt), color='blue', label='fit')
+        # plt.plot(delay_res, dm_dt_fit_func(delay_res, *popt), color='blue', label='fit')
         plt.plot(delay_res, dm_dt_fit_func(delay_res, *p0), label='default')
 
         plt.legend(fontsize=14)
