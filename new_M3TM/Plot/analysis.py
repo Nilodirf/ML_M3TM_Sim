@@ -195,7 +195,7 @@ class SimAnalysis(SimComparePlot):
     @staticmethod
     def fit_umd_data(mat, file):
 
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(10, 7))
 
         if mat == 'all':
             assert type(file) is list and len(file) == 3, 'Give three simulations as well'
@@ -233,17 +233,16 @@ class SimAnalysis(SimComparePlot):
             delay, tes, tps, mags = sim_data[:4]
             mags /= mags[0, 0]
 
-            plt.scatter(exp_data[0], exp_data[1], marker='1', label=r'Liu et al.', s=80, color='red')
-            plt.plot(delay*1e12, mags[:, 0]-1, lw=2.0, label=r'simulation', color='red')
-            plt.title(r'UMD in CrI$_3$', fontsize=18)
+            plt.scatter(exp_data[0], exp_data[1], marker='1', label=r'Lichtenberg et al.', s=130, color='green')
+            plt.plot(delay*1e12, mags[:, 0]-1, lw=2.0, label=r'simulation', color='green')
 
-        # plt.xlim(-1, 25)
-        plt.legend(fontsize=14)
-        plt.xlabel(r'delay [ps]', fontsize=16)
-        plt.ylabel(r'Kerr signal', fontsize=16)
-        plt.xticks(fontsize=14)
-        plt.yticks(fontsize=14)
-        plt.savefig('DPG/CGT_fit.pdf')
+        plt.xlim(-1, 5)
+        plt.legend(fontsize=20)
+        plt.xlabel(r'delay [ps]', fontsize=24)
+        plt.ylabel(r'Kerr signal', fontsize=24)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+        plt.savefig('DPG/FGT_fit.pdf')
 
         plt.show()
         return
