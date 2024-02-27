@@ -213,7 +213,7 @@ class SimAnalysis(SimComparePlot):
         elif mat == 'cgt_long':
             assert type(file) is list and len(file) == 2
             mats = ['cgt_thin', 'cgt_thick']
-            labels = ['15 nm CGT','150 nm CGT']
+            labels = ['15 nm CGT', '150 nm CGT']
             for loop_mat, loop_file, label in zip(mats, file, labels):
                 exp_data = SimAnalysis.get_umd_data(loop_mat)
                 sim_data = SimPlot(loop_file)
