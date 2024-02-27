@@ -213,7 +213,8 @@ class SimAnalysis(SimComparePlot):
         elif mat == 'cgt_long':
             assert type(file) is list and len(file) == 2
             mats = ['cgt_thin', 'cgt_thick']
-            for loop_mat, loop_file in zip(mats, file):
+            labels = ['15 nm CGT','150 nm CGT']
+            for loop_mat, loop_file, label in zip(mats, file, labels):
                 exp_data = SimAnalysis.get_umd_data(loop_mat)
                 sim_data = SimPlot(loop_file)
                 delay, tes, tps, mags = sim_data.get_data()[:4]
@@ -223,7 +224,7 @@ class SimAnalysis(SimComparePlot):
                     mags = SimAnalysis.get_kerr(mags=mags, pen_dep=2e-9, layer_thick=1e-9, norm=True)
 
                 plt.scatter(exp_data[0], exp_data[1], s=4.0)
-                plt.plot(delay * 1e12, mags, label=loop_mat, lw=2.0)
+                plt.plot(delay * 1e12, mags, label=label, lw=2.0)
                 plt.legend(fontsize=14)
 
         else:
@@ -236,13 +237,13 @@ class SimAnalysis(SimComparePlot):
             plt.plot(delay*1e12, mags[:, 0]-1, lw=2.0, label=r'simulation', color='red')
             plt.title(r'UMD in CrI$_3$', fontsize=18)
 
-        plt.xlim(-1, 25)
+        # plt.xlim(-1, 25)
         plt.legend(fontsize=14)
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(r'Kerr signal', fontsize=16)
         plt.xticks(fontsize=14)
         plt.yticks(fontsize=14)
-        plt.savefig('DPG/CRI3_UMD.pdf')
+        plt.savefig('DPG/CGT_fit.pdf')
 
         plt.show()
         return
