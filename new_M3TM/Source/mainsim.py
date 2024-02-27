@@ -171,7 +171,7 @@ class SimDynamics:
         # in equilibrium with the initial temperature profile (for now only uniform) in a flattened format
 
         # increase the damping to speed up the equilibration process:
-        arbsc_sam_eq = arbsc_sam*1e5
+        arbsc_sam_eq = arbsc_sam*1e3
 
         # call solver to equilibrate magnetization:
         eq_sol = solve_ivp(lambda t, fs: SimDynamics.get_m_eq_increments(fs, j_sam, spin_sam, arbsc_sam_eq,

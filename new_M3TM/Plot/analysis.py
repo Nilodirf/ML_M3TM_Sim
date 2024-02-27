@@ -181,6 +181,7 @@ class SimAnalysis(SimComparePlot):
         elif mat == 'fgt':
             data = np.loadtxt('ultrafast mag dynamics/FGT_dat.txt')
             data[:, 1] = data[:, 1]/data[0, 1] - 1
+            data[:, 0] -= 0.2
         elif mat == 'cgt_thin':
             data = np.loadtxt('ultrafast mag dynamics/CGT_thin_dat.txt')
             data[:, 0] += 4
@@ -217,9 +218,9 @@ class SimAnalysis(SimComparePlot):
                 sim_data = SimPlot(loop_file)
                 delay, tes, tps, mags = sim_data.get_data()[:4]
                 if loop_mat == 'cgt_thin':
-                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=1e-9, layer_thick=2e-9, norm=True)
+                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=2e-9, layer_thick=14e-9, norm=True)
                 else:
-                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=1e-9, layer_thick=2e-9, norm=True)
+                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=2e-9, layer_thick=1e-9, norm=True)
 
                 plt.scatter(exp_data[0], exp_data[1], s=4.0)
                 plt.plot(delay * 1e12, mags, label=loop_mat, lw=2.0)
@@ -231,13 +232,17 @@ class SimAnalysis(SimComparePlot):
             delay, tes, tps, mags = sim_data[:4]
             mags /= mags[0, 0]
 
-            plt.scatter(exp_data[0], exp_data[1])
-            plt.plot(delay*1e12, mags[:, 0]-1)
+            plt.scatter(exp_data[0], exp_data[1], marker='1', label=r'Liu et al.', s=80, color='red')
+            plt.plot(delay*1e12, mags[:, 0]-1, lw=2.0, label=r'simulation', color='red')
+            plt.title(r'UMD in CrI$_3$', fontsize=18)
 
-        # plt.xlim(-1, 25)
-
+        plt.xlim(-1, 25)
+        plt.legend(fontsize=14)
         plt.xlabel(r'delay [ps]', fontsize=16)
         plt.ylabel(r'Kerr signal', fontsize=16)
+        plt.xticks(fontsize=14)
+        plt.yticks(fontsize=14)
+        plt.savefig('DPG/CRI3_UMD.pdf')
 
         plt.show()
         return

@@ -359,7 +359,8 @@ class SimPlot:
             ax.set_ylabel(r'sample depth [nm]', fontsize=14)
 
             # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
-            colors = [[76 / 255, 159 / 255, 152 / 255], [159 / 255, 76 / 255, 76 / 255], [159 / 255, 76 / 255, 152 / 255]]
+            # colors = [[76 / 255, 159 / 255, 152 / 255], [159 / 255, 76 / 255, 76 / 255], [159 / 255, 76 / 255, 152 / 255]]
+            colors = [[77/255, 77/255, 159/255], [159/255, 77/255, 92/255], [89/255, 159/255, 77/255]]
             mat_sep_marks = np.append(mat_sep_marks, y_axis[-1])
 
             if key == 'tp':
@@ -375,7 +376,7 @@ class SimPlot:
                 for i, pos in enumerate(block_separator[:-1]):
                     if i == 1:
                         dz = 2e-9
-                        pen_dep = 30e-9
+                        pen_dep = 14e-9
                         exp_decay = np.exp(-np.arange(block_separator[i+1]-pos) * dz / pen_dep)
                         z_block_av = np.sum(z[:, pos:block_separator[i+1]] * exp_decay, axis=1) / np.sum(exp_decay)
                     else:
