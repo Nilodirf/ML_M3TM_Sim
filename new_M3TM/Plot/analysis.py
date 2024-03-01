@@ -340,16 +340,16 @@ class SimAnalysis(SimComparePlot):
 
             return full_func
 
-        popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
+        # popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
 
         print('simulation file: ', file)
-        print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
-        print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
+        # print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
+        # print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
 
-        plt.plot(delay_phase_12, mag_phase_12, label='sim', ls='dotted', color='orange')
+        plt.plot(sim_delay, mag_av, label='sim', ls='dotted', color='orange')
 
-        plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *p0_initial), color='purple', label='initial')
-        plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
+        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *p0_initial), color='purple', label='initial')
+        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
 
         plt.legend(fontsize=14)
         plt.xlabel(r'delay [s]', fontsize=16)
