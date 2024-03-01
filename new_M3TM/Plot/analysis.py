@@ -163,8 +163,7 @@ class SimAnalysis(SimComparePlot):
                 meq[0] *= -1
             # Append it to list me(T)
             meq_list.append(meq[0])
-        meq_list[
-            -1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
+        meq_list[-1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
         return ip.interp1d(temp_grid, meq_list)
 
     @staticmethod
