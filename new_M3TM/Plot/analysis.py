@@ -79,33 +79,8 @@ class SimAnalysis(SimComparePlot):
         return
 
     @staticmethod
-    def get_dm_dt(R, S, tc, tem, mag):
-        J = 3 * sp.k * tc * S / (S + 1)
-        arbsc = R / tc ** 2 / sp.k
-        ms = (np.arange(2 * S + 1) + np.array([-S for i in range(int(2 * S) + 1)]))
-        s_up_eig_squared = -np.power(ms, 2) - ms + S ** 2 + S
-        s_dn_eig_squared = -np.power(ms, 2) + ms + S ** 2 + S
-
-        h_mf = np.multiply(j_sam, mag)
-        eta = np.divide(h_mf, np.multiply(2 * spin_sam * sp.k, te[el_mag_mask])).astype(float)
-        incr_pref = arbsc_sam*tp*h_mf/4/spin_sam/np.sinh(eta)
-
-        fs_up = np.multiply(s_up_eig_sq_sam, fs)
-        fs_dn = np.multiply(s_dn_eig_sq_sam, fs)
-        rate_up_fac = incr_pref * np.exp(-eta)
-        rate_dn_fac = incr_pref * np.exp(eta)
-
-        rate_up_loss = np.multiply(rate_up_fac[..., np.newaxis], fs_up)
-        rate_dn_loss = np.multiply(rate_dn_fac[..., np.newaxis], fs_dn)
-
-        rate_up_gain = np.roll(rate_up_loss, 1)
-        rate_dn_gain = np.roll(rate_dn_loss, -1)
-
-        dfs_dt = rate_up_gain + rate_dn_gain - rate_up_loss - rate_dn_loss
-
-    @staticmethod
     def get_R(asf, gep, Tdeb, Tc, Vat, mu_at):
-        R = 8*asf*gep/sp.k*Tc**2*Vat/mu_at/Tdeb**2
+        R = 8*asf*gep*Tc**2*Vat/mu_at/Tdeb**2/sp.k
         print('R = ', R*1e-12 , '1/ps')
         return 8*asf*gep*sp.k*Tc**2*Vat/mu_at/Tdeb**2
 
@@ -120,7 +95,8 @@ class SimAnalysis(SimComparePlot):
 
         return term_1+term_2
 
-    def create_mean_mag_map(self):
+    @staticmethod
+    def create_mean_mag_map(Tc, S):
         # This function computes the mean field mean magnetization map by solving the self-consistent equation m=B(m, T)
         # As an output we get an interpolation function of the mean field magnetization at any temperature T<=T_c (this can of course be extended to T>T_c with zeros).
 
@@ -135,9 +111,10 @@ class SimAnalysis(SimComparePlot):
             #   (ii) (electron) temperature (scalar)
             # As an output we get the Brillouin function evaluated at (i), (ii) (scalar)
 
-            eta = self.J * m / sp.k / T / self.Tc
-            c1 = (2 * self.S + 1) / (2 * self.S)
-            c2 = 1 / (2 * self.S)
+            J = 3*S/(S+1)*sp.k*Tc
+            eta = J * m / sp.k / T / Tc
+            c1 = (2 * S + 1) / (2 * S)
+            c2 = 1 / (2 * S)
             bri_func = c1 / np.tanh(c1 * eta) - c2 / np.tanh(c2 * eta)
             return bri_func
 
@@ -149,7 +126,7 @@ class SimAnalysis(SimComparePlot):
 
         # Define a function to find the intersection of m and B(m, T) for given T with scipy:
         def find_intersection_sp(m, Bm, m0):
-            return ip.fsolve(lambda x: m(x) - Bm(x), m0)
+            return scipy.optimize.fsolve(lambda x: m(x) - Bm(x), m0)
 
         # Find meq for every temperature, starting point for the search being (1-T/Tc)^(1/2), fill the list
         for i, T in enumerate(temp_grid[1:]):
@@ -163,8 +140,7 @@ class SimAnalysis(SimComparePlot):
                 meq[0] *= -1
             # Append it to list me(T)
             meq_list.append(meq[0])
-        meq_list[
-            -1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
+        meq_list[-1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
         return ip.interp1d(temp_grid, meq_list)
 
     @staticmethod
@@ -257,6 +233,10 @@ class SimAnalysis(SimComparePlot):
         return kerr_signal
 
     @staticmethod
+    def phonon_exp_fit(t, T0, Teq, exponent, delay):
+        return (T0 - Teq) * np.exp(-1 / exponent * (t - delay)) + Teq
+
+    @staticmethod
     def fit_phonon_decay(file, first_layer_index, last_layer_index, start_time, end_time=None):
 
         # get the simulation data needed:
@@ -279,18 +259,14 @@ class SimAnalysis(SimComparePlot):
         # average the phonon temperature dynamics:
         sim_tp_av = np.sum(sim_tp, axis=1)/(np.abs(first_layer_index-(last_layer_index+1)))
 
-        # define the fit function:
-        def phonon_exp_fit(t, T0, Teq, exponent):
-            return (T0-Teq)*np.exp(-1/exponent*(t-sim_delay[0]))+Teq
-
-        p0 = [sim_tp_av[0], sim_tp_av[0]/5, 1e-9]
-        popt, cv = scipy.optimize.curve_fit(phonon_exp_fit, sim_delay, sim_tp_av, p0)
+        p0 = [sim_tp_av[0], sim_tp_av[0]/5, 1e-9, sim_delay[0]]
+        popt, cv = scipy.optimize.curve_fit(SimAnalysis.phonon_exp_fit, sim_delay, sim_tp_av, p0)
 
         print('T_0, T_eq, exponent [s] = ', popt)
         print('standard deviation:', np.sqrt(np.diag(cv)))
 
         plt.plot(sim_delay, sim_tp_av, label=r'simulation')
-        plt.plot(sim_delay, phonon_exp_fit(sim_delay, *popt), label=r'fit')
+        plt.plot(sim_delay, SimAnalysis.phonon_exp_fit(sim_delay, *popt), label=r'fit')
 
         plt.legend(fontsize=14)
         plt.xlabel(r'delay [ps]')
@@ -328,6 +304,10 @@ class SimAnalysis(SimComparePlot):
         else:
             last_time_index = finderb(t_max, sim_delay)[0]
 
+        mmin_time_index = finder_nosort(np.amin(mag_av), mag_av)[0]
+        delay_phase_1 = sim_delay[first_time_index:mmin_time_index]
+        mag_phase_1 = mag_av[first_time_index:mmin_time_index]
+
 
         delay_phase_12 = sim_delay[first_time_index:last_time_index]
         mag_phase_12 = mag_av[first_time_index:last_time_index]
@@ -341,20 +321,30 @@ class SimAnalysis(SimComparePlot):
 
             return full_func
 
-        popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
+        p0_1 = [0.2, 1e-10, 2e-12]
+        def LLB_demag(t, mmag, tau_1, t_offset):
+            denom = np.sqrt(1-(1-mmag**2)*np.exp(-2*(t-t_offset)/tau_1))
+            return mmag/denom
+
+        #popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
+        popt_1, cv_1 = scipy.optimize.curve_fit(LLB_demag, delay_phase_1, mag_phase_1, p0_1)
 
         print('simulation file: ', file)
-        print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
-        print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
+        print('fit_mmag, fit_tau_1, fit_t_offset = ', popt_1)
+        # print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
+        # print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
 
-        plt.plot(delay_phase_12, mag_phase_12, label='sim', ls='dotted', color='orange')
+        plt.plot(delay_phase_1, mag_phase_1, label='sim', ls='dotted', color='orange')
 
-        plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *p0_initial), color='purple', label='initial')
-        plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
+        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *p0_initial), color='purple', label='initial')
+        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
+        # plt.plot(delay_phase_1, LLB_demag(delay_phase_1, *p0_1), label='default params')
+        plt.plot(delay_phase_1, LLB_demag(delay_phase_1, *popt_1), label='LLB_fit')
 
         plt.legend(fontsize=14)
         plt.xlabel(r'delay [s]', fontsize=16)
         plt.ylabel(r'average magnetization', fontsize=16)
+        plt.savefig('CGT_analytical_fit.pdf')
         plt.show()
 
         return popt_all, np.sqrt(np.diag(cv_all))
@@ -405,6 +395,37 @@ class SimAnalysis(SimComparePlot):
         plt.show()
 
         return popt, cv
+
+    @staticmethod
+    def fit_FGT_remag(file):
+        sim_data = SimPlot(file).get_data()
+        sim_delay = sim_data[0]
+        sim_mags = sim_data[3]
+        sim_tps = sim_data[2][:, 9:15]
+
+        mag_av = np.sum(sim_mags, axis=1) / len(sim_mags[0])
+
+        mmin_time_index = finder_nosort(np.amin(mag_av), mag_av)[0]
+        delay_phase_1 = sim_delay[mmin_time_index:]
+        mag_phase_1 = mag_av[mmin_time_index:]
+        tp_phase_1 = np.sum(sim_tps[mmin_time_index:], axis=1)/len(sim_tps.T)
+
+        popt, cv_opt = SimAnalysis.fit_phonon_decay(file=file, first_layer_index = 9, last_layer_index=15, start_time=sim_delay[mmin_time_index], end_time=None)
+        mmag_func = SimAnalysis.create_mean_mag_map(220., 1.5)
+        phonon_temp = SimAnalysis.phonon_exp_fit(delay_phase_1, *popt)
+        # mmag_T = mmag_func(phonon_temp/220.)
+        mmag_T = mmag_func(tp_phase_1/220.)
+
+        plt.plot(delay_phase_1, mmag_T, label=r'$m_{eq}$(T(t))', ls=':', lw=5.0)
+        plt.plot(delay_phase_1, mag_phase_1, label=r'simulaiton')
+        plt.legend()
+        plt.show()
+
+        plt.plot(delay_phase_1, (mmag_T-mag_phase_1)/mag_phase_1, label=r'difference')
+        plt.show()
+        return
+
+
 
 
 

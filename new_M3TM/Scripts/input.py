@@ -17,7 +17,7 @@ cgt = SimMaterials(name='CGT', pen_dep=30e-9, tdeb=200, dz=2e-9, vat=1e-28, ce_g
 sio2 = SimMaterials(name='SiO2', pen_dep=1, tdeb=470, dz=2e-9, vat=1e-28, ce_gamma=0., cp_max=1.7e6, kappap=1.,
                     kappae=0., gep=0., spin=0, tc=0., muat=0., asf=0.)
 fgt = SimMaterials(name='FGT', pen_dep=30e-9, tdeb=190, dz=1e-9, vat=1.7e-29, ce_gamma=1561., cp_max=2e6,
-                   kappap=0.5, kappae=0.25, gep=1e18, spin=2, tc=220., muat=1.5, asf=0.06)
+                   kappap=0.5, kappae=0.25, gep=6.5e17, spin=1.5, tc=220., muat=2., asf=0.04)
 cri3 = SimMaterials(name='CrI3', pen_dep=30e-9, tdeb=134, dz=1e-9, vat=1.35e-28, ce_gamma=550., cp_max=1.23e6,
                    kappap=1.36, kappae=0., gep=4e16, spin=1.5, tc=61., muat=4, asf=0.175)
 
@@ -26,17 +26,17 @@ cri3 = SimMaterials(name='CrI3', pen_dep=30e-9, tdeb=134, dz=1e-9, vat=1.35e-28,
 # The first material to be added will be closest to the laser pulse and so on.
 sample = SimSample()
 sample.add_layers(material=hbn, layers=8)
-sample.add_layers(material=cgt, layers=76, kappap_int=10.)
+sample.add_layers(material=fgt, layers=8, kappap_int=10.)
 sample.add_layers(material=sio2, layers=150, kappap_int=0.6)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, pulse_width=60e-15, fluence=0.32, delay=1e-12)
+pulse = SimPulse(sample=sample, pulse_width=60e-15, fluence=3., delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=2e-9, ini_temp=6., solver='RK45', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=2e-9, ini_temp=100., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='cgt/thick_multilayer')
+sim.save_data(solution, save_file='fgt/high_flu')
