@@ -5,6 +5,8 @@ import time
 from scipy import constants as sp
 
 from .finderb import finderb
+
+
 class SimDynamics:
     # This is the main Simulation class that holds all methods to compute dynamics of the extended M3TM.
     def __init__(self, sample, pulse, end_time, ini_temp, solver, max_step, atol=1e-6, rtol=1e-3):
