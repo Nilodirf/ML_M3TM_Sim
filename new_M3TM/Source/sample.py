@@ -60,7 +60,7 @@ class SimSample:
                 assert kappae_int is not None and \
                        (type(kappae_int) == float or kappae_int == 'min' or kappap_int == 'max' or kappae_int == 'av'),\
                         'Please introduce electronic diffusion interface constant using ' \
-                        'kappap_int = <value> (in W/m/K) ' \
+                        'kappae_int = <value> (in W/m/K) ' \
                         'or "max" or "min" to either set the value manually or use the larger/smaller value of '\
                         'electronic heat conductivities of the adjacent materials.'
 

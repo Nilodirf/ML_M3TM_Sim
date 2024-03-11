@@ -4,15 +4,15 @@ from ..Plot.plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='cgt/thin_multilayer')
+plotter = SimPlot(file='test_abs_sub')
 
 # plotter.convert_to_dat()
 
 # Plot a map of the denoted simulation of one of the three subsystems, save if you want to:
 # plotter.map_plot(key='tp',  save_fig=False)
 
-plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=True, filename='thin_alltime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
-# plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=True, filename='thick_alltime_mag', show_title=False, color_scale='inferno', vmin=0., vmax=1)
+# plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=False, filename='thin_alltime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
+plotter.map_plot(key='te', kind='colormap', max_time=2000, save_fig=False, filename='thick_alltime_mag', show_title=False, color_scale='inferno')
 # plotter.map_plot(key='tp', kind='surface', max_time=2000, save_fig=True, filename='thick_alltime', show_title=False, color_scale='Blues_r')
 
 
