@@ -49,5 +49,6 @@ def finder_nosort_nest(key_nest, array):
 
     distances = np.abs(array-key_nest)
     indices = np.where(distances == np.amin(distances))
+    first_index = indices[0][0]
 
-    return indices[0]
+    return first_index

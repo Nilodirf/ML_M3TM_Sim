@@ -97,6 +97,7 @@ class SimSample:
             else:
                 self.kappa_e_int = np.append(self.kappa_e_int, kappae_int)
 
+
         self.mat_arr = np.append(self.mat_arr, np.array([material for _ in range(layers)]))
         self.len = self.get_len()
         self.mat_blocks = self.get_material_changes()

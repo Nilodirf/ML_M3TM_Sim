@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="62.235271mm"
-   height="78.480392mm"
-   viewBox="0 0 62.235271 78.480393"
+   width="28.004189mm"
+   height="37.73777mm"
+   viewBox="0 0 28.004188 37.73777"
    version="1.1"
    id="svg95324"
    inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
-   sodipodi:docname="cgt_thinthick.svg"
+   sodipodi:docname="maciej.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -26,8 +26,8 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.73851712"
-     inkscape:cx="-228.15991"
-     inkscape:cy="6.7703238"
+     inkscape:cx="420.43711"
+     inkscape:cy="-9.4784533"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="-8"
@@ -128,7 +128,7 @@
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-165.56873,-146.91866)">
+     transform="translate(6.1530623,-151.37041)">
     <g
        id="g96428"
        transform="translate(113.92762,83.475271)">
@@ -427,9 +427,9 @@
        style="font-size:29.3333px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect98022);display:inline;fill:#532a2a;stroke:#532a2a;stroke-width:4.76976"><tspan
          x="352.30701"
          y="237.65647"
-         id="tspan993"><tspan
+         id="tspan3995"><tspan
            style="stroke:none"
-           id="tspan991">1.5 eV</tspan></tspan></text>
+           id="tspan3993">1.5 eV</tspan></tspan></text>
     <image
        y="151.55164"
        x="23.255613"
@@ -461,10 +461,10 @@
        style="font-size:16px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect35859);display:inline;fill:#000000;stroke-width:0.755906"><tspan
          x="55.168945"
          y="159.87496"
-         id="tspan995">Maciej </tspan><tspan
+         id="tspan3997">Maciej </tspan><tspan
          x="40.942383"
          y="179.87496"
-         id="tspan997">Dabrowski</tspan></text>
+         id="tspan3999">Dabrowski</tspan></text>
     <g
        transform="scale(0.26458333)"
        id="text104198"
@@ -476,7 +476,7 @@
        style="font-size:29.3333px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect104821);display:inline;fill:#080808;fill-opacity:1;stroke:none;stroke-width:4.76976"><tspan
          x="188.79691"
          y="260.67601"
-         id="tspan999">hBN</tspan></text>
+         id="tspan4001">hBN</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.252459,0.07917571,-0.07917571,0.252459,134.03319,166.02647)"
@@ -484,7 +484,7 @@
        style="font-size:29.3333px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect104855);display:inline;fill:#080808;fill-opacity:1;stroke:none;stroke-width:4.76976"><tspan
          x="170.79691"
          y="102.25022"
-         id="tspan1001">CGT</tspan></text>
+         id="tspan4003">CGT</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.26148235,0.04038962,-0.04038962,0.26148235,72.863228,135.01871)"
@@ -492,9 +492,9 @@
        style="font-size:29.3333px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect104861);display:inline;fill:#080808;fill-opacity:1;stroke:none;stroke-width:4.76976"><tspan
          x="406.93535"
          y="252.55101"
-         id="tspan1005">SiO<tspan
+         id="tspan4007">SiO<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan1003">2</tspan></tspan></text>
+   id="tspan4005">2</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.2472538,-0.09418014,0.09418014,0.2472538,120.88905,164.93451)"
@@ -502,7 +502,7 @@
        style="font-size:29.3333px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect104870);display:inline;fill:#080808;fill-opacity:1;stroke:none;stroke-width:4.76976"><tspan
          x="234.86493"
          y="218.69944"
-         id="tspan1007">15</tspan></text>
+         id="tspan4009">15</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.24291463,-0.10486572,0.10486572,0.24291463,107.02141,163.69241)"
@@ -510,7 +510,7 @@
        style="font-size:29.3333px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect104876);display:inline;fill:#080808;fill-opacity:1;stroke:none;stroke-width:4.76976"><tspan
          x="240.55801"
          y="291.81858"
-         id="tspan1009">15 (150)</tspan></text>
+         id="tspan4011">15 (150)</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.22915859,-0.13225233,0.13225233,0.22915859,46.916942,241.96022)"
@@ -518,6 +518,6 @@
        style="font-size:29.3333px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect104882);display:inline;fill:#080808;fill-opacity:1;stroke:none;stroke-width:4.76976"><tspan
          x="565.9014"
          y="217.34593"
-         id="tspan1011">300</tspan></text>
+         id="tspan4013">300</tspan></text>
   </g>
 </svg>

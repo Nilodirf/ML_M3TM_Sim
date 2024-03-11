@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="239.33383mm"
-   height="100.43868mm"
-   viewBox="0 0 239.33383 100.43868"
+   width="69.344376mm"
+   height="54.174675mm"
+   viewBox="0 0 69.344375 54.174674"
    version="1.1"
    id="svg72278"
    inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
-   sodipodi:docname="umd_2.svg"
+   sodipodi:docname="local_model.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -26,14 +26,14 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.4770342"
-     inkscape:cx="691.25006"
-     inkscape:cy="183.47577"
+     inkscape:cx="48.746331"
+     inkscape:cy="9.4784533"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g16863-5" />
+     inkscape:current-layer="layer1" />
   <defs
      id="defs72275">
     <linearGradient
@@ -874,9 +874,9 @@
      inkscape:label="Ebene 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(59.120469,-56.901286)">
+     transform="translate(-110.86898,-102.8718)">
     <rect
-       style="fill:#bc7b77;fill-opacity:0.807692;stroke:none;stroke-width:0.54056;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
+       style="fill:#bc7b77;fill-opacity:0.76208186;stroke:none;stroke-width:0.54056;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect13118-8"
        width="69.344376"
        height="54.174675"
@@ -1041,9 +1041,9 @@
        transform="translate(-91.088789,-5.9434403)"><tspan
          x="50.458984"
          y="69.742517"
-         id="tspan2911"><tspan
+         id="tspan14937"><tspan
            style="font-size:5.64444px"
-           id="tspan2909">metal</tspan></tspan></text>
+           id="tspan14935">metal</tspan></tspan></text>
     <text
        xml:space="preserve"
        id="text1994"
@@ -1051,9 +1051,9 @@
        transform="translate(-81.007569,-10.589861)"><tspan
          x="114.52734"
          y="73.029163"
-         id="tspan2915"><tspan
+         id="tspan14941"><tspan
            style="shape-inside:url(#rect1996)"
-           id="tspan2913">semiconductors</tspan></tspan></text>
+           id="tspan14939">semiconductors</tspan></tspan></text>
     <text
        xml:space="preserve"
        id="text2000"
@@ -1061,9 +1061,9 @@
        transform="translate(-91.835244,14.661826)"><tspan
          x="111.31445"
          y="83.349939"
-         id="tspan2919"><tspan
+         id="tspan14945"><tspan
            style="font-size:4.23333px"
-           id="tspan2917">0.5-0.9 eV</tspan></tspan></text>
+           id="tspan14943">0.5-0.9 eV</tspan></tspan></text>
     <text
        xml:space="preserve"
        id="text2000-0"
@@ -1071,9 +1071,9 @@
        transform="translate(-39.624432,14.440381)"><tspan
          x="111.31445"
          y="83.349939"
-         id="tspan2923"><tspan
+         id="tspan14949"><tspan
            style="font-size:4.23333px"
-           id="tspan2921">0.9-1.2 eV</tspan></tspan></text>
+           id="tspan14947">0.9-1.2 eV</tspan></tspan></text>
     <rect
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.620961;stroke-miterlimit:4;stroke-dasharray:none;paint-order:stroke fill markers"
        id="rect2106"
@@ -1234,9 +1234,9 @@
        transform="translate(88.120746,-7.294956)"><tspan
          x="50.458984"
          y="69.742517"
-         id="tspan2927"><tspan
+         id="tspan14953"><tspan
            style="font-size:4.23333px"
-           id="tspan2925">1.5 eV</tspan></tspan></text>
+           id="tspan14951">1.5 eV</tspan></tspan></text>
     <path
        style="fill:none;stroke:#532a2a;stroke-width:0.5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 134.14686,117.38669 v -2.70193"
@@ -1631,9 +1631,9 @@
        transform="matrix(0.32207779,0,0,0.33803072,157.5548,87.314364)"><tspan
          x="11.527344"
          y="136.76296"
-         id="tspan2931">g<tspan
+         id="tspan14957">g<tspan
    style="baseline-shift:sub"
-   id="tspan2929">ep</tspan></tspan></text>
+   id="tspan14955">ep</tspan></tspan></text>
     <text
        xml:space="preserve"
        id="text13100"
@@ -1641,9 +1641,9 @@
        transform="matrix(0.32207779,0,0,0.33803072,165.81863,89.482651)"><tspan
          x="-111.14844"
          y="128.74538"
-         id="tspan2935">W<tspan
+         id="tspan14961">W<tspan
    style="baseline-shift:sub"
-   id="tspan2933">es</tspan></tspan></text>
+   id="tspan14959">es</tspan></tspan></text>
     <text
        xml:space="preserve"
        id="text13109"
@@ -1651,9 +1651,9 @@
        transform="matrix(0.32207779,0,0,0.33803072,158.98088,87.185424)"><tspan
          x="-37.917969"
          y="123.93484"
-         id="tspan2939">a<tspan
+         id="tspan14965">a<tspan
    style="baseline-shift:sub"
-   id="tspan2937">sf</tspan></tspan></text>
+   id="tspan14963">sf</tspan></tspan></text>
     <rect
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.374;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect13118-4"
@@ -1677,7 +1677,7 @@
        transform="matrix(0.32207779,0,0,0.33803072,159.88292,83.864936)"><tspan
          x="-2.6367188"
          y="83.596279"
-         id="tspan2941">phonons</tspan></text>
+         id="tspan14967">phonons</tspan></text>
     <text
        xml:space="preserve"
        id="text13166"
@@ -1685,7 +1685,7 @@
        transform="matrix(0.32207779,0,0,0.33803072,164.13261,84.143713)"><tspan
          x="-115.95898"
          y="83.330654"
-         id="tspan2943">spins</tspan></text>
+         id="tspan14969">spins</tspan></text>
     <text
        xml:space="preserve"
        id="text13172"
@@ -1693,7 +1693,7 @@
        transform="matrix(0.32207779,0,0,0.33803072,158.05838,89.099295)"><tspan
          x="-58.763672"
          y="183.28964"
-         id="tspan2945">electrons</tspan></text>
+         id="tspan14971">electrons</tspan></text>
     <rect
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.302;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:stroke fill markers"
        id="rect13118"

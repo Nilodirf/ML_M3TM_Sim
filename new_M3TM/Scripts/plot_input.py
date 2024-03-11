@@ -4,21 +4,22 @@ from ..Plot.plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='cgt/thin_multilayer')
+plotter = SimPlot(file='array/FGT(16)_SiO2(300)_flu_0.5')
 
 # plotter.convert_to_dat()
 
 # Plot a map of the denoted simulation of one of the three subsystems, save if you want to:
 # plotter.map_plot(key='tp',  save_fig=False)
 
-plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=True, filename='thin_alltime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
+# plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=True, filename='thin_alltime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
 # plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=True, filename='thick_alltime_mag', show_title=False, color_scale='inferno', vmin=0., vmax=1)
 # plotter.map_plot(key='tp', kind='surface', max_time=2000, save_fig=True, filename='thick_alltime', show_title=False, color_scale='Blues_r')
 
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
-# plotter.line_plot(key='tp', average=False, save_fig=False)
+plotter.line_plot(key='tp', average=True, save_fig=False, min_layer=0, max_layer=8)
 # plotter.line_plot(key='te', average=False, save_fig=False, norm=False)
+# plotter.line_plot(key='mag', average=False, save_fig=False, norm=False)
 
 # plotter.line_plot(key='mag', min_layer=0, max_layer=4, average=False, save_fig=False, norm=False)
 
