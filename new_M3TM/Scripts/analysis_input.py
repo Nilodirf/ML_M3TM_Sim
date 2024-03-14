@@ -8,12 +8,12 @@ import os
 # SimAnalysis.fit_umd_data('cgt_long', ['cgt/thin_multilayer', 'cgt/thick_multilayer_cap'])
 
 # SimAnalysis.fit_phonon_decay('array/FGT(16)_AIN(300)_flu_0.3', 0, 8, 10e-12, end_time=3e-9)
-# p0_cgt = [0.7, 0.3, 4e-12, 1e-10, 0.2, 1e-9, 5e-10]
-# p0_fgt = [0.7, 0.4, -4e-12, 1e-11, 0.2, 0.6e-10, 1e-10]
-# popt_int, cv_int =SimAnalysis.fit_mag_data(file='CGT/thin_multilayer', t1=1.5e-12, t_max=2e-9, p0_initial=p0_cgt)
-# popt_der, cv_der = SimAnalysis.fit_dm_dt(file='fgt/thin_mulitlayer', t1=1e-12, p0_initial=popt_int[1:])
+p0_cgt = [0.7, 0.3, 4e-12, 1e-10, 0.2, 1e-9, 5e-10]
+p0_fgt = [0.7, 0.4, -4e-12, 1e-11, 0.2, 0.6e-10, 1e-10]
+popt_int, cv_int =SimAnalysis.fit_mag_data(file='CGT/thin_multilayer', t1=1.5e-12, t_max=2e-9, p0_initial=p0_cgt)
+popt_der, cv_der = SimAnalysis.fit_dm_dt(file='fgt/thin_mulitlayer', t1=1e-12, p0_initial=popt_int[1:])
 
-SimAnalysis.fit_FGT_remag('fgt/high_flu', 1.5, 220.)
+# SimAnalysis.fit_FGT_remag('array/FGT(16)_SiO2(300)_flu_0.5', 1.5, 220.)
 # SimAnalysis.mag_tem_plot('cgt/thin_multilayer')
 
 

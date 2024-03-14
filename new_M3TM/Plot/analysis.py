@@ -517,17 +517,17 @@ class SimAnalysis(SimComparePlot):
         plt.show()
 
 
-        # def fit_m_diff(t, tau_1, tau_2, A, B):
-        #     return -A * np.exp((-t-5e-10)/tau_1) + B * np.exp((-t-5e-10)/tau_2)
-        #
-        # p0_diff = [5e-10, 6.7e-10, 2, 1.5]
+        def fit_m_diff(t, tau_1, tau_2, A, B):
+            return -A * np.exp((-t-5e-10)/tau_1) + B * np.exp((-t-5e-10)/tau_2)
+
+        p0_diff = [5e-10, 6.7e-10, 2, 1.5]
         # popt, cv = scipy.optimize.curve_fit(fit_m_diff, delay_phase_1 * 1e9, (mmag_T - mag_phase_1))
-        #
-        # plt.plot(delay_phase_1, (mmag_T-mag_phase_1), label=r'difference')
+
+        plt.plot(delay_phase_1, (mmag_T**2-mag_phase_1**2), label=r'difference')
         # plt.plot(delay_phase_1, fit_m_diff(delay_phase_1, *popt), label=r'fit')
-        # plt.plot(delay_phase_1, fit_m_diff(delay_phase_1, *p0_diff), label=r'default params')
-        # plt.legend()
-        # plt.show()
+        plt.plot(delay_phase_1, fit_m_diff(delay_phase_1, *p0_diff), label=r'default params')
+        plt.legend()
+        plt.show()
         return
 
     def fit_all_phonon(self, save_file_name, first_layer, last_layer, last_time):
