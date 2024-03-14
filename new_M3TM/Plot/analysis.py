@@ -447,15 +447,19 @@ class SimAnalysis(SimComparePlot):
             def LLB_demag(t, mmag, tau_1, t_offset):
                 denom = np.sqrt(1-(1-mmag**2)*np.exp(-(t-t_offset)/tau_1))
                 return mmag/denom
+
+            lower_bounds = [mag_phase_1[-1]-0.05, 1e-15, 0]
+            upper_bounds = [1, 1e-11, 5e-12]
+
             # run the fit:
-            popt_1, cv_1 = scipy.optimize.curve_fit(LLB_demag, delay_phase_1, mag_phase_1, p0_1)
+            popt_1, cv_1 = scipy.optimize.curve_fit(LLB_demag, delay_phase_1, mag_phase_1, p0_1, bounds=(lower_bounds, upper_bounds))
 
             # if the fit does not converge, lower the guess of tau_1:
             while not np.all(np.isfinite(cv_1)):
                 print('trying again: ', file)
                 tau_1_try *= 0.9
                 p0_1 = [mag_av[mmin_time_index + first_time_index], tau_1_try, 2e-12]
-                popt_1, cv_1 = scipy.optimize.curve_fit(LLB_demag, delay_phase_1, mag_phase_1, p0_1)
+                popt_1, cv_1 = scipy.optimize.curve_fit(LLB_demag, delay_phase_1, mag_phase_1, p0_1, bounds=(lower_bounds, upper_bounds))
 
             # print the results
             print('simulation file: ', file)
@@ -672,7 +676,7 @@ class SimAnalysis(SimComparePlot):
             else:
                 print('Did not find the thickness you made me search')
 
-            popt, cv = SimAnalysis.fit_mag_tau1(file=file, t1=t1, show_fig=True, save_fig=True, save_folder='all_tau_1', kind='LLB')
+            popt, cv = SimAnalysis.fit_mag_tau1(file=file, t1=t1, show_fig=True, save_fig=True, save_folder=save_folder, kind=kind)
             # popt = T0, Teq, exponent, delay
             all_mag_params[i, j, k] = popt
 
@@ -766,7 +770,7 @@ class SimAnalysis(SimComparePlot):
                     kappa = 1.
                 elif j == 8:
                     kappa = 0.35
-                for k, param in enumerate(sub_row[1, 2:]):  # the 1 here refers to either thin (m) or thick (n) sample
+                for k, param in enumerate(sub_row[0, :]):  # the 1 here refers to either thin (m) or thick (n) sample
                     if k == 2:
                         mmag_params[i][0].append(kappa)
                         mmag_params[i][1].append(param)
@@ -805,7 +809,7 @@ class SimAnalysis(SimComparePlot):
         labels = [r'FGT', r'CGT', r'CrI3']
 
         for i in range(len(colors)):
-            fig_mmag.plot(teq_params[i][0], teq_params[i][1], ls='dashed', marker='o', lw=0.5, color=colors[i], label=labels[i])
+            fig_mmag.plot(mmag_params[i][0], mmag_params[i][1], ls='dashed', marker='o', lw=0.5, color=colors[i], label=labels[i])
             fig_tau_1.plot(tau_1_params[i][0], (tau_1_params[i][1]), ls='dashed', marker='o', lw=0.5, color=colors[i])
             fig_t_offset.plot(t_offset_params[i][0], t_offset_params[i][1], ls='dashed', marker='o', lw=0.5, color=colors[i])
 

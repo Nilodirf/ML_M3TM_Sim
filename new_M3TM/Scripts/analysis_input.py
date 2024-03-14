@@ -1,5 +1,6 @@
 import numpy as np
 from ..Plot.analysis import SimAnalysis
+import os
 
 thin_thick_files = ['fit/thin', 'FGT/thin_free']
 
@@ -13,6 +14,10 @@ thin_thick_files = ['fit/thin', 'FGT/thin_free']
 # popt_int, cv_int =SimAnalysis.fit_mag_data(file='FGT/sub_AIN', t1=5e-12, t_max=0.5e-9, p0_initial=p0_fgt)
 # popt_der, cv_der = SimAnalysis.fit_dm_dt(file='fgt/thin_mulitlayer', t1=1e-12, p0_initial=popt_int[1:])
 
-SimAnalysis.fit_mag_tau1(file='cgt/thin_multilayer', kind='LLB', show_fig=True, save_fig=False, t1=10e-12)
-SimAnalysis.fit_mag_tau2(file='cgt/thin_multilayer', kind='exp', show_fig=True, save_fig=False)
+SimAnalysis.fit_mag_tau1(file='array/FGT(16)_AIN(300)_flu_0.5', kind='exp', show_fig=True, save_fig=False, t1=0e-12)
+SimAnalysis.fit_mag_tau2(file='array/FGT(16)_AIN(300)_flu_0.5', kind='exp', show_fig=True, save_fig=False)
 
+files = os.listdir('folder_here')
+all_data = SimAnalysis(files)
+
+SimAnalysis.fit_all_mag_tau1()
