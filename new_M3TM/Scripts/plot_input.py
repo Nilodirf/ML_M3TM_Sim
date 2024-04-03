@@ -4,7 +4,7 @@ from ..Plot.plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='test_abs_sub_2')
+plotter = SimPlot(file='tim_all_ke')
 
 # plotter.convert_to_dat()
 
@@ -12,8 +12,8 @@ plotter = SimPlot(file='test_abs_sub_2')
 # plotter.map_plot(key='tp',  save_fig=False)
 
 # plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=False, filename='thin_alltime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
-# plotter.map_plot(key='te', kind='colormap', max_time=2000, save_fig=False, filename='thick_alltime_mag', show_title=False, color_scale='inferno')
-# plotter.map_plot(key='tp', kind='surface', max_time=2000, save_fig=True, filename='thick_alltime', show_title=False, color_scale='Blues_r')
+plotter.map_plot(key='te', kind='colormap', save_fig=False, show_title=False, color_scale='Reds_r')
+plotter.map_plot(key='tp', kind='colormap', save_fig=False, show_title=False, color_scale='Blues_r')
 
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:

@@ -133,10 +133,13 @@ class SimDynamics:
         vat_sam = self.Sam.get_params('vat')[mag_mask]
 
         te0, tp0 = self.initialize_temperature()
-        fss0 = self.initialize_spin_configuration().flatten()
+        if mag_num != 0:
+            fss0 = self.initialize_spin_configuration().flatten()
 
-        fss_eq = SimDynamics.equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                                             fss0, te0, tp0[mag_mask], el_mag_mask, ms_sam, mag_num)
+            fss_eq = SimDynamics.equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
+                                                fss0, te0, tp0[mag_mask], el_mag_mask, ms_sam, mag_num)
+        else:
+            fss_eq = np.zeros(1)
 
         ts = np.concatenate((te0, tp0))
         config0 = np.concatenate((ts, fss_eq))
@@ -230,15 +233,23 @@ class SimDynamics:
 
         te = te_tp_fs_flat[:len_sam_te]
         tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
-        fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
-        fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
 
-        mag = SimDynamics.get_mag(fss, ms_sam, spin_sam)
-        dfs_dt = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
+        if mag_num != 0:
+            fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
+            fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
+
+            mag = SimDynamics.get_mag(fss, ms_sam, spin_sam)
+            dfs_dt = SimDynamics.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
                                          mag, fss, te, tp[mag_mask], el_mag_mask)
-        dm_dt = SimDynamics.get_mag(dfs_dt, ms_sam, spin_sam)
+            dm_dt = SimDynamics.get_mag(dfs_dt, ms_sam, spin_sam)
 
-        mag_en_t = SimDynamics.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
+            mag_en_t = SimDynamics.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
+
+            dfs_dt_flat = dfs_dt.flatten()
+        else:
+            mag_en_t = 0
+            dfs_dt_flat = np.zeros(1)
+
         cp_sam_t = np.zeros(len_sam)
         for i, ind_list in enumerate(mat_ind):
             cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
@@ -264,7 +275,6 @@ class SimDynamics:
         dte_dt += dte_dt_diff
         dtp_dt += dtp_dt_diff
 
-        dfs_dt_flat = dfs_dt.flatten()
         dtep_dt = np.concatenate((dte_dt, dtp_dt))
         all_increments_flat = np.concatenate((dtep_dt, dfs_dt_flat))
 
@@ -280,7 +290,7 @@ class SimDynamics:
         # Input:
         # ce_sam_t (numpy array). 1d-array holding the electronic heat capacities at the current temperature
         # cp_sam_t (numpy array). 1d-array holding the phononic heat capacities at the current temperature
-        # gep_sam (numpy array). 1d-array holding the electron phonon coupling at the current temperature
+        # gep_sam (numpy array). 1d-array holding the electron phonon coupling constants
         # te (numpy array). 1d-array of the current electron temperatures
         # tp (numpy array). 1d-array of the current phonon temperatures
         # pulse_t (numpy array). 1d-array of the current pulse power
@@ -442,10 +452,14 @@ class SimDynamics:
         tes = sim_results[:, :self.Sam.len_te]
         tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len]
 
-        fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
-        fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num,
+        if self.Sam.mag_num != 0:
+            fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
+            fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num,
                                     int(2*self.Sam.get_params('spin')[self.Sam.mag_mask][0]+1)))
-        mags = self.get_mag_results(fss)
+            mags = self.get_mag_results(fss)
+
+        else:
+            mags = np.zeros(1)
 
         return sim_delay, tes, tps, mags
 

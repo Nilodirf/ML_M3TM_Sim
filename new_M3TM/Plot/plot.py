@@ -93,20 +93,29 @@ class SimPlot:
 
         layer_labels_te = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                          for position in positions_line]
-                                         for i, positions_line in enumerate(positions) if gamma_els[i] != 0]))
+                                         for i, positions_line in enumerate(positions) if gamma_els[i] != 0], dtype=object))
+        print(layer_labels_te)
 
-        layer_labels_mag = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
-                                          for position in positions_line]
-                                          for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))
+        if np.array(mu_ats).any() != 0:
+
+            layer_labels_mag = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
+                                              for position in positions_line]
+                                              for i, positions_line in enumerate(positions) if mu_ats[i] != 0], dtype=object))
+
+            layer_thicknesses_mag = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
+                                                             for i, positions_line in enumerate(positions) if
+                                                             mu_ats[i] != 0], dtype=object)) * 1e9
+        else:
+            layer_labels_mag = np.zeros(1)
+            layer_thicknesses_mag = np.zeros(1)
 
         layer_thicknesses = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
                                            for i, positions_line in enumerate(positions)], dtype=object))*1e9
 
         layer_thicknesses_te = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
-                                              for i, positions_line in enumerate(positions) if gamma_els[i] != 0]))*1e9
+                                              for i, positions_line in enumerate(positions) if gamma_els[i] != 0], dtype=object))*1e9
 
-        layer_thicknesses_mag = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
-                                               for i, positions_line in enumerate(positions) if mu_ats[i] != 0]))*1e9
+
 
         cap_thickness_te = 0.
         for i, l in enumerate(positions):

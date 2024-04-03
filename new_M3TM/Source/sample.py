@@ -58,7 +58,7 @@ class SimSample:
 
             if material.ce_gamma != 0 and self.mat_arr[-1].ce_gamma != 0:
                 assert kappae_int is not None and \
-                       (type(kappae_int) == float or kappae_int == 'min' or kappap_int == 'max' or kappae_int == 'av'),\
+                       (type(kappae_int) == float or kappae_int == 'min' or kappae_int == 'max' or kappae_int == 'av'),\
                         'Please introduce electronic diffusion interface constant using ' \
                         'kappae_int = <value> (in W/m/K) ' \
                         'or "max" or "min" to either set the value manually or use the larger/smaller value of '\
