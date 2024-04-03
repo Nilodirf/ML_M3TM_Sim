@@ -83,18 +83,26 @@ class SimPlot:
         positions = positions.replace('[[', '').replace(']]', '')
         positions = positions.split('], [')
         positions = [mat.split(',') for mat in positions]
-        positions = [[str(int(pos)-int(pos_line[0]) + 1) for pos in pos_line] for pos_line in positions]
+        positions = np.array([[str(int(pos)+1) for pos in pos_line] for pos_line in positions], dtype=object)
+        positions_int = list(np.concatenate(positions))
+        positions_in_order = sorted([int(pos) for pos in positions_int])
+        label_sorter = [positions_int.index(str(pos)) for pos in positions_in_order]
+
+        positions_te = np.array([[str(int(pos) + 1) for pos in pos_line] for i, pos_line in enumerate(positions) if gamma_els[i] != 0], dtype=object)
+        positions_int_te = list(np.concatenate(positions_te))
+        positions_in_order_te = sorted([int(pos) for pos in positions_int_te])
+        label_sorter_te = [positions_int_te.index(str(pos)) for pos in positions_in_order_te]
+
 
         delay -= delay_0
 
         layer_labels = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                                  for position in positions_line]
-                                                 for i, positions_line in enumerate(positions)], dtype=object))
+                                                 for i, positions_line in enumerate(positions)], dtype=object))[label_sorter]
 
         layer_labels_te = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                          for position in positions_line]
-                                         for i, positions_line in enumerate(positions) if gamma_els[i] != 0], dtype=object))
-        print(layer_labels_te)
+                                         for i, positions_line in enumerate(positions) if gamma_els[i] != 0], dtype=object))[label_sorter_te]
 
         if np.array(mu_ats).any() != 0:
 
@@ -114,8 +122,6 @@ class SimPlot:
 
         layer_thicknesses_te = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
                                               for i, positions_line in enumerate(positions) if gamma_els[i] != 0], dtype=object))*1e9
-
-
 
         cap_thickness_te = 0.
         for i, l in enumerate(positions):
@@ -274,10 +280,11 @@ class SimPlot:
             title = 'Electron Temperature Map'
             y_axis = self.depth_labels_te[min_layer: max_layer]
             y_labels = self.layer_labels_te[min_layer: max_layer]
-            y_label_mask = np.array([True if index.endswith('_1') else False for index in y_labels])
-            mat_sep_marks = y_axis[y_label_mask]
-            mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
-            text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
+            y_label_mask = np.array([True if index[0] != y_labels[i+1][0] else False for i, index in enumerate(y_labels[:-1])])
+            y_label_mask = np.append(y_label_mask, np.array([True]))
+            mat_sep_marks = y_axis[y_label_mask]+1
+            # mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
+            text_above = [str(y_label)[:y_label.index('_')] for y_label in y_labels[y_label_mask]]
             z_label = r'$T_e$ [K]'
         elif key == 'tp':
             z = self.tps
@@ -289,10 +296,12 @@ class SimPlot:
             title = 'Phonon Temperature Map'
             y_axis = self.depth_labels[min_layer: max_layer]
             y_labels = self.layer_labels[min_layer:max_layer]
-            y_label_mask = np.array([True if index.endswith('_1') else False for index in y_labels])
-            mat_sep_marks = y_axis[y_label_mask]
-            mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
-            text_above = [str(y_label).replace('_1', '') for y_label in y_labels[y_label_mask]]
+            y_label_mask = np.array([True if index[0] != y_labels[i+1][0] else False for i, index in enumerate(y_labels[:-1])])
+            y_label_mask = np.append(y_label_mask, np.array([True]))
+            mat_sep_marks = y_axis[y_label_mask]+1
+            # mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask] + 2
+            print(mat_sep_marks)
+            text_above = [str(y_label)[:y_label.index('_')] for y_label in y_labels[y_label_mask]]
             z_label = r'$T_p$ [K]'
         elif key == 'mag':
             z = self.mags
@@ -339,7 +348,7 @@ class SimPlot:
             for i, mat_sep in enumerate(mat_sep_marks):
                 if y_axis[0] < mat_sep < y_axis[-1]:
                     plt.hlines(float(mat_sep), x[0], x[-1], color=text_color)
-                plt.text((x[-1]-x[0])*0.5/10, float(mat_sep) + 13, text_above[i], fontsize=14, color=text_color)
+                plt.text((x[-1]-x[0])*(i+1)/10, float(mat_sep), text_above[i], fontsize=10, color=text_color)
 
             plt.gca().invert_yaxis()
 
