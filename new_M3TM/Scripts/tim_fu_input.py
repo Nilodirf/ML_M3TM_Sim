@@ -10,12 +10,12 @@ from ..Source.pulse import SimPulse
 from ..Source.mainsim import SimDynamics
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
-Yttrium = SimMaterials(name='Y', pen_dep=34e-9, tdeb=186, dz=2e-9, vat=1e-28, ce_gamma=400., cp_max=1.25e6, kappap=0.,
-                   kappae=17., gep=0.5e17, spin=0., tc=0., muat=0., asf=0.)
+Yttrium = SimMaterials(name='Y', pen_dep=34e-9, tdeb=186, dz=2e-9, vat=1e-28, ce_gamma=400., cp_max=1.25e6, kappap=7.,
+                   kappae=10., gep=0.5e17, spin=0., tc=0., muat=0., asf=0.)
 Terbium = SimMaterials(name='Tb', pen_dep=19.4e-9, tdeb=174, dz=2e-9, vat=1e-28, ce_gamma=225., cp_max=2.2e6,
                    kappap=35., kappae=60., gep=2.5e17, spin=0., tc=0., muat=0., asf=0.)
-Aluminium = SimMaterials(name='Al', pen_dep=7.5e-9, tdeb=390, dz=2e-9, vat=1e-28, ce_gamma=135., cp_max=2.5e6, kappap=0.,
-                    kappae=240., gep=3e17, spin=0, tc=0., muat=0., asf=0.)
+Aluminium = SimMaterials(name='Al', pen_dep=7.5e-9, tdeb=390, dz=2e-9, vat=1e-28, ce_gamma=135., cp_max=2.5e6, kappap=40.,
+                    kappae=200., gep=3e17, spin=0, tc=0., muat=0., asf=0.)
 Siliconnitirde = SimMaterials(name='Si3N4', pen_dep=1, tdeb=400, dz=2e-9, vat=1.7e-29, ce_gamma=0., cp_max=3.17e6,
                    kappap=30., kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
 
@@ -33,10 +33,10 @@ sample.add_layers(material=Siliconnitirde, layers=100, kappap_int='av')
 pulse = SimPulse(sample=sample, pulse_width=20e-15, fluence=0.5, delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-12, ini_temp=300., solver='RK23', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-12, ini_temp=300., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='tim_all_ke')
+sim.save_data(solution, save_file='tim_with_kp')
