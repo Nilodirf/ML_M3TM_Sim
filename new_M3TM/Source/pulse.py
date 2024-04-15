@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy import constants as sp
 
 from ..Source.finderb import finderb
 
@@ -7,7 +8,7 @@ from ..Source.finderb import finderb
 class SimPulse:
     # This class lets us define te pulse for excitation of the sample
 
-    def __init__(self, sample, pulse_width, fluence, delay, pulse_dt, method, energy=None, theta=None, phi=None):
+    def __init__(self, sample, pulse_width, fluence, delay, method, photon_energy_eV=None, theta=None, phi=None):
         # Input:
         # sample (object). Sample in use
         # pulse_width (float). Sigma of gaussian pulse shape in s
@@ -33,11 +34,10 @@ class SimPulse:
         self.delay = delay
         self.peak_intensity = self.fluence/np.sqrt(2*np.pi)/self.pulse_width/10
         self.Sam = sample
-        self.pulse_dt = pulse_dt
         self.method = method
         assert self.method == 'LB' or self.method == 'Abeles', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
                                                               ' or \' Abeles\' (for computation of Fresnel equations).'
-        self.energy = energy
+        self.energy = photon_energy_eV
         self.theta = np.pi * theta
         self.phi = np.pi * phi
         self.pulse_time_grid, self.pulse_map = self.get_pulse_map()
@@ -352,3 +352,17 @@ class SimPulse:
         ### CHANGES: s to ps, m to nm, full power
 
         return
+
+    def get_for_all_layers(self, array):
+        # This method takes 1d array defined on N blocks of the sample and returns the data stored in this array for all
+        # layers in the sample.
+
+        # Input:
+        # self (object). The pulse in use
+        # array (numpy array). The 1d-array that shall be extended
+
+        # Returns:
+        # array_for_layers (numpy array). The 1d-array for all layers in the sample
+
+        return np.concatenate(np.array([[array[i] for _ in range(self.Sam.mat_blocks[i])] for i in range(len(self.Sam.mat_blocks))], dtype=object)).astype(complex)
+
