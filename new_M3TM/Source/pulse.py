@@ -62,8 +62,8 @@ class SimPulse:
         return pump_time_grid, pump_map
 
     def depth_profile(self, pump_grid):
-        # This method computes the depth dependence of the laser pulse in exponential fashion without reflection
-        # at interface and multiplies it with the time dependence.
+        # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abeles'
+        # matrix method.
 
         # Input:
         # sample (class object). The before constructed sample
@@ -74,29 +74,188 @@ class SimPulse:
         # and for the whole sample (second dimension)
 
         dz_sam = self.Sam.get_params('dz')
-        pendep_sam = self.Sam.get_params('pen_dep')
         mat_blocks = self.Sam.mat_blocks
 
-        max_power = self.peak_power
+        max_intensity = self.peak_intensity
         powers = np.array([])
-        first_layer = 0
-        last_layer = 0
 
-        for i in range(len(mat_blocks)):
-            last_layer += mat_blocks[i]
-            if pendep_sam[first_layer] == 1:
-                powers = np.append(powers, np.zeros(mat_blocks[i]))
+        if self.method == 'LB':
+
+            pendep_sam = self.Sam.get_params_from_blocks('pen_dep')
+            assert pendep_sam.any() is not None, 'Define penetration depths for all blocks of the sample within the' \
+                                                 'SimSample.add_layers() method when choosing Lambert-Beer absorption '\
+                                                 'profile.'
+
+            first_layer = 0
+            last_layer = 0
+
+            already_penetrated = 0
+
+            for i in range(len(mat_blocks)):
+                last_layer += mat_blocks[i]
+                if pendep_sam[first_layer] == 1:
+                    powers = np.append(powers, np.zeros(mat_blocks[i]))
+                    first_layer = last_layer
+                    continue
+                pen_red = np.divide((np.arange(mat_blocks[i])+already_penetrated)*dz_sam[first_layer:last_layer],
+                                    pendep_sam[first_layer:last_layer])
+                powers = np.append(powers, max_intensity/pendep_sam[first_layer:last_layer]
+                                   * np.exp(-pen_red))
+                max_intensity = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
-                continue
-            pen_red = np.divide(np.arange(mat_blocks[i])*dz_sam[first_layer:last_layer],
-                                pendep_sam[first_layer:last_layer])
-            powers = np.append(powers, max_power/pendep_sam[first_layer:last_layer]
-                               * np.exp(-pen_red))
-            max_power = powers[-1]*pendep_sam[last_layer-1]
-            first_layer = last_layer
-        excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
+                already_penetrated = 1
+            abs_flu = np.sum(powers*self.Sam.get_params('dz')) * (np.sqrt(2*np.pi)*self.pulse_width*10)
+            trans_flu = self.fluence-abs_flu
+            ref_flu = 0
+            excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
 
-        return excitation_map
+            return excitation_map
+
+        elif self.method == 'Abeles':
+
+            assert self.Sam.n_comp_arr.any() is not None, 'Please define a refractive index for every constituent'\
+                                                               'of the sample within the definition of the sample.'
+            assert self.energy is not None and self.theta is not None and self.phi is not None, \
+                'For the chosen method, make sure photon energy, theta and phi are defined.'
+
+            # N is the number of blocks/constituents in the sample, so all in all we have N+2 blocks in the system,
+            # considering vacuum before and after the sample:
+            N = len(self.Sam.mat_blocks)
+
+            # wavelength in m of laser pulse from photon energy:
+            wave_length = sp.h*sp.c/sp.physical_constants['electron volt'][0]/self.energy
+
+            # compute the normalized electric field amplitudes of p/s waves from the given angle phi:
+            e_p0 = np.cos(self.phi)
+            e_s0 = np.sin(self.phi)
+
+            # set up array of refraction indices, first layer and last layer considered vacuum before/after sample:
+            n_comp_arr = np.append(np.append(np.ones(1), self.Sam.n_comp_arr), np.ones(1))
+
+            # compute the penetration angle theta in every sample constituent from Snell's law:
+            theta_arr = np.empty(N+2, dtype=complex)
+            theta_arr[0] = self.theta
+            theta_arr[1:] = np.arcsin(n_comp_arr[0]/n_comp_arr[1:]*np.sin(theta_arr[0]))
+
+            # fresnel equations at N+1 interfaces:
+            n_last = n_comp_arr[:-1]
+            n_next = n_comp_arr[1:]
+            cos_theta_last = np.cos(theta_arr[:-1])
+            cos_theta_next = np.cos(theta_arr[1:])
+
+            r_s = np.divide(n_last*cos_theta_last-n_next*cos_theta_next, n_last*cos_theta_last+n_next*cos_theta_next)
+            t_s = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_last+n_next*cos_theta_next)
+            r_p = np.divide(n_last*cos_theta_next-n_next*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
+            t_p = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
+
+            print(t_p)
+
+            # we need the thicknesses of blocks and the distance from previous interfaces:
+            dzs = self.Sam.get_params('dz')
+            penetration_from_interface = np.array([])
+            block_thicknesses = np.array([])
+            start = 0
+            for end in self.Sam.mat_blocks:
+                end += start
+                penetration_from_interface = np.append(penetration_from_interface, np.cumsum(dzs[start:end])-dzs[start])
+                block_thicknesses = np.append(block_thicknesses, np.sum(dzs[start:end]))
+                start = end
+
+            # now the propagation matrices, for N+1 blocks:
+            all_C_s_mat = np.empty((N+1, 2, 2), dtype=complex)
+            all_C_p_mat = np.empty((N+1, 2, 2), dtype=complex)
+
+            all_C_s_mat[0] = np.array([[1, r_s[0]], [r_s[0], 1]])
+            all_C_p_mat[0] = np.array([[1, r_p[0]], [r_p[0], 1]])
+
+            all_phases = 2*np.pi/wave_length*n_comp_arr[1:-1]*cos_theta_last[1:]*block_thicknesses*1j
+
+            for i in range(1, len(all_C_s_mat)):
+                all_C_s_mat[i] = np.array([[np.exp(-all_phases[i-1]), r_s[i]*np.exp(-all_phases[i-1])],
+                                          [r_s[i]*np.exp(all_phases[i-1]), np.exp(all_phases[i-1])]])
+                all_C_p_mat[i] = np.array([[np.exp(-all_phases[i-1]), r_p[i]*np.exp(-all_phases[i-1])],
+                                           [r_p[i]*np.exp(all_phases[i-1]), np.exp(all_phases[i-1])]])
+
+            # now D_matrices:
+            all_D_s_mat = np.empty((N+2, 2, 2), dtype=complex)
+            all_D_p_mat = np.empty((N+2, 2, 2), dtype=complex)
+
+            all_D_s_mat[-1] = np.identity(2)
+            all_D_p_mat[-1] = np.identity(2)
+
+            for i in range(len(all_D_p_mat)-2, -1, -1):
+                all_D_s_mat[i] = np.matmul(all_C_s_mat[i], all_D_s_mat[i+1])
+                all_D_p_mat[i] = np.matmul(all_C_p_mat[i], all_D_p_mat[i+1])
+
+            # total reflection, transmission:
+            t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1])*cos_theta_next[-1],
+                              np.conj(n_comp_arr[0])*cos_theta_last[0]))\
+                      * np.abs(np.prod(t_p)/all_D_p_mat[0, 0, 0])**2
+            t_s_tot = np.real(np.divide(n_comp_arr[-1]*cos_theta_next[-1], n_comp_arr[0]*cos_theta_last[0]))\
+                      * np.abs(np.prod(t_s)/all_D_s_mat[0, 0, 0])**2
+            r_s_tot = np.abs(all_D_s_mat[0, 1, 0] / all_D_s_mat[0, 0, 0])**2
+            r_p_tot = np.abs(all_D_p_mat[0, 1, 0] / all_D_p_mat[0, 0, 0])**2 if self.theta != 1/2 else None
+
+            # electric field in all N+1 blocks, for +(-) propagating waves of layer j indexed [j,0(1)]:
+            all_E_s_amps = np.empty((N+1, 2), dtype=complex)
+            all_E_p_amps = np.empty((N+1, 2), dtype=complex)
+
+            for i in range(N+1):
+                tp = np.prod(t_p[:i+1])
+                ts = np.prod(t_s[:i+1])
+                t_p_ep = tp * e_p0
+                t_s_es = ts * e_s0
+                all_E_p_amps[i, 0] = all_D_p_mat[i, 0, 0]/all_D_p_mat[0, 0, 0]*t_p_ep if self.theta != np.pi/2 else 0
+                all_E_p_amps[i, 1] = all_D_p_mat[i, 1, 0]/all_D_p_mat[0, 0, 0]*t_p_ep if self.theta != np.pi/2 else 0
+                all_E_s_amps[i, 0] = all_D_s_mat[i, 0, 0]/all_D_s_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
+                all_E_s_amps[i, 1] = all_D_s_mat[i, 1, 0]/all_D_s_mat[0, 0, 0]*t_s_es if self.theta != np.pi/2 else 0
+
+            # kz in all blocks of the sample:
+            kz_in_sample = 2*np.pi/wave_length*n_comp_arr[1:-1]*np.cos(theta_arr[1:-1])
+
+            # electric field in all layers of sample and proportionality factor for absorptance:
+            e_p_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
+            e_s_in_sample = np.empty((self.Sam.len, 2), dtype=complex)
+            q_prop = np.empty(self.Sam.len)
+
+            first_layer = 0
+            for i, last_layer in enumerate(self.Sam.mat_blocks):
+                last_layer += first_layer
+                phase = 1j*kz_in_sample[i]*penetration_from_interface[first_layer:last_layer]
+                phase = np.array([np.exp(phase), np.exp(-phase)]).T
+                e_s_in_sample[first_layer: last_layer] = phase * all_E_s_amps[i+1, :]
+                e_p_in_sample[first_layer: last_layer] = phase * all_E_p_amps[i+1, :]
+                q_prop[first_layer: last_layer] = np.real(np.divide(n_comp_arr[i+1]*np.cos(theta_arr[i+1]), np.cos(self.theta)))\
+                                                  * 2*np.imag(kz_in_sample[i])
+                first_layer = last_layer
+
+            e_x_in_sample = np.concatenate(-np.diff(e_p_in_sample, axis=-1)) * np.cos(self.get_for_all_layers(theta_arr[1:-1]))
+            e_z_in_sample = -np.sum(e_p_in_sample, axis=-1) * np.sin(self.get_for_all_layers(theta_arr[1:-1]))
+            e_y_in_sample = np.sum(e_s_in_sample, axis=-1)
+
+            # from the E-field we get the normalized intensity:
+
+            F_z_p = np.abs(e_x_in_sample)**2 + np.abs(e_z_in_sample)**2
+            F_z_s = np.abs(e_y_in_sample)**2
+            F_z = F_z_p + F_z_s
+
+            # and finally the absorbed power densities:
+            powers = self.peak_intensity*q_prop*F_z
+            abs_flu = self.fluence * np.sum(F_z * self.Sam.get_params('dz')*q_prop)
+            ref_flu = self.fluence * (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
+            trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
+
+            print('directly computed absorbed fluence:', abs_flu)
+            print('refelcted fluence:', ref_flu)
+            print('transmitted fluence:', trans_flu)
+            print('flu-trans-ref:', self.fluence-trans_flu-ref_flu)
+
+            excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
+
+            ### ADD: assertion for absorption but no ce defined!!
+            ### CHANGE: pen_dep and layer_thickness to sample class, not materials
+
+            return excitation_map
 
     def visualize(self, axis, fit=None, save_fig=False, save_file=None):
         # This method plots the spatial/temporal/both dependencies of the pump pulse.
