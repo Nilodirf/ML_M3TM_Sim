@@ -6,10 +6,9 @@ class SimMaterials:
     # The material class holds mostly parameters of the materials in the sample to be constructed.
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
-    def __init__(self, name, pen_dep, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
+    def __init__(self, name, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
         # Input:
         # name (String). Name of the material
-        # pen_dep (float). Penetration depth of the layers of the material in m
         # tdeb (float). Debye temperature of the material
         # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
         # vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
@@ -39,7 +38,6 @@ class SimMaterials:
         # for all spin sublevels
 
         self.name = name
-        self.pen_dep = pen_dep
         self.tdeb = tdeb
         self.dz = dz
         self.vat = vat

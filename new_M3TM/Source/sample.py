@@ -21,8 +21,10 @@ class SimSample:
         # kappa_e_int (numpy array). 1d-array of the interface constants of electronic heat diffusion. Starts empty,
         # recalculated after adding of layers
         # len_te (int). Number of layers that have free electrons (determined with el_mask)
-        # el_mag_mask (numpy array). 1D-boolean array of the length of number of layers with itinerant electrons,
-        # boolean for whether they are magnetic (True) or not (False).
+        # el_mag_mask (boolean array). Array of the length of numbers of layers that hold free electrons, True if
+        # also magnetic, False if not
+        # n_comp_arr (numpy array). 1d-array of the complex refractive indices of the sample constituents (blocks)
+        # pen_dep_arr (numpy array). 1d-array of the penetration depths of sample consituents (blocks)
 
         self.mat_arr = np.array([])
         self.len = self.get_len()
@@ -35,16 +37,19 @@ class SimSample:
         self.kappa_e_int = np.array([])
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
+        self.n_comp_arr = np.array([])
+        self.pen_dep_arr = np.array([])
 
-    def add_layers(self, material, layers, kappap_int=None, kappae_int=None):
+    def add_layers(self, material, layers, kappap_int=None, kappae_int=None, n_comp=None, pen_dep=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
 
         # Input:
         # self (object). A pointer to the sample in construction
         # material (object). A material previously defined with the materials class
         # layers (int). Number of layers with depth material.dz to be added to the sample
-        # kappap_int (float). Phononic interface heat conductivity to the last block of the sample
-        # kappae_int (float). Electronic interface heat conductivity to the last block of the sample
+        # kappap_int (float/string). Phononic interface heat conductivity to the last block of the sample
+        # kappae_int (float/string). Electronic interface heat conductivity to the last block of the sample
+        # n_comp (complex float). Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate.
 
         # Returns:
         # mat_arr (numpy array). 1d-array after the layers have been added
@@ -52,17 +57,17 @@ class SimSample:
         if self.len > 0:
             assert kappap_int is not None and \
                    (type(kappap_int) == float or kappap_int == 'min' or kappap_int == 'max' or kappap_int == 'av'), \
-                    'Please introduce phononic diffusion interface constant using kappap_int = <value> (in W/m/K) or '\
-                    '"max" or "min" to either set the value manually or use the larger/smaller value of '\
-                    'phononic heat conductivities of the adjacent materials.'
+                'Please introduce phononic diffusion interface constant using kappap_int = <value> (in W/m/K) or ' \
+                '"max" or "min" to either set the value manually or use the larger/smaller value of ' \
+                'phononic heat conductivities of the adjacent materials.'
 
             if material.ce_gamma != 0 and self.mat_arr[-1].ce_gamma != 0:
                 assert kappae_int is not None and \
-                       (type(kappae_int) == float or kappae_int == 'min' or kappae_int == 'max' or kappae_int == 'av'),\
-                        'Please introduce electronic diffusion interface constant using ' \
-                        'kappae_int = <value> (in W/m/K) ' \
-                        'or "max" or "min" to either set the value manually or use the larger/smaller value of '\
-                        'electronic heat conductivities of the adjacent materials.'
+                       (type(kappae_int) == float or kappae_int == 'min' or kappap_int == 'max' or kappae_int == 'av'), \
+                    'Please introduce electronic diffusion interface constant using ' \
+                    'kappap_int = <value> (in W/m/K) ' \
+                    'or "max" or "min" to either set the value manually or use the larger/smaller value of ' \
+                    'electronic heat conductivities of the adjacent materials.'
 
             else:
                 kappae_int = 0.
@@ -77,7 +82,7 @@ class SimSample:
 
             elif kappap_int == 'av':
                 self.kappa_p_int = \
-                    np.append(self.kappa_p_int, (self.mat_arr[-1].kappap+material.kappap)/2)
+                    np.append(self.kappa_p_int, (self.mat_arr[-1].kappap + material.kappap) / 2)
 
             else:
                 self.kappa_p_int = np.append(self.kappa_p_int, kappap_int)
@@ -92,7 +97,7 @@ class SimSample:
 
             elif kappae_int == 'av':
                 self.kappa_e_int = \
-                    np.append(self.kappa_e_int, (self.mat_arr[-1].kappae+material.kappae)/2)
+                    np.append(self.kappa_e_int, (self.mat_arr[-1].kappae + material.kappae) / 2)
 
             else:
                 self.kappa_e_int = np.append(self.kappa_e_int, kappae_int)
@@ -106,8 +111,28 @@ class SimSample:
         self.mag_num = self.get_num_mag_mat()
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
+        self.n_comp_arr = np.append(self.n_comp_arr, n_comp)
+        self.pen_dep_arr = np.append(self.pen_dep_arr, pen_dep)
 
         return self.mat_arr
+
+    def get_params_from_blocks(self, param):
+        # This method returns parameters defined for blocks of the sample for each layer within (e.g. pen_dep, n_comp_arr)
+
+        # Input:
+        # self (object). The sample object in use
+        # param (Str). The parameter to be given for all layers of the sample
+
+        # Returns:
+        # params (numpy array). 1d-array of the parameters requested for all layers in the sample
+
+        if param == 'pen_dep':
+            return np.concatenate(np.array(
+                [[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))]))
+
+        elif param == 'n_comp':
+            return np.concatenate(np.array(
+                [[self.n_comp_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))]))
 
     def get_params(self, param):
         # This method lets us read out the parameters of all layers in the sample
