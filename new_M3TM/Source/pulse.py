@@ -7,24 +7,39 @@ from ..Source.finderb import finderb
 class SimPulse:
     # This class lets us define te pulse for excitation of the sample
 
-    def __init__(self, sample, pulse_width, fluence, delay):
+    def __init__(self, sample, pulse_width, fluence, delay, pulse_dt, method, energy=None, theta=None, phi=None):
         # Input:
         # sample (object). Sample in use
         # pulse_width (float). Sigma of gaussian pulse shape in s
-        # fluence (float). Fluence of the laser pulse in mJ/cm**2
+        # fluence (float). Fluence of the laser pulse in mJ/cm**2. Converted to J/m**2
         # delay (float). time-delay of the pulse peak after simulation start in s (Let the magnetization relax
         # to equilibrium before injecting the pulse
+        # method (String). The method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abele'
+        # for the matrix formulation calculating the profile via the Fresnel equations.
+        # energy (float). Energy of the optical laser pulse in eV. Only necessary for method 'Abele'
+        # theta (float). Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so
+        # between 0 and 1/2.
+        # phi (float). Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so
+        # between 0 and 1/2.
 
         # Also returns:
-        # peak_power (float). Peak power per area of the pulse in W/m**2. Needed to compute the absorption profile.#
+        # peak_power (float). Peak power per area (intensity) of the pulse in W/m**2.
+        # Needed to compute the absorption profile
         # pulse_time_grid, pulse_map (numpy arrays). 1d-arrays of the time-grid on which the pulse is defined
-        # and the corresponding 2d-array of excitation power density at all times in all layers.
+        # and the corresponding 2d-array of excitation power density at all times in all layers
 
         self.pulse_width = pulse_width
         self.fluence = fluence
         self.delay = delay
-        self.peak_power = self.fluence/np.sqrt(2*np.pi)/self.pulse_width*10
+        self.peak_intensity = self.fluence/np.sqrt(2*np.pi)/self.pulse_width/10
         self.Sam = sample
+        self.pulse_dt = pulse_dt
+        self.method = method
+        assert self.method == 'LB' or self.method == 'Abeles', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
+                                                              ' or \' Abeles\' (for computation of Fresnel equations).'
+        self.energy = energy
+        self.theta = np.pi * theta
+        self.phi = np.pi * phi
         self.pulse_time_grid, self.pulse_map = self.get_pulse_map()
 
     def get_pulse_map(self):
