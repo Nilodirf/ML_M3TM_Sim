@@ -6,11 +6,10 @@ class SimMaterials:
     # The material class holds mostly parameters of the materials in the sample to be constructed.
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
-    def __init__(self, name, tdeb, dz, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
+    def __init__(self, name, tdeb, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
         # Input:
         # name (String). Name of the material
         # tdeb (float). Debye temperature of the material
-        # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
         # vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
         # kappap (float). Phononic heat diffusion constant in W/m/K
         # kappae (float). Electronic heat diffusion constant in W/m/K (set to 0 if no itinerant electrons)
@@ -39,7 +38,6 @@ class SimMaterials:
 
         self.name = name
         self.tdeb = tdeb
-        self.dz = dz
         self.vat = vat
         self.kappap = kappap
         self.kappae = kappae

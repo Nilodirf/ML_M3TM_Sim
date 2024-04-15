@@ -3,6 +3,7 @@ from scipy.integrate import solve_ivp
 import os
 import time
 from scipy import constants as sp
+from datetime import datetime
 
 from .finderb import finderb
 
@@ -118,7 +119,7 @@ class SimDynamics:
         cp_sam = [np.array(i) for i in cp_sam]
         gep_sam = self.Sam.get_params('gep')[el_mask]
         pulse_time_grid, pulse_map = self.Pulse.pulse_time_grid, self.Pulse.pulse_map
-        dz_sam = self.Sam.get_params('dz')
+        dz_sam = self.Sam.get_params_from_blocks('dz')
         kappa_e_sam = self.Sam.get_params('kappae')
         kappa_p_sam = self.Sam.get_params('kappap')
         kappa_e_dz_pref = np.divide(kappa_e_sam, np.power(dz_sam, 2)[..., np.newaxis])[el_mask]
@@ -509,11 +510,13 @@ class SimDynamics:
         params_file = open(sim_path + '/params.dat', 'w+')
 
         params_file.write('##Simulation parameters' + '\n')
-        params_file.write('initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
+        params_file.write('Time of finalization' + str(datetime.now()) + ' GMT' + '\n')
+        params_file.write('Integration method: ' + self.solver + '\n')
+        params_file.write('Initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
         params_file.write('##Sample parameters' + '\n')
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
         params_file.write('Material positions at layer in sample: ' + str(self.Sam.mat_ind) + '\n')
-        params_file.write('Layer depth = ' + str([mat.dz for mat in mats]) + '[m]' + '\n')
+        params_file.write('Layer depth = ' + str(self.Sam.dz_arr*1e9) + '[nm]' + '\n')
         params_file.write('Atomic volumes = ' + str([mat.vat for mat in mats]) + '[m^3]' + '\n')
         params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
         params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
@@ -526,11 +529,16 @@ class SimDynamics:
         params_file.write('kappa_ph = ' + str([mat.kappap for mat in mats]) + '[W/mK]' + '\n')
         params_file.write('T_C = ' + str([mat.tc for mat in mats]) + '[K]' + '\n')
         params_file.write('T_Deb = ' + str([mat.tdeb for mat in mats]) + '[K]' + '\n')
-        params_file.write('### Pulse parameters' + '\n')
+        params_file.write('##Pulse parameters' + '\n')
         params_file.write('Estimated fluence:' + str(self.Pulse.fluence) + '[mJ/cm^2]' + '\n')
         params_file.write('Sigma = ' + str(self.Pulse.pulse_width) + '[s]' + '\n')
         params_file.write('Delay = ' + str(self.Pulse.delay) + '[s]' + '\n')
-        params_file.write('Penetration depth = ' + str([mat.pen_dep for mat in mats]) + '[m]' + '\n')
+        if self.Pulse.method == 'LB':
+            params_file.write('Absorbtion profile computed with Lambert-Beer-Law' + '\n')
+            params_file.write('Penetration depths: ' + str(self.Sam.pen_dep_arr*1e9) + ' nm' + '\n')
+        elif self.Pulse.method == 'Abeles':
+            params_file.write('Absorption profile computed with Abeles\' matrix method' + '\n')
+            params_file.write('Refractive indices: ' + str(self.Sam.n_comp_arr) + '\n')
         params_file.write('##Interface parameters' + '\n')
         params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + '[W/m/K]' + '\n')
         params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + '[W/m/K]' + '\n')

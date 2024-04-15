@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from matplotlib import pyplot as plt
 from scipy import constants as sp
 
@@ -88,7 +89,7 @@ class SimPulse:
         # 2d-array of the corresponding pump energies on the time grid (first dimension)
         # and for the whole sample (second dimension)
 
-        dz_sam = self.Sam.get_params('dz')
+        dz_sam = self.Sam.get_params_from_blocks('dz')
         mat_blocks = self.Sam.mat_blocks
 
         max_intensity = self.peak_intensity
@@ -119,7 +120,7 @@ class SimPulse:
                 max_intensity = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
                 already_penetrated = 1
-            abs_flu = np.sum(powers*self.Sam.get_params('dz')) * (np.sqrt(2*np.pi)*self.pulse_width*10)
+            abs_flu = np.sum(powers*dz_sam) * (np.sqrt(2*np.pi)*self.pulse_width*10)
             trans_flu = self.fluence-abs_flu
             ref_flu = 0
             excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
@@ -166,14 +167,13 @@ class SimPulse:
             print(t_p)
 
             # we need the thicknesses of blocks and the distance from previous interfaces:
-            dzs = self.Sam.get_params('dz')
             penetration_from_interface = np.array([])
             block_thicknesses = np.array([])
             start = 0
             for end in self.Sam.mat_blocks:
                 end += start
-                penetration_from_interface = np.append(penetration_from_interface, np.cumsum(dzs[start:end])-dzs[start])
-                block_thicknesses = np.append(block_thicknesses, np.sum(dzs[start:end]))
+                penetration_from_interface = np.append(penetration_from_interface, np.cumsum(dz_sam[start:end])-dz_sam[start])
+                block_thicknesses = np.append(block_thicknesses, np.sum(dz_sam[start:end]))
                 start = end
 
             # now the propagation matrices, for N+1 blocks:
@@ -256,7 +256,7 @@ class SimPulse:
 
             # and finally the absorbed power densities:
             powers = self.peak_intensity*q_prop*F_z
-            abs_flu = self.fluence * np.sum(F_z * self.Sam.get_params('dz')*q_prop)
+            abs_flu = self.fluence * np.sum(F_z * dz_sam*q_prop)
             ref_flu = self.fluence * (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
             trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
 
@@ -278,7 +278,9 @@ class SimPulse:
         # Input:
         # self (object). The pulse object in use
         # axis (String). Chose whether to plot the temporal profile ('t'), the spatial profile of absorption ('z')
-        # or both ('tz').
+        # or both ('tz')
+        # save_fig (boolean). Wheather to save the figure of the absorption profile
+        # save_file (string). Name of the file to save pulse absorption visualization if save_fig=True
 
         # Returns:
         # None. It is void function that only plots.
@@ -302,11 +304,16 @@ class SimPulse:
             plt.show()
 
         elif axis == 'z':
+            dz_sam = self.Sam.get_params_from_blocks('dz')
             norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
-            sample_depth = np.cumsum(self.Sam.get_params('dz')) - self.Sam.get_params('dz')[0]
+            sample_depth = np.cumsum(dz_sam) - dz_sam[0]
             plt.plot(sample_depth*1e9, self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm)
             plt.xlabel(r'sample depth z [nm]', fontsize=16)
             plt.ylabel(r'S(z)/S$_{max}$', fontsize=16)
+            if self.method == 'LB':
+                plt.title('Absorption profile computed with Lambert-Beer law')
+            if self.method == 'Abeles':
+                plt.title('Absorption profile computed with Abeles matrix method')
             if save_fig:
                 assert save_file is not None, 'If you wish to save, please introduce a name for the file with save_file=\'name\''
                 plt.savefig('Results/' + save_file + '.pdf')
@@ -336,7 +343,8 @@ class SimPulse:
                 plt.show()
 
         else:
-            sample_depth = np.cumsum(self.Sam.get_params('dz'))-self.Sam.get_params('dz')[0]
+            dz_sam = self.Sam.get_params_from_blocks('dz')
+            sample_depth = np.cumsum(dz_sam)-dz_sam[0]
             plt.xlabel(r'delay [ps]', fontsize=16)
             plt.ylabel(r'sample depth [m]', fontsize=16)
             plt.pcolormesh(self.pulse_time_grid, sample_depth, self.pulse_map.T, cmap='inferno')

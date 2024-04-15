@@ -39,13 +39,15 @@ class SimSample:
         self.el_mag_mask = self.get_el_mag_mask()
         self.n_comp_arr = np.array([])
         self.pen_dep_arr = np.array([])
+        self.dz_arr = np.array([])
 
-    def add_layers(self, material, layers, kappap_int=None, kappae_int=None, n_comp=None, pen_dep=None):
+    def add_layers(self, material, dz, layers, kappap_int=None, kappae_int=None, n_comp=None, pen_dep=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
 
         # Input:
         # self (object). A pointer to the sample in construction
         # material (object). A material previously defined with the materials class
+        # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
         # layers (int). Number of layers with depth material.dz to be added to the sample
         # kappap_int (float/string). Phononic interface heat conductivity to the last block of the sample
         # kappae_int (float/string). Electronic interface heat conductivity to the last block of the sample
@@ -63,7 +65,7 @@ class SimSample:
 
             if material.ce_gamma != 0 and self.mat_arr[-1].ce_gamma != 0:
                 assert kappae_int is not None and \
-                       (type(kappae_int) == float or kappae_int == 'min' or kappap_int == 'max' or kappae_int == 'av'), \
+                       (type(kappae_int) == float or kappae_int == 'min' or kappae_int == 'max' or kappae_int == 'av'), \
                     'Please introduce electronic diffusion interface constant using ' \
                     'kappap_int = <value> (in W/m/K) ' \
                     'or "max" or "min" to either set the value manually or use the larger/smaller value of ' \
@@ -113,6 +115,7 @@ class SimSample:
         self.el_mag_mask = self.get_el_mag_mask()
         self.n_comp_arr = np.append(self.n_comp_arr, n_comp)
         self.pen_dep_arr = np.append(self.pen_dep_arr, pen_dep)
+        self.dz_arr = np.append(self.dz_arr, dz)
 
         return self.mat_arr
 
@@ -128,11 +131,15 @@ class SimSample:
 
         if param == 'pen_dep':
             return np.concatenate(np.array(
-                [[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))]))
+                [[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
 
         elif param == 'n_comp':
             return np.concatenate(np.array(
-                [[self.n_comp_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))]))
+                [[self.n_comp_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
+
+        elif param == 'dz':
+            return np.concatenate(np.array(
+                [[self.dz_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
 
     def get_params(self, param):
         # This method lets us read out the parameters of all layers in the sample
