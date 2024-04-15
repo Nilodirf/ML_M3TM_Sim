@@ -4,7 +4,7 @@ from ..Plot.plot import SimPlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='tim_with_kp')
+plotter = SimPlot(file='tim_only_tb')
 
 # plotter.convert_to_dat()
 
@@ -12,7 +12,7 @@ plotter = SimPlot(file='tim_with_kp')
 # plotter.map_plot(key='tp',  save_fig=False)
 
 # plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=False, filename='thin_alltime_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
-plotter.map_plot(key='te', kind='surface', save_fig=False, show_title=False, color_scale='Reds')
+plotter.map_plot(key='te', kind='colormap', save_fig=False, show_title=False, color_scale='Reds')
 plotter.map_plot(key='tp', kind='surface', save_fig=False, show_title=False, color_scale='Blues')
 
 

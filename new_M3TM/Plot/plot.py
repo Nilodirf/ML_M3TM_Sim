@@ -46,6 +46,9 @@ class SimPlot:
         tps = np.load(path + 'tps.npy')
         mags = np.load(path + 'ms.npy')
 
+        if tes.any().dtype is not float:
+            print('somethings up')
+
         with open(path + 'params.dat', 'r') as file:
             content = file.readlines()
 
