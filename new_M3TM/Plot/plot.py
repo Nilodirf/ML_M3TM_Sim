@@ -46,9 +46,6 @@ class SimPlot:
         tps = np.load(path + 'tps.npy')
         mags = np.load(path + 'ms.npy')
 
-        if tes.any().dtype is not float:
-            print('somethings up')
-
         with open(path + 'params.dat', 'r') as file:
             content = file.readlines()
 
@@ -146,8 +143,8 @@ class SimPlot:
 
         depth_labels_mag = np.cumsum(layer_thicknesses_mag) + cap_thickness_mag - layer_thicknesses_mag[0]
 
-        return delay, tes, tps, mags, layer_labels, layer_labels_te, layer_labels_mag, \
-               depth_labels, depth_labels_te, depth_labels_mag
+        return delay.astype(float), tes.astype(float), tps.astype(float), mags.astype(float), layer_labels, layer_labels_te, layer_labels_mag, \
+               depth_labels.astype(float), depth_labels_te.astype(float), depth_labels_mag.astype(float)
 
     def te_tp_plot(self, tp_layers, average, color_scales=['Blues', 'inferno'], min_time=None, max_time=None,
                    save_fig=False, filename=None):
@@ -408,8 +405,9 @@ class SimPlot:
                     ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i], lw=3.0)
                     start_block_at = end_block_at
                 # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
-                z_block_av = np.sum(z_all_layers[:, block_separator[-2]:], axis=1) / len(z_all_layers.T[block_separator[-2]:])
-                ax.plot(x, yg, z_block_av, color=colors[-1], label=text_above[-1], lw=3.0)
+                if len(block_separator) > 1:
+                    z_block_av = np.sum(z_all_layers[:, block_separator[-2]:], axis=1) / len(z_all_layers.T[block_separator[-2]:])
+                    ax.plot(x, yg, z_block_av, color=colors[-1], label=text_above[-1], lw=3.0)
 
                 # add line at T_C and the text (T_c manual at 65 K):
                 # ax.plot(x, yg, np.ones_like(x)*65, color='black', alpha=0.8)
@@ -459,8 +457,9 @@ class SimPlot:
                     ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i], lw=3.0)
                     start_block_at = end_block_at
                 # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
-                z_block_av = np.sum(z_all_layers[:, block_separator[-2]:], axis=1) / len(z_all_layers.T[block_separator[-2]:])
-                ax.plot(x, yg, z_block_av, color=colors[-2], label=text_above[-1], lw=3.0)
+                if len(block_separator) > 1:
+                    z_block_av = np.sum(z_all_layers[:, block_separator[-2]:], axis=1) / len(z_all_layers.T[block_separator[-2]:])
+                    ax.plot(x, yg, z_block_av, color=colors[-2], label=text_above[-1], lw=3.0)
 
                 if key == 'mag':
                     yg = yM * np.ones(x.shape)
@@ -726,6 +725,39 @@ class SimComparePlot:
 
             zero_time = finderb(0., delay)[0]
 
+    def compare_samples(self, key, min_layers, max_layers, colors, labels, save_fig=False, filename=None):
+
+        assert len(min_layers) == len(self.files) and len(max_layers) == len(self.files), 'Introduce as many min ' \
+                                                                                          'and max layers as files.'
+        assert len(colors) == len(self.files) and len(labels) == len (self.files), 'Introduce as many colors as files.'
+        assert key == 'te' or key == 'tp' or key == 'mag', 'Valid keys for plotting subsystems are te, tp and mag.'
+
+        plt.figure(figsize=(8, 6))
+
+        for i, file in enumerate(self.files):
+            plot_file = SimPlot(file)
+            delays, tes, tps, mags = plot_file.get_data()[:4]
+            if key == 'te':
+                y = np.sum(tes[:, min_layers[i]: max_layers[i]], axis=1)/(max_layers[i]-min_layers[i])
+                y_label = r'$T_e$ [K]'
+            elif key == 'tp':
+                y = np.sum(tps[:, min_layers[i]: max_layers[i]], axis=1)/(max_layers[i]-min_layers[i])
+                y_label = r'$T_p$ [K]'
+            elif key == 'mag':
+                y = np.sum(mags[:, min_layers[i]: max_layers[i]], axis=1)/(max_layers[i]-min_layers[i])
+                y_label = r'magnetization'
+
+            plt.plot(delays*1e12, y, color=colors[i], label=labels[i])
+
+        plt.legend(fontsize=16)
+        plt.xlabel(r'delay [ps]', fontsize=20)
+        plt.ylabel(y_label, fontsize=20)
+
+        if save_fig == True:
+            assert filename is not None and type(filename) == str, 'If you want to save the figure, introuce a filename' \
+                                                                   'without file format with filename=...'
+            plt.savefig('Results/' + str(filename) + '.pdf')
+        plt.show()
 
 
 

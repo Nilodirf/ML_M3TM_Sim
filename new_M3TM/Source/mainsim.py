@@ -120,6 +120,7 @@ class SimDynamics:
         gep_sam = self.Sam.get_params('gep')[el_mask]
         pulse_time_grid, pulse_map = self.Pulse.pulse_time_grid, self.Pulse.pulse_map
         dz_sam = self.Sam.get_params_from_blocks('dz')
+        print(dz_sam)
         kappa_e_sam = self.Sam.get_params('kappae')
         kappa_p_sam = self.Sam.get_params('kappap')
         kappa_e_dz_pref = np.divide(kappa_e_sam, np.power(dz_sam, 2)[..., np.newaxis])[el_mask]
@@ -231,10 +232,10 @@ class SimDynamics:
         # Returns:
         # all_increments_flat (numpy array). Flattened 1d-array of the increments of T_e, T_p
         # and fs (spin-level occupation in the magnetic material)
-
         te = te_tp_fs_flat[:len_sam_te]
         tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
 
+        # compute increments of magnetization if magnetic system is defined:
         if mag_num != 0:
             fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
             fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
@@ -251,6 +252,7 @@ class SimDynamics:
             mag_en_t = 0
             dfs_dt_flat = np.zeros(1)
 
+        # compute local interactions of temperatures and pulse:
         cp_sam_t = np.zeros(len_sam)
         for i, ind_list in enumerate(mat_ind):
             cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
@@ -264,6 +266,7 @@ class SimDynamics:
         dte_dt, dtp_dt[el_mask] = SimDynamics.loc_temp_dyn(ce_sam_t, cp_sam_t[el_mask], gep_sam, te,
                                                            tp[el_mask], pulse_t, mag_en_t, el_mag_mask)
 
+        # compute diffusion in temperature systems if the sample contains more than one layer:
         if len(te) == 1:
             dte_dt_diff = np.zeros(1)
         else:
@@ -276,6 +279,7 @@ class SimDynamics:
         dte_dt += dte_dt_diff
         dtp_dt += dtp_dt_diff
 
+        # bring data of increments back into 1d array shape:
         dtep_dt = np.concatenate((dte_dt, dtp_dt))
         all_increments_flat = np.concatenate((dtep_dt, dfs_dt_flat))
 
@@ -341,7 +345,7 @@ class SimDynamics:
 
         dte_dt_diff = np.divide(term_1 + term_2, ce_sam_t)
 
-        return dte_dt_diff
+        return dte_dt_diff.astype(float)
 
     @staticmethod
     def phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp):
@@ -362,7 +366,7 @@ class SimDynamics:
         dtp_dt_diff = np.divide(np.multiply(kappa_p_dz_pref[:, 1], tp_diff_right) +
                                 np.multiply(kappa_p_dz_pref[:, 0], tp_diff_left), cp_sam_t)
 
-        return dtp_dt_diff
+        return dtp_dt_diff.astype(float)
 
     @staticmethod
     def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs, te, tp, el_mag_mask):
@@ -510,38 +514,41 @@ class SimDynamics:
         params_file = open(sim_path + '/params.dat', 'w+')
 
         params_file.write('##Simulation parameters' + '\n')
-        params_file.write('Time of finalization' + str(datetime.now()) + ' GMT' + '\n')
+        params_file.write('Time of finalization: ' + str(datetime.now()) + ' GMT' + '\n')
         params_file.write('Integration method: ' + self.solver + '\n')
-        params_file.write('Initial temperature: ' + str(self.ini_temp) + '[K]' + '\n')
+        params_file.write('Initial temperature: ' + str(self.ini_temp) + ' [K]' + '\n')
         params_file.write('##Sample parameters' + '\n')
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
         params_file.write('Material positions at layer in sample: ' + str(self.Sam.mat_ind) + '\n')
-        params_file.write('Layer depth = ' + str(self.Sam.dz_arr*1e9) + '[nm]' + '\n')
-        params_file.write('Atomic volumes = ' + str([mat.vat for mat in mats]) + '[m^3]' + '\n')
+        params_file.write('Layer depth = ' + str(list(self.Sam.dz_arr)) + ' [m]' + '\n')
+        params_file.write('Atomic volumes = ' + str([mat.vat for mat in mats]) + ' [m^3]' + '\n')
         params_file.write('Effective spin = ' + str([mat.spin for mat in mats]) + '\n')
-        params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + '[mu_Bohr]' + '\n')
+        params_file.write('mu_at = ' + str([mat.muat for mat in mats]) + ' [mu_Bohr]' + '\n')
         params_file.write('a_sf = ' + str([mat.asf for mat in mats]) + '\n')
-        params_file.write('R = ' + str([mat.R*1e-12 for mat in mats]) + '[1/ps]' + '\n')
-        params_file.write('g_ep = ' + str([mat.gep for mat in mats]) + '[W/m^3/K]' + '\n')
-        params_file.write('gamma_el = ' + str([mat.ce_gamma for mat in mats]) + '[J/m^3/K^2]' + '\n')
-        params_file.write('cv_ph_max = ' + str([mat.cp_max for mat in mats]) + '[J/m^3/K]' + '\n')
-        params_file.write('kappa_el = ' + str([mat.kappae for mat in mats]) + '[W/mK]' + '\n')
-        params_file.write('kappa_ph = ' + str([mat.kappap for mat in mats]) + '[W/mK]' + '\n')
-        params_file.write('T_C = ' + str([mat.tc for mat in mats]) + '[K]' + '\n')
-        params_file.write('T_Deb = ' + str([mat.tdeb for mat in mats]) + '[K]' + '\n')
+        params_file.write('R = ' + str([mat.R*1e-12 for mat in mats]) + ' [1/ps]' + '\n')
+        params_file.write('g_ep = ' + str([mat.gep for mat in mats]) + ' [W/m^3/K]' + '\n')
+        params_file.write('gamma_el = ' + str([mat.ce_gamma for mat in mats]) + ' [J/m^3/K^2]' + '\n')
+        params_file.write('cv_ph_max = ' + str([mat.cp_max for mat in mats]) + ' [J/m^3/K]' + '\n')
+        params_file.write('kappa_el = ' + str([mat.kappae for mat in mats]) + ' [W/mK]' + '\n')
+        params_file.write('kappa_ph = ' + str([mat.kappap for mat in mats]) + ' [W/mK]' + '\n')
+        params_file.write('T_C = ' + str([mat.tc for mat in mats]) + ' [K]' + '\n')
+        params_file.write('T_Deb = ' + str([mat.tdeb for mat in mats]) + ' [K]' + '\n')
         params_file.write('##Pulse parameters' + '\n')
-        params_file.write('Estimated fluence:' + str(self.Pulse.fluence) + '[mJ/cm^2]' + '\n')
-        params_file.write('Sigma = ' + str(self.Pulse.pulse_width) + '[s]' + '\n')
-        params_file.write('Delay = ' + str(self.Pulse.delay) + '[s]' + '\n')
+        params_file.write('Estimated fluence:' + str(self.Pulse.fluence) + ' [mJ/cm^2]' + '\n')
+        params_file.write('Sigma = ' + str(self.Pulse.pulse_width) + ' [s]' + '\n')
+        params_file.write('Delay = ' + str(self.Pulse.delay) + ' [s]' + '\n')
         if self.Pulse.method == 'LB':
             params_file.write('Absorbtion profile computed with Lambert-Beer-Law' + '\n')
             params_file.write('Penetration depths: ' + str(self.Sam.pen_dep_arr*1e9) + ' nm' + '\n')
         elif self.Pulse.method == 'Abeles':
             params_file.write('Absorption profile computed with Abeles\' matrix method' + '\n')
             params_file.write('Refractive indices: ' + str(self.Sam.n_comp_arr) + '\n')
+            params_file.write('Photon energy: ' + str(self.Pulse.energy) + ' eV' +'\n')
+            params_file.write('Incident angle: ' + str(self.Pulse.theta/np.pi) + ' pi' + '\n')
+            params_file.write('Polarization angle: ' + str(self.Pulse.phi/np.pi) + ' pi' +'\n')
         params_file.write('##Interface parameters' + '\n')
-        params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + '[W/m/K]' + '\n')
-        params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + '[W/m/K]' + '\n')
+        params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + ' [W/m/K]' + '\n')
+        params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + ' [W/m/K]' + '\n')
         params_file.close()
 
         return

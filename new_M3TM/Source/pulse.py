@@ -114,7 +114,7 @@ class SimPulse:
                     first_layer = last_layer
                     continue
                 pen_red = np.divide((np.arange(mat_blocks[i])+already_penetrated)*dz_sam[first_layer:last_layer],
-                                    pendep_sam[first_layer:last_layer])
+                                    pendep_sam[first_layer:last_layer]).astype(float)
                 powers = np.append(powers, max_intensity/pendep_sam[first_layer:last_layer]
                                    * np.exp(-pen_red))
                 max_intensity = powers[-1]*pendep_sam[last_layer-1]
@@ -125,7 +125,7 @@ class SimPulse:
             ref_flu = 0
             excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
 
-            return excitation_map
+            return excitation_map.astype(float)
 
         elif self.method == 'Abeles':
 
@@ -146,7 +146,7 @@ class SimPulse:
             e_s0 = np.sin(self.phi)
 
             # set up array of refraction indices, first layer and last layer considered vacuum before/after sample:
-            n_comp_arr = np.append(np.append(np.ones(1), self.Sam.n_comp_arr), np.ones(1))
+            n_comp_arr = np.append(np.append(np.ones(1, dtype=complex), self.Sam.n_comp_arr), np.ones(1, dtype=complex))
 
             # compute the penetration angle theta in every sample constituent from Snell's law:
             theta_arr = np.empty(N+2, dtype=complex)
@@ -164,9 +164,7 @@ class SimPulse:
             r_p = np.divide(n_last*cos_theta_next-n_next*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
             t_p = np.divide(2*n_last*cos_theta_last, n_last*cos_theta_next+n_next*cos_theta_last)
 
-            print(t_p)
-
-            # we need the thicknesses of blocks and the distance from previous interfaces:
+            # we need the thicknesses of blocks and the distance from previous interfaces, for the N inner blocks:
             penetration_from_interface = np.array([])
             block_thicknesses = np.array([])
             start = 0
@@ -176,31 +174,39 @@ class SimPulse:
                 block_thicknesses = np.append(block_thicknesses, np.sum(dz_sam[start:end]))
                 start = end
 
-            # now the propagation matrices, for N+1 blocks:
+            # now the propagation matrices, for N+1 blocks, the first vacuum layer cannot be defined in this sense:
             all_C_s_mat = np.empty((N+1, 2, 2), dtype=complex)
             all_C_p_mat = np.empty((N+1, 2, 2), dtype=complex)
 
-            all_C_s_mat[0] = np.array([[1, r_s[0]], [r_s[0], 1]])
+            all_C_s_mat[0] = np.array([[1, r_s[0]], [r_s[0], 1]])  # 0 corresponds to the first sample block here
             all_C_p_mat[0] = np.array([[1, r_p[0]], [r_p[0], 1]])
 
-            all_phases = 2*np.pi/wave_length*n_comp_arr[1:-1]*cos_theta_last[1:]*block_thicknesses*1j
+            # N phases for the N blocks of the sample
+            all_phases = 1j*2*np.pi/wave_length*n_comp_arr[1:-1]*cos_theta_last[1:]*block_thicknesses
 
             for i in range(1, len(all_C_s_mat)):
+                # starts at i=1, so after the first sample block
                 all_C_s_mat[i] = np.array([[np.exp(-all_phases[i-1]), r_s[i]*np.exp(-all_phases[i-1])],
                                           [r_s[i]*np.exp(all_phases[i-1]), np.exp(all_phases[i-1])]])
                 all_C_p_mat[i] = np.array([[np.exp(-all_phases[i-1]), r_p[i]*np.exp(-all_phases[i-1])],
                                            [r_p[i]*np.exp(all_phases[i-1]), np.exp(all_phases[i-1])]])
 
-            # now D_matrices:
+            print(0, all_C_s_mat[0])
+            print(1, all_C_s_mat[1])
+
+            # now D_matrices for all N+2 blocks:
             all_D_s_mat = np.empty((N+2, 2, 2), dtype=complex)
             all_D_p_mat = np.empty((N+2, 2, 2), dtype=complex)
 
+            # fill last one in vacuum with identity:
             all_D_s_mat[-1] = np.identity(2)
             all_D_p_mat[-1] = np.identity(2)
 
             for i in range(len(all_D_p_mat)-2, -1, -1):
+                # starts in last block of sample (i=N), loops until first vacuum (i=0)
                 all_D_s_mat[i] = np.matmul(all_C_s_mat[i], all_D_s_mat[i+1])
                 all_D_p_mat[i] = np.matmul(all_C_p_mat[i], all_D_p_mat[i+1])
+                print('second loop', i, all_D_s_mat[i])  # THIS SEEMS WRONG!!!
 
             # total reflection, transmission:
             t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1])*cos_theta_next[-1],
@@ -236,7 +242,7 @@ class SimPulse:
             first_layer = 0
             for i, last_layer in enumerate(self.Sam.mat_blocks):
                 last_layer += first_layer
-                phase = 1j*kz_in_sample[i]*penetration_from_interface[first_layer:last_layer]
+                phase = np.array(1j*kz_in_sample[i]*penetration_from_interface[first_layer:last_layer], dtype=complex)
                 phase = np.array([np.exp(phase), np.exp(-phase)]).T
                 e_s_in_sample[first_layer: last_layer] = phase * all_E_s_amps[i+1, :]
                 e_p_in_sample[first_layer: last_layer] = phase * all_E_p_amps[i+1, :]
@@ -270,7 +276,7 @@ class SimPulse:
             ### ADD: assertion for absorption but no ce defined!!
             ### CHANGE: pen_dep and layer_thickness to sample class, not materials
 
-            return excitation_map
+            return excitation_map.astype(float)
 
     def visualize(self, axis, fit=None, save_fig=False, save_file=None):
         # This method plots the spatial/temporal/both dependencies of the pump pulse.
@@ -305,7 +311,8 @@ class SimPulse:
 
         elif axis == 'z':
             dz_sam = self.Sam.get_params_from_blocks('dz')
-            norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
+            # norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
+            norm = 1
             sample_depth = np.cumsum(dz_sam) - dz_sam[0]
             plt.plot(sample_depth*1e9, self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm)
             plt.xlabel(r'sample depth z [nm]', fontsize=16)
@@ -326,7 +333,7 @@ class SimPulse:
                 elif fit == 'lin':
                     def fit_func(depth, slope):
                         return 1-(slope*depth)
-                excited_depth = sample_depth[self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :] != 0]
+                excited_depth = sample_depth[self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :] != 0].astype(float)
                 excited_depth -= excited_depth[0]
                 to_fit = self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :] / norm
                 to_fit = to_fit[to_fit != 0]

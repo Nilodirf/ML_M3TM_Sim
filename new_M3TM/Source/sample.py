@@ -120,7 +120,7 @@ class SimSample:
         return self.mat_arr
 
     def get_params_from_blocks(self, param):
-        # This method returns parameters defined for blocks of the sample for each layer within (e.g. pen_dep, n_comp_arr)
+        # This method returns parameters defined for blocks of the sample for each layer within (e.g. pen_dep, n_comp_arr, dz)
 
         # Input:
         # self (object). The sample object in use
