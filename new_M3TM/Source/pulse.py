@@ -255,8 +255,8 @@ class SimPulse:
 
             # from the E-field we get the normalized intensity:
 
-            F_z_p = (np.abs(e_x_in_sample)**2 + np.abs(e_z_in_sample)**2)/e_p0**2
-            F_z_s = np.abs(e_y_in_sample)**2/e_s0**2
+            F_z_p = (np.abs(e_x_in_sample)**2 + np.abs(e_z_in_sample)**2)/e_p0**2 if self.phi != np.pi*1/2 else 0
+            F_z_s = np.abs(e_y_in_sample)**2/e_s0**2 if self.phi != 0 else 0
             F_z = F_z_p + F_z_s
 
             # and finally the absorbed power densities:

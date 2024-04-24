@@ -39,7 +39,7 @@ sample.add_layers(material=Terbium, dz=0.01e-9, layers=550, pen_dep=19.4e-9, n_c
 
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_eV=1.55, theta=0, phi=1/4)
+pulse = SimPulse(sample=sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_eV=1.55, theta=0, phi=0)
 pulse.visualize(axis='z', save_fig=True, save_file='tim_only_Tb_absorption_Abeles', fit=None)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
