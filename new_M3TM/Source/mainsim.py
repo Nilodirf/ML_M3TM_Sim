@@ -234,6 +234,9 @@ class SimDynamics:
         te = te_tp_fs_flat[:len_sam_te]
         tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
 
+        if te.any()<300.:
+            print('False')
+
         if mag_num != 0:
             fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
             fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
