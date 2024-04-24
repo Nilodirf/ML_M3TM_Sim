@@ -35,7 +35,7 @@ sample = SimSample()
 # sample.add_layers(material=Aluminium, dz=2e-9, layers=150, pen_dep=7.5e-9, n_comp=2.8+8.45j, kappap_int='av', kappae_int='max')
 # sample.add_layers(material=Siliconnitirde, dz=2e-9, layers=100, pen_dep=1, n_comp=2.008+0j, kappap_int='av')
 
-sample.add_layers(material=Terbium, dz=2e-9, layers=55, pen_dep=19.4e-9, n_comp=1.97+3.28j)
+sample.add_layers(material=Terbium, dz=0.01e-9, layers=550, pen_dep=19.4e-9, n_comp=1.97+3.28j)
 
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)

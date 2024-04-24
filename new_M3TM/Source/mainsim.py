@@ -120,7 +120,6 @@ class SimDynamics:
         gep_sam = self.Sam.get_params('gep')[el_mask]
         pulse_time_grid, pulse_map = self.Pulse.pulse_time_grid, self.Pulse.pulse_map
         dz_sam = self.Sam.get_params_from_blocks('dz')
-        print(dz_sam)
         kappa_e_sam = self.Sam.get_params('kappae')
         kappa_p_sam = self.Sam.get_params('kappap')
         kappa_e_dz_pref = np.divide(kappa_e_sam, np.power(dz_sam, 2)[..., np.newaxis])[el_mask]
