@@ -205,10 +205,9 @@ class SimPulse:
                 all_D_p_mat[i] = np.matmul(all_C_p_mat[i], all_D_p_mat[i+1])
 
             # total reflection, transmission:
-            t_p_tot = np.real(np.divide(np.conj(n_comp_arr[-1])*cos_theta_next[-1],
-                              np.conj(n_comp_arr[0])*cos_theta_last[0]))\
+            t_p_tot = np.real(np.divide(cos_theta_next[-1], cos_theta_last[0]))\
                       * np.abs(np.prod(t_p)/all_D_p_mat[0, 0, 0])**2
-            t_s_tot = np.real(np.divide(n_comp_arr[-1]*cos_theta_next[-1], n_comp_arr[0]*cos_theta_last[0]))\
+            t_s_tot = np.real(np.divide(cos_theta_next[-1], cos_theta_last[0]))\
                       * np.abs(np.prod(t_s)/all_D_s_mat[0, 0, 0])**2
             r_s_tot = np.abs(all_D_s_mat[0, 1, 0] / all_D_s_mat[0, 0, 0])**2
             r_p_tot = np.abs(all_D_p_mat[0, 1, 0] / all_D_p_mat[0, 0, 0])**2
@@ -249,14 +248,13 @@ class SimPulse:
                                                   * 2*np.imag(kz_in_sample[i])
                 first_layer = last_layer
 
-            e_x_in_sample = np.concatenate(np.diff(e_p_in_sample, axis=-1)) * np.cos(self.get_for_all_layers(theta_arr[1:-1]))
-            e_z_in_sample = np.sum(e_p_in_sample, axis=-1) * np.sin(self.get_for_all_layers(theta_arr[1:-1]))
+            e_x_in_sample = np.sum(e_p_in_sample, axis=-1) * np.cos(self.get_for_all_layers(theta_arr[1:-1]))
+            e_z_in_sample = np.concatenate(np.diff(e_p_in_sample, axis=-1)) * np.sin(self.get_for_all_layers(theta_arr[1:-1]))
             e_y_in_sample = np.sum(e_s_in_sample, axis=-1)
 
             # from the E-field we get the normalized intensity:
-
-            F_z_p = (np.abs(e_x_in_sample)**2 + np.abs(e_z_in_sample)**2)/e_p0**2 if self.phi != np.pi*1/2 else 0
-            F_z_s = np.abs(e_y_in_sample)**2/e_s0**2 if self.phi != 0 else 0
+            F_z_p = (np.abs(e_x_in_sample)**2 + np.abs(e_z_in_sample)**2) if self.phi != np.pi*1/2 else 0
+            F_z_s = np.abs(e_y_in_sample)**2 if self.phi != 0 else 0
             F_z = F_z_p + F_z_s
 
             # and finally the absorbed power densities:
@@ -265,10 +263,13 @@ class SimPulse:
             ref_flu = self.fluence * (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
             trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
 
-            print('directly computed absorbed fluence:', abs_flu)
-            print('refelcted fluence:', ref_flu)
-            print('transmitted fluence:', trans_flu)
-            print('flu-trans-ref:', self.fluence-trans_flu-ref_flu)
+            print('Absorption profile computed with Abeles\' matrix method at a fluence of ', str(self.fluence), ' mJ/cm^2')
+            print('F_a_sim =', abs_flu, 'mJ/cm^2')
+            print('F_r =', ref_flu, 'mJ/cm^2')
+            print('F_t =', trans_flu, 'mJ/cm^2')
+            print('F_a = F - F_r - F_t=', self.fluence-trans_flu-ref_flu, 'mJ/cm^2')
+            print('Relative error due to finite layer size: ', np.round(100*(abs_flu-(self.fluence-trans_flu-ref_flu))/abs_flu), 2, '%')
+            print()
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 

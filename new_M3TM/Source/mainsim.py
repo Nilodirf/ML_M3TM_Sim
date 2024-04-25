@@ -133,6 +133,9 @@ class SimDynamics:
         ms_sam = self.Sam.get_params('ms')
         vat_sam = self.Sam.get_params('vat')[mag_mask]
 
+        print('All parameters initialized. Starting simulation')
+        print()
+
         te0, tp0 = self.initialize_temperature()
         if mag_num != 0:
             fss0 = self.initialize_spin_configuration().flatten()
@@ -194,6 +197,7 @@ class SimDynamics:
         print('Equilibration phase done.')
         print('Equilibrium magnetization: ' + str(mag_eq))
         print('at initial temperature: ' + str(tp0) + ' K')
+        print()
 
         # return the equilibrium spin occupation:
         return fs_eq_flat
