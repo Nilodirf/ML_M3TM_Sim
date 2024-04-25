@@ -76,6 +76,15 @@ You need to watch out for three things:
 2. If you interface two materials __with itinerant electrons__, you also need to specify boundary conditions for the interfacial electronic heat diffusion.
 3. You need two specify either a penetration depth for the laser pulse or a complex refractive index to simulate the penetration of the pump pulse into your sample structure(I will add both because I can!). For insulating materials introduce a penetration depth of exactly an integer 1!
 
+Here is a list of the parameters to chose when adding layers to your sample:
+- ***material*** (object). _A material previously defined with the materials class_
+- ***dz*** (float). _Layer thickness of the material in m. Important only for resolution of heat diffusion_
+- ***layers*** (int). _Number of layers with depth material.dz to be added to the sample_
+- ***kappap_int*** (float/string). _Phononic interface heat conductivity to the last block of the sample. Either in W/m/K or 'av', 'min', 'max' of the constants of the two interfaced materials_
+- ***kappae_int*** (float/string). _Electronic interface heat conductivity to the last block of the sample. Either in W/m/K or 'av', 'min', 'max' of the constants of the two interfaced materials_
+- ***pen_dep (float)***. _Penetration depth of the laser pulse in m if to be computed with Lambert-Beer absorption profile_
+- ***n_comp*** (complex float). _Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate_
+
 ```
 my_sample.add_layers(material=my_insulator, dz= 1nm, layers=5, pen_dep=7.5e-9, n_comp=2.8+8.45j)
 my_sample.add_layers(material=my_magnet, dz=1nm, layers=15, pen_dep=34e-9, n_comp=2.21+2.73j, kappae_int='max', kappap_int=1.)
