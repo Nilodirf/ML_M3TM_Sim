@@ -114,6 +114,16 @@ my_pulse_Lambert_Beer = SimPulse(sample=my_sample, method='LB', pulse_width=20e-
 
 All the physical parameters are defined now, we just need to run the simulation now. Therefor we need to define some computational parameters. These may influence if the simulation runs fast, slow, wonky or exact. In the end, you might need to play around a little until you have found a configuration that yields solid and fast results.
 
+The parameters to define are:
+- ***sample*** (object). _The sample in use_
+- ***pulse*** (object). _The pulse excitation in use_
+- ***end_time*** (float). _Final time of simulation (including pulse delay) in s_
+- ***ini_temp*** (float). _Initial temperature of electron and phonon baths in the whole sample in K_
+- ***solver*** (String). _The solver used to evaluate the differential equation. See documentation of scipy.integrate.solve_ivp_
+- ***max_step*** (float). _Maximum step size in s of the solver for the whole simulation_
+- ***atol*** (float). _Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver_
+- ***rtol*** (float). _Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver_
+
 ```
 my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=200e-12, solver='RK23', max_step=1e-14)
 ```
