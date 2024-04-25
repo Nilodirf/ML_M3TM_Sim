@@ -32,18 +32,18 @@ from ..Source.mainsim import SimDynamics
 
 Materials are defined merely by their parameters. Here is a list of all the available parameters:
 
-- ***name*** (string). _Name of the material_
-- ***tdeb*** (float). _Debye temperature of the material_
-- ***cp_max*** (float). _Maximal phononic heat capacity in W/$m**3$/K. Temperature dependence is computed with Einstein model_
-- ***kappap*** (float). _Phononic heat diffusion constant in W/m/K_
-- ***kappae*** (float). _Electronic heat diffusion constant in W/m/K_
-- ***ce_gamma*** (float). _Sommerfeld constant of electronic heat capacity in J/$m**3$/K_
-- ***gep*** (float). _Electron-phonon coupling constant in W/$m**3$/K_
-- ***spin*** (float). _Effective spin of the material_
-- ***tc*** (float). _Curie temperature of the material_
-- ***muat*** (float). _Atomic magnetic moment in unit of $\mu_B$_
-- ***asf*** (float). _Electron-phonon-scattering induced spin flip probability of the material_
-- ***vat*** (float). _Magnetic atomic volume in $m^3$._
+- ***name*** (string).    _Name of the material_
+- ***tdeb*** (float).     _Debye temperature of the material_
+- ***cp_max*** (float).   _Maximal phononic heat capacity in W/m**3/K. Temperature dependence is computed with Einstein model_
+- ***kappap*** (float).   _Phononic heat diffusion constant in W/m/K_
+- ***kappae*** (float).   _Electronic heat diffusion constant in W/m/K_
+- ***ce_gamma*** (float). _Sommerfeld constant of electronic heat capacity in J/m**3/K_
+- ***gep*** (float).      _Electron-phonon coupling constant in W/m**3/K_
+- ***spin*** (float).     _Effective spin of the material
+- ***tc*** (float).       _Curie temperature of the material_
+- ***muat*** (float).     _Atomic magnetic moment in unit of \mu_Bohr_
+- ***asf*** (float).      _Electron-phonon-scattering induced spin flip probability of the material_
+- ***vat*** (float).      _Magnetic atomic volume in m^3._
 
 
 _For an insulating material, you only need to define the parameters for a phononic system:_
