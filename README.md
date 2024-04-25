@@ -32,6 +32,20 @@ from ..Source.mainsim import SimDynamics
 
 Materials are defined merely by their parameters. Here is a list of all the available parameters:
 
+- name (String). Name of the material
+- tdeb (float). Debye temperature of the material
+- cp_max (float). Maximal phononic heat capacity in W/m**3/K. Temperature dependence is computed with Einstein model
+- kappap (float). Phononic heat diffusion constant in W/m/K
+- kappae (float). Electronic heat diffusion constant in W/m/K (set to 0 if no itinerant electrons)
+- ce_gamma (float). Sommerfeld constant of electronic heat capacity in J/m**3/K (set to 0 if no itinerant electrons)
+- gep (float). Electron-phonon coupling constant in W/m**3/K (set to 0 if no itinerant electrons)
+- spin (float). Effective spin of the material (set to 0 if no itinerant spin-full electrons)
+- tc (float). Curie temperature of the material (set to 0 if not magnetic)
+- muat (float). Atomic magnetic moment in unit of mu_bohr. (set to 0 if not magnetic)
+- asf (float). Electron-phonon-scattering induced spin flip probability of the material (set to 0 if no itinerant spin-full electrons)
+- vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
+
+
 _For an insulating material, you only need to define the parameters for a phononic system:_
 ```
 my_insulator = SimMaterials(name='Gummydummy', tdeb=400, cp_max=3e6, kappap=30.)
