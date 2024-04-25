@@ -9,11 +9,11 @@ The last version control has been done for Python 3.11.
 The following packages need to be installed to run the code:
 
 -numpy
--scipy
--os
+*scipy
++os
 -time
--datetime
--matplotlib
+*datetime
++matplotlib
 
 ## Creating the Script file
 Create a script within the code/Scripts folder. All the contents of this file are listed below.
