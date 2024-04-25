@@ -32,18 +32,18 @@ from ..Source.mainsim import SimDynamics
 
 Materials are defined merely by their parameters. Here is a list of all the available parameters:
 
-- name (String). Name of the material
-- tdeb (float). Debye temperature of the material
-- cp_max (float). Maximal phononic heat capacity in W/m**3/K. Temperature dependence is computed with Einstein model
-- kappap (float). Phononic heat diffusion constant in W/m/K
-- kappae (float). Electronic heat diffusion constant in W/m/K (set to 0 if no itinerant electrons)
-- ce_gamma (float). Sommerfeld constant of electronic heat capacity in J/m**3/K (set to 0 if no itinerant electrons)
-- gep (float). Electron-phonon coupling constant in W/m**3/K (set to 0 if no itinerant electrons)
-- spin (float). Effective spin of the material (set to 0 if no itinerant spin-full electrons)
-- tc (float). Curie temperature of the material (set to 0 if not magnetic)
-- muat (float). Atomic magnetic moment in unit of mu_bohr. (set to 0 if not magnetic)
-- asf (float). Electron-phonon-scattering induced spin flip probability of the material (set to 0 if no itinerant spin-full electrons)
-- vat (float). Magnetic atomic volume in m. Influences for magnetization rate parameter in M3TM
+- ***name*** (string). _Name of the material_
+- ***tdeb*** (float). _Debye temperature of the material_
+- ***cp_max*** (float). _Maximal phononic heat capacity in W/$m**3$/K. Temperature dependence is computed with Einstein model_
+- ***kappap*** (float). _Phononic heat diffusion constant in W/m/K_
+- ***kappae*** (float). _Electronic heat diffusion constant in W/m/K_
+- ***ce_gamma*** (float). _Sommerfeld constant of electronic heat capacity in J/$m**3$/K_
+- ***gep*** (float). _Electron-phonon coupling constant in W/$m**3$/K_
+- ***spin*** (float). _Effective spin of the material_
+- ***tc*** (float). _Curie temperature of the material_
+- ***muat*** (float). _Atomic magnetic moment in unit of $\mu_B$_
+- ***asf*** (float). _Electron-phonon-scattering induced spin flip probability of the material_
+- ***vat*** (float). _Magnetic atomic volume in $m^3$._
 
 
 _For an insulating material, you only need to define the parameters for a phononic system:_
