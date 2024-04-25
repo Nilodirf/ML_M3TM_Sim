@@ -95,6 +95,16 @@ my_sample.add_layers(material=my_conductor, dz=1nm, layers=300, pen_dep=1, n_com
 
 With the sample created we can now compute already how a pump pulse interacts with it.
 
+To define the pulse you can/must introduce the following parameters:
+- ***sample*** (object). _Sample in use_
+- ***pulse_width*** (float). _Sigma of gaussian pulse shape in s_
+- ***fluence*** (float). _Fluence of the laser pulse in mJ/cm^2. Converted to J/m^_
+- ***delay*** (float). _Time-delay of the pulse peak after simulation start in s _
+- ***method*** (String). _Method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abeles' for the matrix formulation calculating the profile via the Fresnel equations._
+- ***photon_energy_ev*** (float). _Energy of the optical laser pulse in eV. Only necessary for method 'Abeles'_
+- ***theta*** (float). _Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
+- ***phi*** (float). _Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
+
 ```
 my_pulse_Abeles = SimPulse(sample=my_sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_eV=1.55, theta=1/4, phi=1/3)
 my_pulse_Lambert_Beer = SimPulse(sample=my_sample, method='LB', pulse_width=20e-15, fluence=5., delay=0.5e-12)
