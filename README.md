@@ -119,7 +119,7 @@ The parameters to define are:
 - ***pulse*** (object). _The pulse excitation in use_
 - ***end_time*** (float). _Final time of simulation (including pulse delay) in s_
 - ***ini_temp*** (float). _Initial temperature of electron and phonon baths in the whole sample in K_
-- ***solver*** (String). _The solver used to evaluate the differential equation. See [documentation of scipy.integrate.solve_ivp]([https://pages.github.com/](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html))_
+- ***solver*** (String). _The solver used to evaluate the differential equation. See_ [documentation of scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 - ***max_step*** (float). _Maximum step size in s of the solver for the whole simulation_
 - ***atol*** (float). _Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver_
 - ***rtol*** (float). _Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver_
