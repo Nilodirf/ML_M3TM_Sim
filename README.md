@@ -133,8 +133,3 @@ Let's just run it and see if we did okay here. To look at our data later we also
 my_results = my_simulation.get_t_m_maps()
 my_simulation.save_data(my_results, save_file='my_result_files')
 ```
-
-
-
-
-
