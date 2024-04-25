@@ -98,7 +98,7 @@ With the sample created we can now compute already how a pump pulse interacts wi
 To define the pulse you can/must introduce the following parameters:
 - ***sample*** (object). _Sample in use_
 - ***pulse_width*** (float). _Sigma of gaussian pulse shape in s_
-- ***fluence*** (float). _Fluence of the laser pulse in mJ/cm^2. Converted to J/m^_
+- ***fluence*** (float). _Fluence of the laser pulse in mJ/cm^2._
 - ***delay*** (float). _Time-delay of the pulse peak after simulation start in s_
 - ***method*** (String). _Method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abeles' for the matrix formulation calculating the profile via the Fresnel equations._
 - ***photon_energy_ev*** (float). _Energy of the optical laser pulse in eV. Only necessary for method 'Abeles'_
