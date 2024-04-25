@@ -99,7 +99,7 @@ To define the pulse you can/must introduce the following parameters:
 - ***sample*** (object). _Sample in use_
 - ***pulse_width*** (float). _Sigma of gaussian pulse shape in s_
 - ***fluence*** (float). _Fluence of the laser pulse in mJ/cm^2. Converted to J/m^_
-- ***delay*** (float). _Time-delay of the pulse peak after simulation start in s _
+- ***delay*** (float). _Time-delay of the pulse peak after simulation start in s_
 - ***method*** (String). _Method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abeles' for the matrix formulation calculating the profile via the Fresnel equations._
 - ***photon_energy_ev*** (float). _Energy of the optical laser pulse in eV. Only necessary for method 'Abeles'_
 - ***theta*** (float). _Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
