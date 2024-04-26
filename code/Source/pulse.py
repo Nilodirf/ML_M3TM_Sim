@@ -9,7 +9,7 @@ from ..Source.finderb import finderb
 class SimPulse:
     # This class lets us define te pulse for excitation of the sample
 
-    def __init__(self, sample, pulse_width, fluence, delay, method, photon_energy_eV=None, theta=None, phi=None):
+    def __init__(self, sample, pulse_width, fluence, delay, method, photon_energy_ev=None, theta=None, phi=None):
         # Input:
         # sample (object). Sample in use
         # pulse_width (float). Sigma of gaussian pulse shape in s
@@ -38,7 +38,7 @@ class SimPulse:
         self.method = method
         assert self.method == 'LB' or self.method == 'Abeles', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
                                                               ' or \' Abeles\' (for computation of Fresnel equations).'
-        self.energy = photon_energy_eV
+        self.energy = photon_energy_ev
         self.theta = np.pi * theta if theta is not None else None
         self.phi = np.pi * phi if phi is not None else None
         self.pulse_time_grid, self.pulse_map, self.abs_flu, self.ref_flu, self.trans_flu, self.rel_err = self.get_pulse_map()
