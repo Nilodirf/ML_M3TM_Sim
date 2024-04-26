@@ -58,7 +58,7 @@ my_conductor = SimMaterials(name='Blitzydummy', tdeb=300, cp_max=2.5e6, kappap=2
 
 _For a magnetic material, whose spin dynamics you want to model with the M3TM, you need to define additional parameters within the model:_
 ```
-my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=750, kappae=150., gep=0.8e17, spin=2.5, vat=1e-28., tc=600., muat=5., asf=0.06)
+my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=750, kappae=150., gep=0.8e17, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
 ```
 
 ### Create a sample structure
