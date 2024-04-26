@@ -39,8 +39,8 @@ class SimPulse:
         assert self.method == 'LB' or self.method == 'Abeles', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
                                                               ' or \' Abeles\' (for computation of Fresnel equations).'
         self.energy = photon_energy_eV
-        self.theta = np.pi * theta
-        self.phi = np.pi * phi
+        self.theta = np.pi * theta if theta is not None else None
+        self.phi = np.pi * phi if phi is not None else None
         self.pulse_time_grid, self.pulse_map = self.get_pulse_map()
 
     def get_pulse_map(self):
