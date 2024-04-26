@@ -58,7 +58,7 @@ my_conductor = SimMaterials(name='Blitzydummy', tdeb=300, cp_max=2.5e6, kappap=2
 
 _For a magnetic material, whose spin dynamics you want to model with the M3TM, you need to define additional parameters within the model:_
 ```
-my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=75, kappae=150., gep=0.8e17, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
+my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=75, kappae=150., gep=0.8e18, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
 ```
 
 ### Create a sample structure
@@ -133,3 +133,8 @@ Let's just run it and see if we did okay here. To look at our data later we also
 my_results = my_simulation.get_t_m_maps()
 my_simulation.save_data(my_results, save_file='my_result_files')
 ```
+
+The terminal will inform you about the input parameters for sample, pulse, simulation and the current status.
+
+## Check the output
+Within the plot module there are several methods to visualize your output data. Here is a quick guide to look at your data in some ways:
