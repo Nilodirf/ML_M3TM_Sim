@@ -308,3 +308,10 @@ class SimSample:
                 mag_counter += 1
 
         return mag_counter
+
+    def show_info(self):
+        print('Sample construcuted.')
+        print('Consitiuents: ', str(self.mats))
+        print('Thicknesses:' , str(self.mat_blocks*self.dz_arr*1e9) , ' nm')
+        print('Layers:' , str(self.mat_blocks*self.dz_arr))
+        print()
