@@ -136,9 +136,8 @@ class SimPulse:
             abs_flu = np.sum(powers*dz_sam) * (np.sqrt(2*np.pi)*self.pulse_width*10)
             trans_flu = self.fluence-abs_flu
             ref_flu = 0
+            rel_err = None
             excitation_map = np.multiply(pump_grid[..., np.newaxis], np.array(powers))
-
-            return excitation_map.astype(float)
 
         elif self.method == 'Abeles':
 
@@ -282,7 +281,7 @@ class SimPulse:
             ### ADD: assertion for absorption but no ce defined!!
             ### CHANGE: pen_dep and layer_thickness to sample class, not materials
 
-            return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err
+        return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err
 
     def visualize(self, axis, fit=None, save_fig=False, save_file=None):
         # This method plots the spatial/temporal/both dependencies of the pump pulse.
@@ -375,7 +374,8 @@ class SimPulse:
         return
 
     def show_info(self):
-        print('Absorption profile computed with Abeles\' matrix method at a fluence of F = ', str(self.fluence), ' mJ/cm^2')
+        print('Absorption profile computed with Abeles\' matrix method.')
+        print('F = ', str(self.fluence), ' mJ/cm^2')
         print('F_a_sim =', self.abs_flu, 'mJ/cm^2')
         print('F_r =', self.ref_flu, 'mJ/cm^2')
         print('F_t =', self.trans_flu, 'mJ/cm^2')

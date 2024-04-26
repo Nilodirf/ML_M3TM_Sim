@@ -39,7 +39,7 @@ sample.add_layers(material=Siliconnitirde, dz=2e-9, layers=100, pen_dep=1, n_com
 
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_eV=1.55, theta=1/4, phi=1/3)
+pulse = SimPulse(sample=sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_ev=1.55, theta=1/4, phi=1/3)
 pulse.visualize(axis='z', save_fig=True, save_file='tim_full_sam_absorption_Abeles', fit=None)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:

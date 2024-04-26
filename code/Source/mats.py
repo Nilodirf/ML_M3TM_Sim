@@ -6,7 +6,7 @@ class SimMaterials:
     # The material class holds mostly parameters of the materials in the sample to be constructed.
     # Also, it holds information like the thickness of the layers of material (dz) and penetration depth (pen_dep)
 
-    def __init__(self, name, tdeb, vat, ce_gamma, cp_max, kappap, kappae, gep, spin, tc, muat, asf):
+    def __init__(self, name, tdeb, cp_max, kappap, ce_gamma=0., kappae=0., gep=0., vat=0., spin=0., tc=0., muat=0., asf=0.):
         # Input:
         # name (String). Name of the material
         # tdeb (float). Debye temperature of the material

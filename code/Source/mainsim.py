@@ -142,7 +142,7 @@ class SimDynamics:
         if mag_num != 0:
             fss0 = self.initialize_spin_configuration().flatten()
 
-            fss_eq = SimDynamics.equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
+            fss_eq = self.equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
                                                 fss0, te0, tp0[mag_mask], el_mag_mask, ms_sam, mag_num)
         else:
             fss_eq = np.zeros(1)
@@ -169,8 +169,8 @@ class SimDynamics:
 
         return all_sol
 
-    @staticmethod
-    def equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fs0, te0, tp0,
+
+    def equilibrate_mag(self, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fs0, te0, tp0,
                         el_mag_mask, ms_sam, mag_num):
         # This method equilibrates the magnetization to its mean field equilibrium value at the initial temperature.
 
@@ -197,9 +197,12 @@ class SimDynamics:
         fs_eq = np.reshape(fs_eq_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
         mag_eq = SimDynamics.get_mag(fs_eq, ms_sam, spin_sam)
         print('Equilibration phase done.')
-        print('Equilibrium magnetization: ' + str(mag_eq))
+        print('Equilibrium magnetization in magnetic layers: ' + str(mag_eq))
         print('at initial temperature: ' + str(tp0) + ' K')
-        print('Starting main simulation loop. Calculating until ', (self.end_time-self.Pulse.delay)*1e12, ' ps after pulse maximum.')
+        print()
+        print('Starting main simulation loop. Calculating until ', np.round((self.end_time-self.Pulse.delay)*1e12, 3), ' ps after pulse maximum.')
+        print('Solver: ', str(self.solver))
+        print('maximum time step:', str(self.max_step), ' s')
         print()
 
         # return the equilibrium spin occupation:
