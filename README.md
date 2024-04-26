@@ -86,9 +86,9 @@ Here is a list of the parameters to chose when adding layers to your sample:
 - ***n_comp*** (complex float). _Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate_
 
 ```
-my_sample.add_layers(material=my_conductor, dz= 1nm, layers=5, pen_dep=7.5e-9, n_comp=2.8+8.45j)
-my_sample.add_layers(material=my_magnet, dz=1nm, layers=15, pen_dep=34e-9, n_comp=2.21+2.73j, kappae_int='max', kappap_int=1.)
-my_sample.add_layers(material=my_insulator, dz=1nm, layers=300, pen_dep=1, n_comp=1.97+0j, kappap_int='av')
+my_sample.add_layers(material=my_conductor, dz= 1e-9, layers=5, pen_dep=7.5e-9, n_comp=2.8+8.45j)
+my_sample.add_layers(material=my_magnet, dz=1e-9, layers=15, pen_dep=34e-9, n_comp=2.21+2.73j, kappae_int='max', kappap_int=1.)
+my_sample.add_layers(material=my_insulator, dz=1e-9, layers=300, pen_dep=1, n_comp=1.97+0j, kappap_int='av')
 ```
 
 ### Create a Pulse
