@@ -31,7 +31,7 @@ class SimSample:
         self.mat_blocks = self.get_material_changes()
         self.el_mask = self.get_free_electron_mask()
         self.mag_mask = self.get_magdyn_mask()
-        self.mats, self.mat_ind = self.get_mat_positions()
+        self.mats, self.mat_ind = np.array([]), np.array([])
         self.mag_num = self.get_num_mag_mat()
         self.kappa_p_int = np.array([])
         self.kappa_e_int = np.array([])
@@ -40,6 +40,7 @@ class SimSample:
         self.n_comp_arr = np.array([])
         self.pen_dep_arr = np.array([])
         self.dz_arr = np.array([])
+        self.constituents = np.array([])
 
     def add_layers(self, material, dz, layers, kappap_int=None, kappae_int=None, n_comp=None, pen_dep=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
@@ -116,6 +117,7 @@ class SimSample:
         self.n_comp_arr = np.append(self.n_comp_arr, n_comp)
         self.pen_dep_arr = np.append(self.pen_dep_arr, pen_dep)
         self.dz_arr = np.append(self.dz_arr, dz)
+        self.constituents = np.append(self.constituents, material.name)
 
         return self.mat_arr
 
@@ -279,9 +281,9 @@ class SimSample:
         # mats (list). List of the constituents of the sample, starting with the one closest to the laser pulse.
         # mat_ind (list). List of the positions of each layer of material in the sample, positions stored in arrays
 
-        mats = [self.mat_arr[0]]
-        for i, mat in enumerate(list(self.mat_arr))[1:]:
-            if mat != self.mat_arr[i-1]:
+        mats = []
+        for i, mat in enumerate(list(self.mat_arr)):
+            if mat not in mats:
                 mats.append(mat)
 
         mat_indices = [[] for _ in mats]
@@ -312,7 +314,7 @@ class SimSample:
     def show_info(self):
         print()
         print('Sample constructed.')
-        print('Constitiuents: ', str(self.mats))
+        print('Constitiuents: ', str(self.constituents))
         print('Thicknesses:' , str(self.mat_blocks*self.dz_arr*1e9) , ' nm')
-        print('Number of layers:' , str(self.mat_blocks*self.dz_arr))
+        print('Number of layers:' , str(self.mat_blocks))
         print()

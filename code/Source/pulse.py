@@ -375,7 +375,7 @@ class SimPulse:
         return
 
     def show_info(self):
-        print('Absorption profile computed with Abeles\' matrix method at a fluence of ', str(self.fluence), ' mJ/cm^2')
+        print('Absorption profile computed with Abeles\' matrix method at a fluence of F = ', str(self.fluence), ' mJ/cm^2')
         print('F_a_sim =', self.abs_flu, 'mJ/cm^2')
         print('F_r =', self.ref_flu, 'mJ/cm^2')
         print('F_t =', self.trans_flu, 'mJ/cm^2')
