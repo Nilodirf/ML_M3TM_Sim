@@ -374,12 +374,12 @@ class SimPulse:
 
         return
 
-        def show_info(self):
-            print('Absorption profile computed with Abeles\' matrix method at a fluence of ', str(self.fluence), ' mJ/cm^2')
-            print('F_a_sim =', self.abs_flu, 'mJ/cm^2')
-            print('F_r =', self.ref_flu, 'mJ/cm^2')
-            print('F_t =', self.trans_flu, 'mJ/cm^2')
-            print('F_a = F - F_r - F_t=', self.fluence-self.trans_flu-self.ref_flu, 'mJ/cm^2')
-            print('Relative error due to finite layer size: ', np.round(100*(abs_flu-(self.fluence-self.trans_flu-self.ref_flu))/abs_flu, 2), '%')
-            print()
-            return
+    def show_info(self):
+        print('Absorption profile computed with Abeles\' matrix method at a fluence of ', str(self.fluence), ' mJ/cm^2')
+        print('F_a_sim =', self.abs_flu, 'mJ/cm^2')
+        print('F_r =', self.ref_flu, 'mJ/cm^2')
+        print('F_t =', self.trans_flu, 'mJ/cm^2')
+        print('F_a = F - F_r - F_t=', self.fluence-self.trans_flu-self.ref_flu, 'mJ/cm^2')
+        print('Relative error due to finite layer size: ', np.round(100*(self.abs_flu-(self.fluence-self.trans_flu-self.ref_flu))/self.abs_flu, 2), '%')
+        print()
+        return
