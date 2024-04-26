@@ -256,32 +256,32 @@ class SimSample:
 
     def get_el_mag_mask(self):
         # This method creates a mask for free-electron layers, filtering out non-magnetic ones. Important for handling
-        # of samples with free-electron, but non-magnetic layers.
+        # of samples with free-electron, but non-magnetic layers
 
         # Input:
         # self (object). The sample in use
 
         # Returns:
         # el_mag_mask (boolean array). 1d-array of length self.len_te, with entries True for magnetic layers, False for
-        # nonmagnetic layers.
+        # nonmagnetic layers
 
         el_mag_mask = np.array([mat.muat for mat in self.mat_arr[self.el_mask]]) != 0
 
         return el_mag_mask
 
     def get_mat_positions(self):
-        # This method determines all different materials in the sample and creates a nested list of their positions.
+        # This method determines all different materials in the sample and creates a nested list of their positions
 
         # Input:
         # self (object). The sample in use
 
         # Returns:
-        # mats (list). List of the different materials in the sample, starting with the one closest to the laser pulse
-        # mat_ind (list). List of the positions of each layer of material in the sample, positions stored in arrays.
+        # mats (list). List of the constituents of the sample, starting with the one closest to the laser pulse.
+        # mat_ind (list). List of the positions of each layer of material in the sample, positions stored in arrays
 
-        mats = []
-        for mat in list(self.mat_arr):
-            if mat not in mats:
+        mats = [self.mat_arr[0]]
+        for i, mat in enumerate(list(self.mat_arr))[1:]:
+            if mat != self.mat_arr[i-1]:
                 mats.append(mat)
 
         mat_indices = [[] for _ in mats]
