@@ -125,7 +125,7 @@ The parameters to define are:
 - ***rtol*** (float). _Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver_
 
 ```
-my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=20e-12, solver='RK23', max_step=1e-14)
+my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=20e-12, solver='Radau', max_step=1e-13)
 ```
 
 Let's just run it and see if we did okay here. To look at our data later we also need to save it:
