@@ -41,7 +41,20 @@ class SimPulse:
         self.energy = photon_energy_eV
         self.theta = np.pi * theta if theta is not None else None
         self.phi = np.pi * phi if phi is not None else None
-        self.pulse_time_grid, self.pulse_map = self.get_pulse_map()
+        self.pulse_time_grid, self.pulse_map, self.abs_flu, self.ref_flu, self.trans_flu, self.rel_err = self.get_pulse_map()
+        
+    def get_for_all_layers(self, array):
+        # This method takes 1d array defined on N blocks of the sample and returns the data stored in this array for all
+        # layers in the sample.
+
+        # Input:
+        # self (object). The pulse in use
+        # array (numpy array). The 1d-array that shall be extended
+
+        # Returns:
+        # array_for_layers (numpy array). The 1d-array for all layers in the sample
+
+        return np.concatenate(np.array([[array[i] for _ in range(self.Sam.mat_blocks[i])] for i in range(len(self.Sam.mat_blocks))], dtype=object)).astype(complex)
 
     def get_pulse_map(self):
         # This method creates a time grid and a spatially independent pulse excitation of gaussian shape
@@ -73,9 +86,9 @@ class SimPulse:
         pump_time_grid = np.append(pump_time_grid, end_pump_time+1e-15)
         pump_grid = np.append(pump_grid, 0.)
 
-        pump_map = self.depth_profile(pump_grid)
+        pump_map, abs_flu, ref_flu, trans_flu, rel_err = self.depth_profile(pump_grid)
 
-        return pump_time_grid, pump_map
+        return pump_time_grid, pump_map, abs_flu, ref_flu, trans_flu, rel_err
 
     def depth_profile(self, pump_grid):
         # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abeles'
@@ -262,21 +275,14 @@ class SimPulse:
             abs_flu = self.fluence * np.sum(F_z * dz_sam*q_prop)
             ref_flu = self.fluence * (e_p0**2 * r_p_tot + e_s0**2 * r_s_tot)
             trans_flu = self.fluence * (e_p0**2 * t_p_tot + e_s0**2 * t_s_tot)
-
-            print('Absorption profile computed with Abeles\' matrix method at a fluence of ', str(self.fluence), ' mJ/cm^2')
-            print('F_a_sim =', abs_flu, 'mJ/cm^2')
-            print('F_r =', ref_flu, 'mJ/cm^2')
-            print('F_t =', trans_flu, 'mJ/cm^2')
-            print('F_a = F - F_r - F_t=', self.fluence-trans_flu-ref_flu, 'mJ/cm^2')
-            print('Relative error due to finite layer size: ', np.round(100*(abs_flu-(self.fluence-trans_flu-ref_flu))/abs_flu), 2, '%')
-            print()
+            rel_err = np.round(100*(abs_flu-(self.fluence-trans_flu-ref_flu))/abs_flu, 2)
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 
             ### ADD: assertion for absorption but no ce defined!!
             ### CHANGE: pen_dep and layer_thickness to sample class, not materials
 
-            return excitation_map.astype(float)
+            return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err
 
     def visualize(self, axis, fit=None, save_fig=False, save_file=None):
         # This method plots the spatial/temporal/both dependencies of the pump pulse.
@@ -368,16 +374,12 @@ class SimPulse:
 
         return
 
-    def get_for_all_layers(self, array):
-        # This method takes 1d array defined on N blocks of the sample and returns the data stored in this array for all
-        # layers in the sample.
-
-        # Input:
-        # self (object). The pulse in use
-        # array (numpy array). The 1d-array that shall be extended
-
-        # Returns:
-        # array_for_layers (numpy array). The 1d-array for all layers in the sample
-
-        return np.concatenate(np.array([[array[i] for _ in range(self.Sam.mat_blocks[i])] for i in range(len(self.Sam.mat_blocks))], dtype=object)).astype(complex)
-
+        def show_info(self):
+            print('Absorption profile computed with Abeles\' matrix method at a fluence of ', str(self.fluence), ' mJ/cm^2')
+            print('F_a_sim =', self.abs_flu, 'mJ/cm^2')
+            print('F_r =', self.ref_flu, 'mJ/cm^2')
+            print('F_t =', self.trans_flu, 'mJ/cm^2')
+            print('F_a = F - F_r - F_t=', self.fluence-self.trans_flu-self.ref_flu, 'mJ/cm^2')
+            print('Relative error due to finite layer size: ', np.round(100*(abs_flu-(self.fluence-self.trans_flu-self.ref_flu))/abs_flu, 2), '%')
+            print()
+            return
