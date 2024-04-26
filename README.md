@@ -53,12 +53,12 @@ my_insulator = SimMaterials(name='Gummydummy', tdeb=400, cp_max=3e6, kappap=30.)
 
 _For a conducting (or semimetallic materials whose electrons can be excited above the bandgap by the used pulse), you also need to define thermal parameters for the electronic system and their interaction with the phonons via electron-phonon-counpling:_
 ```
-my_conductor = SimMaterials(name='Blitzydummy', tdeb=300, cp_max=2.5e6, kappap=20., ce_gamma=1000, kappae=100., gep=1e18)
+my_conductor = SimMaterials(name='Blitzydummy', tdeb=300, cp_max=2.5e6, kappap=20., ce_gamma=100, kappae=100., gep=1e18)
 ```
 
 _For a magnetic material, whose spin dynamics you want to model with the M3TM, you need to define additional parameters within the model:_
 ```
-my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=750, kappae=150., gep=0.8e17, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
+my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=75, kappae=150., gep=0.8e17, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
 ```
 
 ### Create a sample structure
@@ -125,7 +125,7 @@ The parameters to define are:
 - ***rtol*** (float). _Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver_
 
 ```
-my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=200e-12, solver='RK23', max_step=1e-14)
+my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=20e-12, solver='RK23', max_step=1e-14)
 ```
 
 Let's just run it and see if we did okay here. To look at our data later we also need to save it:
