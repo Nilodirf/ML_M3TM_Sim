@@ -134,8 +134,8 @@ class SimDynamics:
         vat_sam = self.Sam.get_params('vat')[mag_mask]
 
         self.Pulse.show_info()
-
-        print('All parameters initialized. Starting simulation')
+        self.Sam.show_info()
+        print('Starting simulation')
         print()
 
         te0, tp0 = self.initialize_temperature()
