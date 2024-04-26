@@ -132,9 +132,9 @@ class SimDynamics:
         mag_num = self.Sam.mag_num
         ms_sam = self.Sam.get_params('ms')
         vat_sam = self.Sam.get_params('vat')[mag_mask]
-
-        self.Pulse.show_info()
+        
         self.Sam.show_info()
+        self.Pulse.show_info()
         print('Starting simulation')
         print()
 
@@ -199,6 +199,7 @@ class SimDynamics:
         print('Equilibration phase done.')
         print('Equilibrium magnetization: ' + str(mag_eq))
         print('at initial temperature: ' + str(tp0) + ' K')
+        print('Starting main simulation loop. Calculating until ', (self.end_time-self.Pulse.delay)*1e12, ' ps after pulse maximum.')
         print()
 
         # return the equilibrium spin occupation:
