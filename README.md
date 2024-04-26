@@ -39,7 +39,7 @@ Materials are defined merely by their parameters. Here is a list of all the avai
 - ***kappae*** (float).   _Electronic heat diffusion constant in W/m/K_
 - ***ce_gamma*** (float). _Sommerfeld constant of electronic heat capacity in J/m**3/K_
 - ***gep*** (float).      _Electron-phonon coupling constant in W/m**3/K_
-- ***spin*** (float).     _Effective spin of the material
+- ***spin*** (float).     _Effective spin of the material_
 - ***tc*** (float).       _Curie temperature of the material_
 - ***muat*** (float).     _Atomic magnetic moment in unit of \mu_Bohr_
 - ***asf*** (float).      _Electron-phonon-scattering induced spin flip probability of the material_
@@ -86,9 +86,9 @@ Here is a list of the parameters to chose when adding layers to your sample:
 - ***n_comp*** (complex float). _Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate_
 
 ```
-my_sample.add_layers(material=my_insulator, dz= 1nm, layers=5, pen_dep=7.5e-9, n_comp=2.8+8.45j)
+my_sample.add_layers(material=my_conductor, dz= 1nm, layers=5, pen_dep=7.5e-9, n_comp=2.8+8.45j)
 my_sample.add_layers(material=my_magnet, dz=1nm, layers=15, pen_dep=34e-9, n_comp=2.21+2.73j, kappae_int='max', kappap_int=1.)
-my_sample.add_layers(material=my_conductor, dz=1nm, layers=300, pen_dep=1, n_comp=1.97+0j, kappap_int='av')
+my_sample.add_layers(material=my_insulator, dz=1nm, layers=300, pen_dep=1, n_comp=1.97+0j, kappap_int='av')
 ```
 
 ### Create a Pulse
@@ -98,9 +98,9 @@ With the sample created we can now compute already how a pump pulse interacts wi
 To define the pulse you can/must introduce the following parameters:
 - ***sample*** (object). _Sample in use_
 - ***pulse_width*** (float). _Sigma of gaussian pulse shape in s_
-- ***fluence*** (float). _Fluence of the laser pulse in mJ/cm^2._
+- ***fluence*** (float). _Fluence of the laser pulse in mJ/cm^2_
 - ***delay*** (float). _Time-delay of the pulse peak after simulation start in s_
-- ***method*** (String). _Method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abeles' for the matrix formulation calculating the profile via the Fresnel equations._
+- ***method*** (String). _Method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abeles' for the matrix formulation calculating the profile via the Fresnel equations_
 - ***photon_energy_ev*** (float). _Energy of the optical laser pulse in eV. Only necessary for method 'Abeles'_
 - ***theta*** (float). _Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
 - ***phi*** (float). _Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
