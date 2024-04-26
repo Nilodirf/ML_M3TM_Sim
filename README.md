@@ -106,7 +106,7 @@ To define the pulse you can/must introduce the following parameters:
 - ***phi*** (float). _Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
 
 ```
-my_pulse_Abeles = SimPulse(sample=my_sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_eV=1.55, theta=1/4, phi=1/3)
+my_pulse_Abeles = SimPulse(sample=my_sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_ev=1.55, theta=1/4, phi=1/3)
 my_pulse_Lambert_Beer = SimPulse(sample=my_sample, method='LB', pulse_width=20e-15, fluence=5., delay=0.5e-12)
 ```
 
