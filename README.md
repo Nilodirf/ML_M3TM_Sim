@@ -21,7 +21,7 @@ Create a script within the code/Scripts folder. All the contents of this file ar
 ### Import the Source files 
 These are relative imports of all the source files needed for the simulation:
 
-```
+```python
 from ..Source.mats import SimMaterials
 from ..Source.sample import SimSample
 from ..Source.pulse import SimPulse
