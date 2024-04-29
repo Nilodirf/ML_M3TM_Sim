@@ -18,7 +18,7 @@ The following packages need to be installed to run the code:
 ## Creating the Script file
 Create a script within the code/Scripts folder. All the contents of this file are listed below.
 
-<summary>### Import the Source files</summary>
+<summary>Import the Source files</summary>
 These are relative imports of all the source files needed for the simulation:
 
 ```python
