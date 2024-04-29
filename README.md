@@ -47,17 +47,17 @@ Materials are defined merely by their parameters. Here is a list of all the avai
 
 
 _For an insulating material, you only need to define the parameters for a phononic system:_
-```
+```python
 my_insulator = SimMaterials(name='Gummydummy', tdeb=400, cp_max=3e6, kappap=30.)
 ```
 
 _For a conducting (or semimetallic materials whose electrons can be excited above the bandgap by the used pulse), you also need to define thermal parameters for the electronic system and their interaction with the phonons via electron-phonon-counpling:_
-```
+```python
 my_conductor = SimMaterials(name='Blitzydummy', tdeb=300, cp_max=2.5e6, kappap=20., ce_gamma=100, kappae=100., gep=1e18)
 ```
 
 _For a magnetic material, whose spin dynamics you want to model with the M3TM, you need to define additional parameters within the model:_
-```
+```python
 my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=75, kappae=150., gep=0.8e18, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
 ```
 
@@ -65,7 +65,7 @@ my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., c
 
 With the materials you created before you can now build a sample.
 
-```
+```python
 my_sample = SimSample()
 ```
 
@@ -85,7 +85,7 @@ Here is a list of the parameters to chose when adding layers to your sample:
 - ***pen_dep (float)***. _Penetration depth of the laser pulse in m if to be computed with Lambert-Beer absorption profile_
 - ***n_comp*** (complex float). _Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate_
 
-```
+```python
 my_sample.add_layers(material=my_conductor, dz= 1e-9, layers=5, pen_dep=7.5e-9, n_comp=2.8+8.45j)
 my_sample.add_layers(material=my_magnet, dz=1e-9, layers=15, pen_dep=34e-9, n_comp=2.21+2.73j, kappae_int='max', kappap_int=1.)
 my_sample.add_layers(material=my_insulator, dz=1e-9, layers=300, pen_dep=1, n_comp=1.97+0j, kappap_int='av')
@@ -105,7 +105,7 @@ To define the pulse you can/must introduce the following parameters:
 - ***theta*** (float). _Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
 - ***phi*** (float). _Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
 
-```
+```python
 my_pulse_Abeles = SimPulse(sample=my_sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_ev=1.55, theta=1/4, phi=1/3)
 my_pulse_Lambert_Beer = SimPulse(sample=my_sample, method='LB', pulse_width=20e-15, fluence=5., delay=0.5e-12)
 ```
@@ -124,12 +124,12 @@ The parameters to define are:
 - ***atol*** (float). _Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver_
 - ***rtol*** (float). _Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver_
 
-```
+```python
 my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=20e-12, solver='Radau', max_step=1e-13)
 ```
 
-Let's just run it and see if we did okay here. To look at our data later we also need to save it:
-```
+Let's just run it and see if we did okay here. To look at our data later we also need to save it on the harddrive. Automatically, in the code's regisrtry, a folder 'Results' will be created, where the simulation output files will be stored within a folder denoted by _save_file_. The actual data is stored in .npy format:
+```python
 my_results = my_simulation.get_t_m_maps()
 my_simulation.save_data(my_results, save_file='my_result_files')
 ```
