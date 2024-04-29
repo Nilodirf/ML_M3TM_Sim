@@ -16,6 +16,7 @@ The following packages need to be installed to run the code:
 - ***matplotlib***
 
 ## Creating the Script file
+
 Create a script within the code/Scripts folder. All the contents of this file are listed below
 These are relative imports of all the source files needed for the simulation:
 
@@ -27,6 +28,9 @@ from ..Source.mainsim import SimDynamics
 ```
   
 ### Create materials
+
+<details>
+<summary>How to create a material</summary>
 
 Materials are defined merely by their parameters. Here is a list of all the available parameters:
 
@@ -59,9 +63,12 @@ _For a magnetic material, whose spin dynamics you want to model with the M3TM, y
 my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=75, kappae=150., gep=0.8e18, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
 ```
 
-<summary>Create a sample strucutre</summary>
+</details>
 
 ### Create a sample structure
+
+<details>
+<summary>How to build a sample</summary>
 
 With the materials you created before you can now build a sample.
 
@@ -91,7 +98,12 @@ my_sample.add_layers(material=my_magnet, dz=1e-9, layers=15, pen_dep=34e-9, n_co
 my_sample.add_layers(material=my_insulator, dz=1e-9, layers=300, pen_dep=1, n_comp=1.97+0j, kappap_int='av')
 ```
 
+</details>
+
 ### Create a Pulse
+
+<details>
+<summary>How to create a Pulse</summary>
 
 With the sample created we can now compute already how a pump pulse interacts with it.
 
@@ -110,7 +122,12 @@ my_pulse_Abeles = SimPulse(sample=my_sample, method='Abeles', pulse_width=20e-15
 my_pulse_Lambert_Beer = SimPulse(sample=my_sample, method='LB', pulse_width=20e-15, fluence=5., delay=0.5e-12)
 ```
 
+</details>
+
 ### Define Simulation Parameters
+
+<details>
+<summary>How to set up the simulation</summary>
 
 All the physical parameters are defined now, we just need to run the simulation now. Therefor we need to define some computational parameters. These may influence if the simulation runs fast, slow, wonky or exact. In the end, you might need to play around a little until you have found a configuration that yields solid and fast results.
 
@@ -133,6 +150,8 @@ Let's just run it and see if we did okay here. To look at our data later we also
 my_results = my_simulation.get_t_m_maps()
 my_simulation.save_data(my_results, save_file='my_result_files')
 ```
+
+</details>
 
 The terminal will inform you about the input parameters for sample, pulse, simulation and the current status.
 
