@@ -1,4 +1,4 @@
-# Multilayer Microscopic Three Temperature Model Simulations
+# Multilayer Microscopic Three Temperature Model Simulations (_ML_M3TM_Sim_)
 
 Welcome! This code solves the M3TM equations in a magnetic material in a multilayer of an arbitrary amount of cap and substrate layers.
 This code is not yet an official python package, so to use it you must download the code and save it locally.
