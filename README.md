@@ -17,7 +17,13 @@ The following packages need to be installed to run the code:
 
 ## Creating the Script file
 
-Create a script within the code/Scripts folder. All the contents of this file are listed below
+Create a script within the code/Scripts folder. For here, we shall call our file **tutorial_input.py**. All the contents of this file are listed below.
+
+### Source code imports
+
+<details>
+<summary>How to import the source code</summary>
+  
 These are relative imports of all the source files needed for the simulation:
 
 ```python
@@ -26,6 +32,8 @@ from ..Source.sample import SimSample
 from ..Source.pulse import SimPulse
 from ..Source.mainsim import SimDynamics
 ```
+
+</details>
   
 ### Create materials
 
@@ -145,7 +153,7 @@ The parameters to define are:
 my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=20e-12, solver='Radau', max_step=1e-13)
 ```
 
-Let's just run it and see if we did okay here. To look at our data later we also need to save it on the harddrive. Automatically, in the code's regisrtry, a folder 'Results' will be created, where the simulation output files will be stored within a folder denoted by _save_file_. The actual data is stored in .npy format:
+Let's just run it and see if we did okay here. To look at our data later we also need to save it on the harddrive. Automatically, in the package's regisrtry, a folder 'Results' will be created, where the simulation output files will be stored within a folder denoted by _save_file_. The actual data is stored in .npy format:
 ```python
 my_results = my_simulation.get_t_m_maps()
 my_simulation.save_data(my_results, save_file='my_result_files')
@@ -153,7 +161,15 @@ my_simulation.save_data(my_results, save_file='my_result_files')
 
 </details>
 
-The terminal will inform you about the input parameters for sample, pulse, simulation and the current status.
+## Run the simulation
+
+To run the simulation you have set up, open the terminal and navigate to _ML_M3TM_Sim_.
+Run the command
+```
+py -m code.Scripts.tutorial_input
+```
+
+The command prompt will show the setup of your sample, the computed pulse profile, initial conditions and briefly inform about the state of the simulation.
 
 ## Check the output
 Within the plot module there are several methods to visualize your output data. Here is a quick guide to look at your data in some ways:
