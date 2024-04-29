@@ -16,9 +16,7 @@ The following packages need to be installed to run the code:
 - ***matplotlib***
 
 ## Creating the Script file
-Create a script within the code/Scripts folder. All the contents of this file are listed below.
-
-<summary>Import the Source files</summary>
+Create a script within the code/Scripts folder. All the contents of this file are listed below
 These are relative imports of all the source files needed for the simulation:
 
 ```python
@@ -27,9 +25,6 @@ from ..Source.sample import SimSample
 from ..Source.pulse import SimPulse
 from ..Source.mainsim import SimDynamics
 ```
-
-<details>
-<summary>Create materials</summary>
   
 ### Create materials
 
@@ -138,7 +133,6 @@ Let's just run it and see if we did okay here. To look at our data later we also
 my_results = my_simulation.get_t_m_maps()
 my_simulation.save_data(my_results, save_file='my_result_files')
 ```
-</details>
 
 The terminal will inform you about the input parameters for sample, pulse, simulation and the current status.
 
