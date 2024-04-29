@@ -30,6 +30,7 @@ from ..Source.mainsim import SimDynamics
 
 <details>
 <summary>Create materials</summary>
+  
 ### Create materials
 
 Materials are defined merely by their parameters. Here is a list of all the available parameters:
@@ -62,7 +63,8 @@ _For a magnetic material, whose spin dynamics you want to model with the M3TM, y
 ```python
 my_magnet = SimMaterials(name='Spinnydummy', tdeb=200, cp_max=2e6, kappap=10., ce_gamma=75, kappae=150., gep=0.8e18, spin=2.5, vat=1e-28, tc=600., muat=5., asf=0.06)
 ```
-</details>
+
+<summary>Create a sample strucutre</summary>
 
 ### Create a sample structure
 
@@ -136,6 +138,7 @@ Let's just run it and see if we did okay here. To look at our data later we also
 my_results = my_simulation.get_t_m_maps()
 my_simulation.save_data(my_results, save_file='my_result_files')
 ```
+</details>
 
 The terminal will inform you about the input parameters for sample, pulse, simulation and the current status.
 
