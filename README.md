@@ -40,20 +40,20 @@ from ..Source.mainsim import SimDynamics
 <details>
 <summary>How to create a material</summary>
 
-Materials are defined merely by their parameters. Here is a list of all the available parameters:
+Materials are defined merely by their parameters. Here is a list of all the available parameters, where  [**_optional_1_**] denotes that these parameters need to be defined for materials with an electronic subsystem and  [**_optional_2_**] parameters need to be introduced for materials with a spin subsystem:
 
 - ***name*** (string).    _Name of the material_
 - ***tdeb*** (float).     _Debye temperature of the material_
 - ***cp_max*** (float).   _Maximal phononic heat capacity in W/m**3/K. Temperature dependence is computed with Einstein model_
 - ***kappap*** (float).   _Phononic heat diffusion constant in W/m/K_
-- ***kappae*** (float).   _Electronic heat diffusion constant in W/m/K_
-- ***ce_gamma*** (float). _Sommerfeld constant of electronic heat capacity in J/m**3/K_
-- ***gep*** (float).      _Electron-phonon coupling constant in W/m**3/K_
-- ***spin*** (float).     _Effective spin of the material_
-- ***tc*** (float).       _Curie temperature of the material_
-- ***muat*** (float).     _Atomic magnetic moment in unit of \mu_Bohr_
-- ***asf*** (float).      _Electron-phonon-scattering induced spin flip probability of the material_
-- ***vat*** (float).      _Magnetic atomic volume in m^3._
+- ***kappae*** [**_optional_1_**] (float).   _Electronic heat diffusion constant in W/m/K_
+- ***ce_gamma*** [**_optional_1_**] (float). _Sommerfeld constant of electronic heat capacity in J/m**3/K_
+- ***gep*** [**_optional_1_**] (float).      _Electron-phonon coupling constant in W/m**3/K_
+- ***spin*** [**_optional_2_**] (float).     _Effective spin of the material_
+- ***tc*** [**_optional_2_**] (float).       _Curie temperature of the material_
+- ***muat*** [**_optional_2_**] (float).     _Atomic magnetic moment in unit of \mu_Bohr_
+- ***asf*** [**_optional_2_**] (float).      _Electron-phonon-scattering induced spin flip probability of the material_
+- ***vat*** [**_optional_2_**] (float).      _Magnetic atomic volume in m^3._
 
 
 _For an insulating material, you only need to define the parameters for a phononic system:_
