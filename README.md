@@ -95,10 +95,10 @@ Here is a list of the parameters to chose when adding layers to your sample:
 - ***material*** (object). _A material previously defined with the materials class_
 - ***dz*** (float). _Layer thickness of the material in m. Important only for resolution of heat diffusion_
 - ***layers*** (int). _Number of layers with depth material.dz to be added to the sample_
-- ***kappap_int*** (float/string). _Phononic interface heat conductivity to the last block of the sample. Either in W/m/K or 'av', 'min', 'max' of the constants of the two interfaced materials_
-- ***kappae_int*** (float/string). _Electronic interface heat conductivity to the last block of the sample. Either in W/m/K or 'av', 'min', 'max' of the constants of the two interfaced materials_
-- ***pen_dep (float)***. _Penetration depth of the laser pulse in m if to be computed with Lambert-Beer absorption profile_
-- ***n_comp*** (complex float). _Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate_
+- ***kappap_int*** [**_see 1._**] (float/string). _Phononic interface heat conductivity to the last block of the sample. Either in W/m/K or 'av', 'min', 'max' of the constants of the two interfaced materials_
+- ***kappae_int*** [**_see 2._**] (float/string). _Electronic interface heat conductivity to the last block of the sample. Either in W/m/K or 'av', 'min', 'max' of the constants of the two interfaced materials_
+- ***pen_dep*** [**_see 3._**] (float). _Penetration depth of the laser pulse in m if to be computed with Lambert-Beer absorption profile_
+- ***n_comp***[**_see 3._**]  (complex float). _Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate_
 
 ```python
 my_sample.add_layers(material=my_conductor, dz= 1e-9, layers=5, pen_dep=7.5e-9, n_comp=2.8+8.45j)
@@ -121,9 +121,9 @@ To define the pulse you can/must introduce the following parameters:
 - ***fluence*** (float). _Fluence of the laser pulse in mJ/cm^2_
 - ***delay*** (float). _Time-delay of the pulse peak after simulation start in s_
 - ***method*** (String). _Method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abeles' for the matrix formulation calculating the profile via the Fresnel equations_
-- ***photon_energy_ev*** (float). _Energy of the optical laser pulse in eV. Only necessary for method 'Abeles'_
-- ***theta*** (float). _Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
-- ***phi*** (float). _Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
+- ***photon_energy_ev***  [**_only_Abeles_**] (float). _Energy of the optical laser pulse in eV. Only necessary for method 'Abeles'_
+- ***theta*** [**_only_Abeles_**] (float). _Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
+- ***phi*** [**_only_Abeles_**] (float). _Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so between 0 and 1/2. Only necessary for method 'Abeles'_
 
 ```python
 my_pulse_Abeles = SimPulse(sample=my_sample, method='Abeles', pulse_width=20e-15, fluence=5., delay=0.5e-12, photon_energy_ev=1.55, theta=1/4, phi=1/3)
@@ -146,8 +146,8 @@ The parameters to define are:
 - ***ini_temp*** (float). _Initial temperature of electron and phonon baths in the whole sample in K_
 - ***solver*** (String). _The solver used to evaluate the differential equation. See_ [documentation of scipy.integrate.solve_ivp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html)
 - ***max_step*** (float). _Maximum step size in s of the solver for the whole simulation_
-- ***atol*** (float). _Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver_
-- ***rtol*** (float). _Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver_
+- ***atol*** [**_optional_**] (float). _Absolute tolerance of solve_ivp solver. Default is 1e-6 as the default of the solver_
+- ***rtol*** [**_optional_**] (float). _Relative tolerance of solve_ivp solver. Default is 1e-3 as the default of the solver_
 
 ```python
 my_simulation = SimDynamics(sample=my_sample, pulse=my_pulse_Abeles, ini_temp=300., end_time=20e-12, solver='Radau', max_step=1e-13)
