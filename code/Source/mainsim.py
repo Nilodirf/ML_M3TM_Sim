@@ -147,6 +147,11 @@ class SimDynamics:
         else:
             fss_eq = np.zeros(1)
 
+        print('Starting main simulation loop. Calculating until ', np.round((self.end_time-self.Pulse.delay)*1e12, 3), ' ps after pulse maximum.')
+        print('Solver: ', str(self.solver))
+        print('maximum time step:', str(self.max_step), ' s')
+        print()
+
         ts = np.concatenate((te0, tp0))
         config0 = np.concatenate((ts, fss_eq))
 
@@ -200,10 +205,6 @@ class SimDynamics:
         print('Equilibrium magnetization in magnetic layers: ' + str(mag_eq))
         print('at initial temperature: ' + str(tp0) + ' K')
         print()
-        print('Starting main simulation loop. Calculating until ', np.round((self.end_time-self.Pulse.delay)*1e12, 3), ' ps after pulse maximum.')
-        print('Solver: ', str(self.solver))
-        print('maximum time step:', str(self.max_step), ' s')
-        print()
 
         # return the equilibrium spin occupation:
         return fs_eq_flat
@@ -244,13 +245,6 @@ class SimDynamics:
         te = te_tp_fs_flat[:len_sam_te]
         tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
 
-<<<<<<< HEAD:new_M3TM/Source/mainsim.py
-        if te.any()<300.:
-            print('False')
-
-=======
-        # compute increments of magnetization if magnetic system is defined:
->>>>>>> d62a1af5785383e671cddcff8b218e0cbea2d95d:code/Source/mainsim.py
         if mag_num != 0:
             fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
             fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
