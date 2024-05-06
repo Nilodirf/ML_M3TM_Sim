@@ -25,7 +25,7 @@ class SimPulse:
         # between 0 and 1/2.
 
         # Also returns:
-        # peak_power (float). Peak power per area (intensity) of the pulse in W/m**2.
+        # peak_intensity (float). Peak power per area (intensity) of the pulse in W/m**2.
         # Needed to compute the absorption profile
         # pulse_time_grid, pulse_map (numpy arrays). 1d-arrays of the time-grid on which the pulse is defined
         # and the corresponding 2d-array of excitation power density at all times in all layers
@@ -319,9 +319,9 @@ class SimPulse:
             # norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
             norm = 1
             sample_depth = np.cumsum(dz_sam) - dz_sam[0]
-            plt.plot(sample_depth*1e9, self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm)
+            plt.plot(sample_depth*1e9, self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm/1e18)
             plt.xlabel(r'sample depth z [nm]', fontsize=16)
-            plt.ylabel(r'S(z)/S$_{max}$', fontsize=16)
+            plt.ylabel(r'Abs. Peak Power density [PW/$m^3$]', fontsize=16)
             if self.method == 'LB':
                 plt.title('Absorption profile computed with Lambert-Beer law')
             if self.method == 'Abeles':
@@ -348,7 +348,7 @@ class SimPulse:
                 plt.plot(excited_depth, fit_func(excited_depth, pen_dep[0]), ls ='--', label='fit with pen_dep=' + str(pen_dep[0]*1e9) + 'nm')
                 plt.legend(fontsize=14)
                 plt.xlabel(r'depth of excited sample [m]', fontsize=16)
-                plt.ylabel(r'Normalized power', fontsize=16)
+                plt.ylabel(r'Absorbed Power density [PW/$m^3$]', fontsize=16)
                 if save_fig:
                     assert save_file is not None, 'If you wish to save, please introduce a name for the file with save_file=\'name\''
                     plt.savefig('Results/' + save_file + '.pdf')

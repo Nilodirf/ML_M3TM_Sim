@@ -57,6 +57,10 @@ class SimSample:
         # Returns:
         # mat_arr (numpy array). 1d-array after the layers have been added
 
+        assert n_comp is not None or pen_dep is not None, ('Please introduce either a complex refraction index '
+                                                           'or penetration depth for the computation of the pulse '
+                                                           'profile.')
+
         if self.len > 0:
             assert kappap_int is not None and \
                    (type(kappap_int) == float or kappap_int == 'min' or kappap_int == 'max' or kappap_int == 'av'), \
