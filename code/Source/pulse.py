@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+import os
 from matplotlib import pyplot as plt
 from scipy import constants as sp
 
@@ -29,6 +30,11 @@ class SimPulse:
         # Needed to compute the absorption profile
         # pulse_time_grid, pulse_map (numpy arrays). 1d-arrays of the time-grid on which the pulse is defined
         # and the corresponding 2d-array of excitation power density at all times in all layers
+        # abs_flu (float). The absorbed fluence calculated for the sample structure, without errors for
+        # finite timesteps.
+        # ref_flu (float). The reflected fluence calulated for the sample strucutre, without timesep errors
+        # rel_err (float). Error for absorbed fluence due to finite layer size in percent, rounded to 0.1 %
+
 
         self.pulse_width = pulse_width
         self.fluence = fluence
@@ -316,19 +322,40 @@ class SimPulse:
 
         elif axis == 'z':
             dz_sam = self.Sam.get_params_from_blocks('dz')
-            # norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
-            norm = 1
+            norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
+            # norm = 1
             sample_depth = np.cumsum(dz_sam) - dz_sam[0]
-            plt.plot(sample_depth*1e9, self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm/1e18)
+            powers_to_plot = self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm/1e18
+            plt.plot(sample_depth*1e9, powers_to_plot, color='black', lw=2.0)
+            plt.ylim(0, np.amax(powers_to_plot))
+            plt.xlim(0, sample_depth[-1]*1e9)
             plt.xlabel(r'sample depth z [nm]', fontsize=16)
             plt.ylabel(r'Abs. Peak Power density [PW/$m^3$]', fontsize=16)
+
+            # add fillings to denote different sample constituents:
+            top_fill = np.amax(powers_to_plot)
+            depth_0 = 0.
+            for i, mat in enumerate(self.Sam.constituents):
+                depth_range = np.array([depth_0, depth_0 + self.Sam.dz_arr[i] * 1e9 * self.Sam.mat_blocks[i]])
+                plt.fill_between(depth_range, np.ones(2)*top_fill, np.zeros(2), alpha=0.5, label=str(mat))
+                depth_0 = depth_range[-1]
             if self.method == 'LB':
-                plt.title('Absorption profile computed with Lambert-Beer law')
+                plt.title('Absorption profile computed with Lambert-Beer law', fontsize=20)
             if self.method == 'Abeles':
-                plt.title('Absorption profile computed with Abeles matrix method')
+                plt.title('Absorption profile computed with Abeles matrix method', fontsize=20)
+            plt.legend(fontsize=16)
+
             if save_fig:
+
                 assert save_file is not None, 'If you wish to save, please introduce a name for the file with save_file=\'name\''
-                plt.savefig('Results/' + save_file + '.pdf')
+
+                save_path = 'Results/' + str(save_file) + '.pdf'
+
+                if not os.path.exists('Results'):
+                    os.makedirs('Results')
+
+                plt.savefig('Results/' + str(save_file) + '.pdf')
+
             plt.show()
 
             if fit is not None:
@@ -369,11 +396,18 @@ class SimPulse:
 
             plt.show()
 
-        ### CHANGES: s to ps, m to nm, full power
-
         return
 
     def show_info(self):
+        # This method is called in the main simulation loop to inform the user on the display
+        # about the pulse parameters.
+
+        # Input:
+        # self (pointer). The pulse object in use.
+
+        # Returns:
+        # None. Void function
+
         print('Absorption profile computed with Abeles\' matrix method.')
         print('F = ', str(self.fluence), ' mJ/cm^2')
         print('F_a_sim =', self.abs_flu, 'mJ/cm^2')
