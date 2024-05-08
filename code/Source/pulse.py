@@ -284,9 +284,6 @@ class SimPulse:
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 
-            ### ADD: assertion for absorption but no ce defined!!
-            ### CHANGE: pen_dep and layer_thickness to sample class, not materials
-
         return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err
 
     def visualize(self, axis, fit=None, save_fig=False, save_file=None):
@@ -325,12 +322,12 @@ class SimPulse:
             norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
             # norm = 1
             sample_depth = np.cumsum(dz_sam) - dz_sam[0]
-            powers_to_plot = self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm/1e18
+            powers_to_plot = self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm
             plt.plot(sample_depth*1e9, powers_to_plot, color='black', lw=2.0)
             plt.ylim(0, np.amax(powers_to_plot))
             plt.xlim(0, sample_depth[-1]*1e9)
             plt.xlabel(r'sample depth z [nm]', fontsize=16)
-            plt.ylabel(r'Abs. Peak Power density [PW/$m^3$]', fontsize=16)
+            plt.ylabel(r'Norm. absorbed energy', fontsize=16)
 
             # add fillings to denote different sample constituents:
             top_fill = np.amax(powers_to_plot)
