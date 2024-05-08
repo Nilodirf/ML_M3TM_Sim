@@ -177,8 +177,40 @@ Run the command
 ```
 py -m code.Scripts.tutorial_input
 ```
+<details>
+<summary>The command prompt will show the setup of your sample, the computed pulse profile, initial conditions and briefly inform about the state of the simulation.</summary>
 
-The command prompt will show the setup of your sample, the computed pulse profile, initial conditions and briefly inform about the state of the simulation.
+```
+Sample constructed.
+Constitiuents:  ['Blitzydummy' 'Spinnydummy' 'Gummydummy']
+Thicknesses: [  5.  15. 300.]  nm
+Number of layers: [5, 15, 300]
+
+Absorption profile computed with Abeles' matrix method.
+F =  5.0  mJ/cm^2
+F_a_sim = 1.468017037261054 mJ/cm^2
+F_r = 3.1144679343569615 mJ/cm^2
+F_t = 0.4369338236503731 mJ/cm^2
+F_a = F - F_r - F_t= 1.448598241992665 mJ/cm^2
+Relative error due to finite layer size:  1.32 %
+
+Starting simulation
+
+Equilibration phase done.
+Equilibrium magnetization in magnetic layers: [0.88880614 0.88880614 0.88880614 0.88880614 0.88880614 0.88880614
+ 0.88880614 0.88880614 0.88880614 0.88880614 0.88880614 0.88880614
+ 0.88880614 0.88880614 0.88880614]
+at initial temperature: [300. 300. 300. 300. 300. 300. 300. 300. 300. 300. 300. 300. 300. 300.
+ 300.] K
+
+Starting main simulation loop. Calculating until  19.5  ps after pulse maximum.
+Solver:  Radau
+maximum time step: 1e-13  s
+
+Simulation done. Time expired: 46.86850047111511 s
+```
+
+</details>
 
 ## Check the output
 Within the plot module there are several methods to visualize your output data. Here is a quick guide to look at your data in some ways:
