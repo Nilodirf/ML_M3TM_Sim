@@ -130,6 +130,8 @@ my_pulse_Abeles = SimPulse(sample=my_sample, method='Abeles', pulse_width=20e-15
 my_pulse_Lambert_Beer = SimPulse(sample=my_sample, method='LB', pulse_width=20e-15, fluence=5., delay=0.5e-12)
 ```
 
+![Screenshot of a comment on a GitHub issue showing an image, added in the Markdown, of an Octocat smiling and raising a tentacle.](/Tutorial_figures/tutorial_pulse_Abeles.pdf)
+
 </details>
 
 ### Define Simulation Parameters
