@@ -283,7 +283,8 @@ class SimPlot:
             y_labels = self.layer_labels_te[min_layer: max_layer]
             y_label_mask = np.array([True if index[0] != y_labels[i+1][0] else False for i, index in enumerate(y_labels[:-1])])
             y_label_mask = np.append(y_label_mask, np.array([True]))
-            mat_sep_marks = y_axis[y_label_mask]
+            mat_sep_marks = y_axis[y_label_mask]+2
+            # mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask]
             text_above = [str(y_label)[:y_label.index('_')] for y_label in y_labels[y_label_mask]]
             z_label = r'$T_e$ [K]'
         elif key == 'tp':
@@ -298,7 +299,8 @@ class SimPlot:
             y_labels = self.layer_labels[min_layer:max_layer]
             y_label_mask = np.array([True if index[0] != y_labels[i+1][0] else False for i, index in enumerate(y_labels[:-1])])
             y_label_mask = np.append(y_label_mask, np.array([True]))
-            mat_sep_marks = y_axis[y_label_mask]
+            mat_sep_marks = y_axis[y_label_mask]+2
+            # mat_sep_marks -= np.concatenate((np.array([mat_sep_marks[0]]), np.diff(y_axis)))[y_label_mask] + 2
             text_above = [str(y_label)[:y_label.index('_')] for y_label in y_labels[y_label_mask]]
             z_label = r'$T_p$ [K]'
         elif key == 'mag':
@@ -377,52 +379,97 @@ class SimPlot:
             # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
             mat_sep_marks = np.append(mat_sep_marks, y_axis[-1])
 
+            colors=['red', 'blue', 'green']
+
             if key == 'tp':
                 # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
                 surface_array = np.append(np.zeros(1), mat_sep_marks)
                 for i, mark in enumerate(surface_array[:-2]):
-                    print(int(mark), int(surface_array[i+1]))
                     x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), range(int(mark), int(surface_array[i+1])))
                     z_mesh = np.ones_like(x_mesh)*vmin
-                    ax.plot_surface(x_mesh, y_mesh, z_mesh, color=mat_colors[i], alpha=0.5)
+                    ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[i], alpha=0.5)
 
                 # add lines of the average of tp in each sample constituent, projected onto xz-plane:
                 yg = np.ones(x.shape) * yM
                 block_separator = np.where(np.array(y_label_mask))[0]
                 start_block_at = 0
-
                 for i, pos in enumerate(block_separator[:-1]):
                     end_block_at = pos+start_block_at+1
+                    print(start_block_at, end_block_at, colors[i])
+                    # if i == 1:
+                    #     dz = 2e-9
+                    #     pen_dep = 14e-9
+                    #     exp_decay = np.exp(-np.arange(block_separator[i+1]-pos) * dz / pen_dep)
+                    #     z_block_av = np.sum(z[:, pos:block_separator[i+1]] * exp_decay, axis=1) / np.sum(exp_decay)
+                    # else:
                     z_block_av = np.sum(z_all_layers[:, start_block_at:end_block_at], axis=1)/(end_block_at-start_block_at)
-                    ax.plot(x, yg, z_block_av, color=mat_colors[i], label=text_above[i], lw=3.0)
+                    ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i], lw=3.0)
                     start_block_at = end_block_at
-
                 # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
                 if len(block_separator) > 1:
                     z_block_av = np.sum(z_all_layers[:, block_separator[-2]:], axis=1) / len(z_all_layers.T[block_separator[-2]:])
-                    ax.plot(x, yg, z_block_av, color=mat_colors[-1], label=text_above[-1], lw=3.0)
+                    ax.plot(x, yg, z_block_av, color=colors[-1], label=text_above[-1], lw=3.0)
+
+                # add line at T_C and the text (T_c manual at 65 K):
+                # ax.plot(x, yg, np.ones_like(x)*65, color='black', alpha=0.8)
+                # ax.text(x[-1], yM, 75, r'$T_C$', color='black', size=14)
+
+                # add grey box at fixed time for zoom effect (for paper):
+                # cube_max_x = 6
+                # ym = mat_sep_marks[1]
+                # yM = mat_sep_marks[2]
+                #
+                # x_surf_y, x_surf_z = np.meshgrid((ym, yM), (vmin, vmax))
+                # x_surf_x = cube_max_x*np.ones_like(x_surf_y)
+                # y_surf_x, y_surf_z = np.meshgrid((x[0], cube_max_x), (vmin, vmax))
+                # y_surf_y = ym * np.ones_like(y_surf_z)
+                # z_surf_x, z_surf_y = np.meshgrid((x[0], cube_max_x), (ym, yM))
+                # z_surf_z = vmax*np.ones_like(z_surf_x)
+
+                # ax.plot_surface(x_surf_x, x_surf_y, x_surf_z, color='grey', alpha=0.2)
+                # ax.plot_surface(y_surf_x, y_surf_y, y_surf_z, color='grey', alpha=0.4)
+                # ax.plot_surface(z_surf_x, z_surf_y, z_surf_z, color='grey', alpha=0.6)
 
             if key == 'mag' or key == 'te':
                 # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
                 surface_array = np.append(np.zeros(1), mat_sep_marks)
-                for i, mark in enumerate(surface_array[:-2]):
-                    print(int(mark), int(surface_array[i+1]))
+                for i, mark in enumerate(surface_array[:-1]):
                     x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), range(int(mark), int(surface_array[i+1])))
                     z_mesh = np.ones_like(x_mesh)*vmin
-                    ax.plot_surface(x_mesh, y_mesh, z_mesh, color=mat_colors[i], alpha=0.5)
-                    if i == len(mat_colors)-1:
-                        break
+                    ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[i], alpha=0.5)
+
+                # x_mesh, y_mesh = np.meshgrid((x[0], x[-1]), (y_axis[0], y_axis[-1]))
+                # z_mesh = np.ones_like(x_mesh)*vmin
+                # ax.plot_surface(x_mesh, y_mesh, z_mesh, color=colors[1], alpha=0.5)
 
                 yg = np.ones(x.shape) * yM
                 block_separator = np.where(np.array(y_label_mask))[0]
                 start_block_at = 0
-                for i, pos in enumerate(block_separator):
+                for i, pos in enumerate(block_separator[:-1]):
                     end_block_at = pos+start_block_at+1
+                    print(start_block_at, end_block_at, colors[i])
+                    # if i == 1:
+                    #     dz = 2e-9
+                    #     pen_dep = 14e-9
+                    #     exp_decay = np.exp(-np.arange(block_separator[i+1]-pos) * dz / pen_dep)
+                    #     z_block_av = np.sum(z[:, pos:block_separator[i+1]] * exp_decay, axis=1) / np.sum(exp_decay)
+                    # else:
                     z_block_av = np.sum(z_all_layers[:, start_block_at:end_block_at], axis=1)/(end_block_at-start_block_at)
-                    ax.plot(x, yg, z_block_av, color=mat_colors[i], label=text_above[i], lw=3.0)
+                    ax.plot(x, yg, z_block_av, color=colors[i], label=text_above[i], lw=3.0)
                     start_block_at = end_block_at
-                    if i == len(mat_colors)-1:
-                        break
+                # in the substrate, show the average of all layers, regardless of what is shown in the surface plot:
+                if len(block_separator) > 1:
+                    z_block_av = np.sum(z_all_layers[:, block_separator[-2]:], axis=1) / len(z_all_layers.T[block_separator[-2]:])
+                    ax.plot(x, yg, z_block_av, color=colors[-2], label=text_above[-1], lw=3.0)
+
+                if key == 'mag':
+                    yg = yM * np.ones(x.shape)
+                    layer_thickness = 2e-9
+                    pen_dep = 30e-9
+                    exp_decay = np.exp(-np.arange(len(z.T)) * layer_thickness / pen_dep)
+                    kerr = np.sum(z*exp_decay, axis=1)/len(z.T)
+                    kerr /= kerr[first_time_index]
+                    ax.plot(x, yg, kerr, color=colors[1], label=r'CGT', lw=3.0)
 
             ax.view_init(20, 30)
 
