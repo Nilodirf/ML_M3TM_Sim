@@ -137,7 +137,7 @@ my_pulse_Abeles.visualize(axis='z')
 ```
 
 There are further options to visualize and save these figures, for documentation I refer to [the documentation in the source code](/code/source/pulse.py). Now, our pulse calculated with Abeles' matrix method looks like this:
-![Pulse absorption profile of the above constructed sample.](/Tutorial_figures/tutorial_pulse_Abeles.png)
+![](/Tutorial_figures/tutorial_pulse_Abeles.png)
 
 </details>
 
