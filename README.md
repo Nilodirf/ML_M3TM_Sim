@@ -137,7 +137,7 @@ my_pulse_Abeles.visualize(axis='z')
 ```
 
 There are further options to visualize and save these figures, for documentation I refer to [the documentation in the source code](/code/source/pulse.py). Now, our pulse calculated with Abeles' matrix method looks like this:
-![](/Tutorial_figures/tutorial_pulse_Abeles.png)
+![tutorial_pulse_Abeles-1](https://github.com/Nilodirf/ML_M3TM_Sim/assets/106656383/7c01ea22-bd07-48d3-ae9d-37aa30ad994e)
 
 </details>
 
