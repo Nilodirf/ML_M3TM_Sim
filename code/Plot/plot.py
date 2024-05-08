@@ -231,7 +231,7 @@ class SimPlot:
 
         plt.show()
 
-    def map_plot(self, key, kind, mat_colors, min_layer=None, max_layer=None, save_fig=False, filename=None, min_time=None,
+    def map_plot(self, key, kind, min_layer=None, max_layer=None, save_fig=False, filename=None, min_time=None,
                  max_time=None, color_scale='inferno', text_color='white', vmin=None, vmax=None, show_title=True):
         # This method creates a color plot with appropriate labeling of one of the simulation output maps.
 

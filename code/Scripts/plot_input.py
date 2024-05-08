@@ -12,9 +12,9 @@ plotter = SimPlot(file='my_result_files')
 # Plot a map of the denoted simulation of one of the three subsystems, save if you want to:
 # plotter.map_plot(key='tp',  save_fig=False)
 
-plotter.map_plot(key='mag', kind='surface', mat_colors=['yellow'], max_time=2000, save_fig=False, filename='tutorial_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
-plotter.map_plot(key='te', kind='surface', mat_colors=['green', 'yellow'], save_fig=True, filename='tutorial_te', show_title=False, color_scale='Reds')
-plotter.map_plot(key='tp', kind='surface', mat_colors=['green', 'yellow', 'red'], save_fig=True, filename='tutorial_tp', show_title=False, color_scale='Blues')
+plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=False, filename='tutorial_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
+plotter.map_plot(key='te', kind='surface', save_fig=True, filename='tutorial_te', show_title=False, color_scale='Reds')
+plotter.map_plot(key='tp', kind='surface', save_fig=True, filename='tutorial_tp', show_title=False, color_scale='Blues')
 
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
