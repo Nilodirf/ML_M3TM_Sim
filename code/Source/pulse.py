@@ -32,14 +32,14 @@ class SimPulse:
         # and the corresponding 2d-array of excitation power density at all times in all layers
         # abs_flu (float). The absorbed fluence calculated for the sample structure, without errors for
         # finite timesteps.
-        # ref_flu (float). The reflected fluence calulated for the sample strucutre, without timesep errors
+        # ref_flu (float). The reflected fluence calculated for the sample structure, without timestep errors
         # rel_err (float). Error for absorbed fluence due to finite layer size in percent, rounded to 0.1 %
 
 
         self.pulse_width = pulse_width
         self.fluence = fluence
         self.delay = delay
-        self.peak_intensity = self.fluence/np.sqrt(2*np.pi)/self.pulse_width/10
+        self.peak_intensity = self.fluence/np.sqrt(2*np.pi)/self.pulse_width*10
         self.Sam = sample
         self.method = method
         assert self.method == 'LB' or self.method == 'Abeles', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \

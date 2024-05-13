@@ -22,25 +22,26 @@ Siliconnitirde = SimMaterials(name='Si3N4', tdeb=400, vat=1.7e-29, ce_gamma=0., 
 
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
-sample = SimSample()
-sample.add_layers(material=Yttrium, dz=1e-9, layers=2, pen_dep=34e-9, n_comp=2.21+2.73j)
-sample.add_layers(material=Terbium, dz=1e-9, layers=10, pen_dep=19.4e-9, n_comp=1.97+3.28j, kappap_int='av', kappae_int='max')
-sample.add_layers(material=Yttrium, dz=1e-9, layers=20, pen_dep=34e-9, n_comp=2.21+2.73j, kappap_int='av', kappae_int='max')
-sample.add_layers(material=Aluminium, dz=1e-9, layers=300, pen_dep=7.5e-9, n_comp=2.8+8.45j, kappap_int='av', kappae_int='max')
-sample.add_layers(material=Siliconnitirde, dz=1e-9, layers=200, pen_dep=1, n_comp=2.008+0j, kappap_int='av')
+full_sample = SimSample()
+full_sample.add_layers(material=Yttrium, dz=1e-9, layers=2, pen_dep=34e-9, n_comp=2.21+2.73j)
+full_sample.add_layers(material=Terbium, dz=1e-9, layers=10, pen_dep=19.4e-9, n_comp=1.97+3.28j, kappap_int='av', kappae_int=0.)
+full_sample.add_layers(material=Yttrium, dz=1e-9, layers=20, pen_dep=34e-9, n_comp=2.21+2.73j, kappap_int='av', kappae_int=0.)
+full_sample.add_layers(material=Aluminium, dz=1e-9, layers=300, pen_dep=7.5e-9, n_comp=2.8+8.45j, kappap_int='av', kappae_int=0.)
+full_sample.add_layers(material=Siliconnitirde, dz=1e-9, layers=200, pen_dep=1, n_comp=2.008+0j, kappap_int='av')
 
-# sample.add_layers(material=Terbium, dz=1e-9, layers=110, pen_dep=19.4e-9, n_comp=1.97+3.28j)
+simple_sample = SimSample()
+simple_sample.add_layers(material=Terbium, dz=1e-9, layers=110, pen_dep=19.4e-9, n_comp=1.97+3.28j)
 
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='Abeles', pulse_width=20e-15, fluence=10, delay=0.5e-12, photon_energy_ev=1.55, theta=0, phi=0)
-pulse.visualize(axis='z', save_fig=True, save_file='only_Tb_Abeles_pulse')
+pulse = SimPulse(sample=full_sample, method='Abeles', pulse_width=20e-15, fluence=10, delay=0.5e-12, photon_energy_ev=1.55, theta=0, phi=0)
+pulse.visualize(axis='z', save_fig=True, save_file='FU_Tim_Terbium/full_sample_Abeles_pulse')
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=0.1e-12, ini_temp=300., solver='Radau', max_step=1e-13)
+sim = SimDynamics(sample=full_sample, pulse=pulse, end_time=6.5e-12, ini_temp=300., solver='Radau', max_step=1e-15)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='tim_test_info')
+sim.save_data(solution, save_file='FU_Tim_Terbium/full_sample_zero_diff')

@@ -562,7 +562,7 @@ class SimDynamics:
         params_file.write('Absorbed fluence = ' + str(self.Pulse.abs_flu) + ' [mJ/cm^2]' + '\n')
         params_file.write('Reflected fluence = ' + str(self.Pulse.ref_flu) + ' [mJ/cm^2]' + '\n')
         params_file.write('Transmitted fluence = ' + str(self.Pulse.trans_flu) + ' [mJ/cm^2]' + '\n')
-        params_file.write('Relative error due to finite layer size:' + str(self.Pulse.rel_err) + ' %' + '\n')
+        params_file.write('Relative error due to finite layer size: ' + str(self.Pulse.rel_err) + ' %' + '\n')
         params_file.write('##Interface parameters' + '\n')
         params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + ' [W/m/K]' + '\n')
         params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + ' [W/m/K]' + '\n')
