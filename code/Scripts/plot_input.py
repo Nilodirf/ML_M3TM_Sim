@@ -26,7 +26,7 @@ plotter = SimPlot(file='FU_Tim_Terbium/only_Tb_sample')
 
 # plotter.te_tp_plot(max_time=6.5, average=False, save_fig=False,  filename='te_tp_thick', tp_layers=[2, 12], color_scales=['Greens_r', 'Blues_r'])  #8,84 for thick, 8,
 
-tim_fu_files = ['FU_Tim_Terbium/only_Tb_sample', 'FU_Tim_Terbium/full_sample', 'FU_Tim_Terbium/full_sample_min_diff']
+tim_fu_files = ['FU_Tim_Terbium/only_Tb_sample', 'FU_Tim_Terbium/full_sample', 'FU_Tim_Terbium/full_sample_zero_diff']
 SimComparePlot(tim_fu_files).compare_samples(key='te', min_layers=[2, 2, 2], max_layers=[12, 12, 12], colors=['orange', 'green', 'blue'],
-                                             labels=['only Tb Abeles', 'full sample Abeles', 'minimal diffusion'], save_fig=True,
+                                             labels=['only Tb Abeles', 'full sample Abeles', 'no interface diffusion'], save_fig=True,
                                              filename='te_comp_Abeles')
