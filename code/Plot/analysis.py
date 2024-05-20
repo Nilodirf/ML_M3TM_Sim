@@ -299,69 +299,10 @@ class SimAnalysis(SimComparePlot):
         return popt, cv
 
     @staticmethod
-    def fit_mag_data(file, t1, t_max=None, p0_initial=[0.4, 0.5, 4e-12, 5e-11, 0.3, 1e-9, 5e-10]):
-        # This method fits the average of a simulation set of magnetization dynamics on long timescales after
-        # e-p-equilibration to a function:
-        # f(t) = const. + a*exp(-t/tau_1)+b*tanh((t-t_1)/tau_2)
-
-        # Input:
-        # file (string). Path of the simulation folder from Results
-        # t1 (float). Time in s of when the second slow demagnetization sets in (around e-p-equilibration time)
-
-        # Returns:
-        # popt_all, cv_all (lists). Optimized parameters of the fit and corresponding error values in the order as
-        # in exp_tanh(t, *args)
-
-        # get the data to fit:
-        sim_data = SimPlot(file).get_data()
-        sim_delay = sim_data[0]
-        sim_mags = sim_data[3]
-
-        # average the magnetization:
-        mag_av = np.sum(sim_mags, axis=1)/len(sim_mags[0])
-
-        # sort out the time intervals
-        first_time_index = finderb(t1, sim_delay)[0]
-        if t_max is None:
-            last_time_index = len(sim_delay) + 1
-        else:
-            last_time_index = finderb(t_max, sim_delay)[0]
-
-
-        delay_phase_12 = sim_delay[first_time_index:last_time_index]
-        mag_phase_12 = mag_av[first_time_index:last_time_index]
-
-
-        def exp_tanh(t, offset, exp_scale, exp_offset, tau_1, tanh_scale, tanh_offset, tau_2):
-
-            exp_part = exp_scale*np.exp(-(t-exp_offset)/tau_1)
-            tanh_part = tanh_scale*np.tanh((t-tanh_offset)/tau_2)
-            full_func = offset + exp_part + tanh_part
-
-            return full_func
-
-        # popt_all, cv_all = scipy.optimize.curve_fit(exp_tanh, delay_phase_12, mag_phase_12, p0_initial)
-
-        print('simulation file: ', file)
-        # print('offset, exp_scale, exp_offset, tau_1 = ', popt_all[:4])
-        # print('tanh_scale, tanh_offset, tau_2 = ', popt_all[4:])
-
-        plt.plot(sim_delay, mag_av, label='sim', ls='dotted', color='orange')
-
-        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *p0_initial), color='purple', label='initial')
-        # plt.plot(delay_phase_12, exp_tanh(delay_phase_12, *popt_all), color='blue', label='final')
-
-        plt.legend(fontsize=14)
-        plt.xlabel(r'delay [s]', fontsize=16)
-        plt.ylabel(r'average magnetization', fontsize=16)
-        plt.show()
-
-        return popt_all, np.sqrt(np.diag(cv_all))
-
-    @staticmethod
     def fit_dm_dt(file, t1, t_max=None, p0_initial=[0.4, 0.5, 4e-12, 5e-11, 0.3, 1e-9, 5e-10]):
 
         sim_data = SimPlot(file).get_data()
+
         sim_delay = sim_data[0]
         sim_mags = sim_data[3]
 
@@ -629,6 +570,103 @@ class SimAnalysis(SimComparePlot):
             plt.savefig(save_folder + '/' + file + '_remag_' + fit_string + '.pdf')
 
         return popt, cv
+
+    @staticmethod
+    def fit_mag_data(file, t1, t2):
+        # This method fits the average of a simulation set of magnetization dynamics on long timescales after
+        # e-p-equilibration to a function:
+        # f(t) = const. + a*exp(-t/tau_1)+b*tanh((t-t_1)/tau_2)
+
+        # Input:
+        # file (string). Path of the simulation folder from Results
+        # t1 (float). Time in s of when the second slow demagnetization sets in (around e-p-equilibration time)
+
+        # Returns:
+        # popt_1, cv_1, popt_2, cv_2 (lists). Optimized parameters of the fit and corresponding error values
+        # for term 1 and 2 of the fit function.
+
+        # get the data to fit:
+        # sim_data = SimPlot(file).get_data()
+        # sim_delay = sim_data[0]
+        # sim_mags = sim_data[3]
+
+        data = np.loadtxt('C:/Users/Theodor Griepe/Documents/Github/Magneto-Thermal-Engineering/sim_to_fit/FGT_AIN.dat')
+        sim_delay = data[:, 0]*1e-12
+        mag_av = data[:, 1]
+        mag_av = (mag_av-mag_av[0])/mag_av[0]
+        # average the magnetization:
+        # mag_av = np.sum(sim_mags, axis=1) / len(sim_mags[0])
+
+        # sort out the time intervals
+        first_time_index = finderb(t1, sim_delay)[0]
+        last_time_index = finderb(t2, sim_delay)[0]
+
+        delay_phase_12 = sim_delay[first_time_index:last_time_index]
+        mag_phase_12 = mag_av[first_time_index:last_time_index]
+
+        mag_diff = np.diff(mag_av)
+        time_diff = np.diff(sim_delay)
+        dm_dt = mag_diff / time_diff
+
+        def exp3(t, a1, a3, tau0, tau2, tau3, epsilon_tau, epsilon_tau_a):
+            a2 = a1 + epsilon_tau/tau2*a1 + epsilon_tau_a
+            tau1 = tau2 + epsilon_tau
+            # term_1 = a1 / np.sqrt(t / tau0 + 1)
+            term_1 = 0
+            term_2 = ((tau2 * a2 - tau1 * a1) / (tau2 - tau1)) * np.exp(-t / tau1)
+            term_3 = (tau2 * (a1 - a2) / (tau2 - tau1)) * np.exp(-t / tau2)
+            term_4 = a3 * np.exp(-t / tau3)
+
+            return -(term_1 - term_2 - term_3 - term_4)
+
+        lower_bounds = [0, 0, -np.inf, 0, 0, 0, 0]
+        upper_bounds = [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]
+        bounds = np.array([lower_bounds, upper_bounds])
+
+        p0_all = [-0.1, -0.1, 3e-12, 1e-11, 1e-9, 5e-12, 1e-10]
+
+        popt_all, cv_all = scipy.optimize.curve_fit(exp3, delay_phase_12, mag_phase_12, p0_all,
+                                                    bounds=bounds)
+
+        plt.plot(delay_phase_12, exp3(delay_phase_12, *popt_all), label='fit')
+        plt.plot(delay_phase_12, exp3(delay_phase_12, *p0_all), label='initial')
+        plt.plot(delay_phase_12, mag_phase_12, label='sim')
+        plt.legend()
+        plt.show()
+
+        print('a1,a3, tau0, tau2, tau3, e_tau, e_tau_a = ', popt_all)
+
+        # # Residual analysis
+        # residuals = mag_phase_12 - exp3(delay_phase_12, *popt_all)
+        # plt.plot(delay_phase_12, residuals, label='Residuals', color='red')
+        # plt.axhline(y=0, color='black', linestyle='--', linewidth=1)
+        # plt.xlabel('Delay [s]')
+        # plt.ylabel('Residuals')
+        # plt.legend()
+        # plt.show()
+        # # Goodness-of-fit metrics calculation
+        # y_pred = exp3(delay_phase_12, *popt_all)
+        # SS_res = np.sum((mag_phase_12 - y_pred) ** 2)
+        # SS_tot = np.sum((mag_phase_12 - np.mean(mag_phase_12)) ** 2)
+        # R_squared = 1 - (SS_res / SS_tot)
+        # RMSE = np.sqrt(np.mean((mag_phase_12 - y_pred) ** 2))
+        # print('R^2:', R_squared)
+        # print('RMSE:', RMSE)
+        #
+        # plt.figure(figsize=(10, 8))
+        # ax = plt.gca()
+        # plt.plot(sim_delay * 1e9, mag_av, color='black', marker='o', linestyle='', markersize=12, markevery=200,
+        #          markerfacecolor='none')
+        # plt.plot(delay_phase_12 * 1e9, exp3(delay_phase_12, *popt_all), color='royalblue', ls='-', linewidth='6')
+        #
+        # plt.xlabel(r'$\mathrm{Delay (ns)}$', fontsize=40)
+        # plt.ylabel(r'$\mathrm{M/M_0}$', fontsize=40)
+        # plt.tick_params(which='major', length=8)
+        # plt.text(3.5, 0.75, '$\mathdefault{Graphene}$', fontsize=40, color='red')
+        # plt.tight_layout()
+        # plt.show()
+
+        return popt_all, np.sqrt(np.diag(cv_all))
 
     def fit_all_mag_tau1(self, save_file_name, t1, kind, save_fig, show_fig, save_folder=None, end_time=None):
         # create an array to store all fit parameters: ferro X sub X fluence X param
