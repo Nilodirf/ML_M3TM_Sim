@@ -24,9 +24,9 @@ Siliconnitirde = SimMaterials(name='Si3N4', tdeb=400, vat=1.7e-29, ce_gamma=0., 
 # The first material to be added will be closest to the laser pulse and so on.
 full_sample = SimSample()
 full_sample.add_layers(material=Yttrium, dz=1e-9, layers=2, pen_dep=34e-9, n_comp=2.21+2.73j)
-full_sample.add_layers(material=Terbium, dz=1e-9, layers=10, pen_dep=19.4e-9, n_comp=1.97+3.28j, kappap_int='av', kappae_int=0.)
-full_sample.add_layers(material=Yttrium, dz=1e-9, layers=20, pen_dep=34e-9, n_comp=2.21+2.73j, kappap_int='av', kappae_int=0.)
-full_sample.add_layers(material=Aluminium, dz=1e-9, layers=300, pen_dep=7.5e-9, n_comp=2.8+8.45j, kappap_int='av', kappae_int=0.)
+full_sample.add_layers(material=Terbium, dz=1e-9, layers=10, pen_dep=19.4e-9, n_comp=1.97+3.28j, kappap_int='av', kappae_int='max')
+full_sample.add_layers(material=Yttrium, dz=1e-9, layers=20, pen_dep=34e-9, n_comp=2.21+2.73j, kappap_int='av', kappae_int='max')
+full_sample.add_layers(material=Aluminium, dz=1e-9, layers=300, pen_dep=7.5e-9, n_comp=2.8+8.45j, kappap_int='av', kappae_int='max')
 full_sample.add_layers(material=Siliconnitirde, dz=1e-9, layers=200, pen_dep=1, n_comp=2.008+0j, kappap_int='av')
 
 simple_sample = SimSample()
@@ -44,4 +44,4 @@ sim = SimDynamics(sample=full_sample, pulse=pulse, end_time=6.5e-12, ini_temp=30
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='FU_Tim_Terbium/full_sample_zero_diff')
+sim.save_data(solution, save_file='FU_Tim_Terbium/full_sample')

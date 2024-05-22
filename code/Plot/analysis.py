@@ -591,9 +591,9 @@ class SimAnalysis(SimComparePlot):
         # sim_mags = sim_data[3]
 
         data = np.loadtxt('C:/Users/Theodor Griepe/Documents/Github/Magneto-Thermal-Engineering/sim_to_fit/FGT_AIN.dat')
-        sim_delay = data[:, 0]*1e-12
+        sim_delay = (data[:, 0]-1)*1e-12
         mag_av = data[:, 1]
-        mag_av = (mag_av-mag_av[0])/mag_av[0]
+        mag_av = (mag_av[0]-mag_av)/mag_av[0]
         # average the magnetization:
         # mag_av = np.sum(sim_mags, axis=1) / len(sim_mags[0])
 
@@ -608,22 +608,24 @@ class SimAnalysis(SimComparePlot):
         time_diff = np.diff(sim_delay)
         dm_dt = mag_diff / time_diff
 
-        def exp3(t, a1, a3, tau0, tau2, tau3, epsilon_tau, epsilon_tau_a):
-            a2 = a1 + epsilon_tau/tau2*a1 + epsilon_tau_a
-            tau1 = tau2 + epsilon_tau
-            # term_1 = a1 / np.sqrt(t / tau0 + 1)
-            term_1 = 0
-            term_2 = ((tau2 * a2 - tau1 * a1) / (tau2 - tau1)) * np.exp(-t / tau1)
-            term_3 = (tau2 * (a1 - a2) / (tau2 - tau1)) * np.exp(-t / tau2)
-            term_4 = a3 * np.exp(-t / tau3)
+        def exp3(t, tau_e, dtau_eA, dA_12, A_1, tau_3):
+            # define the missing parameters with respect to the given ones:
+            A_2 = A_1 + dA_12
+            tau_m = tau_e*(1+dA_12/A_1)+dtau_eA
 
-            return -(term_1 - term_2 - term_3 - term_4)
+            # define the terms 2,3,4 and add them to get an array of length of len(t):
+            term_ep = -tau_e*(A_1-A_2)/(tau_e-tau_m)*np.exp(-t/tau_e)
+            term_mag = -(A_2*tau_e-A_1*tau_m)/(tau_e-tau_m)*np.exp(-t/tau_m)
+            term_remag = A_1*np.exp(-t/tau_3)
+            combined_func = term_ep + term_mag + term_remag
 
-        lower_bounds = [0, 0, -np.inf, 0, 0, 0, 0]
-        upper_bounds = [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]
+            return combined_func
+
+        lower_bounds = [0, 0, 0, 0, 0]
+        upper_bounds = [np.inf, np.inf, np.inf, np.inf, np.inf]
         bounds = np.array([lower_bounds, upper_bounds])
 
-        p0_all = [-0.1, -0.1, 3e-12, 1e-11, 1e-9, 5e-12, 1e-10]
+        p0_all = [0.1e-12, 3e-12, 1e-2, 0.03, 0.8e-10]
 
         popt_all, cv_all = scipy.optimize.curve_fit(exp3, delay_phase_12, mag_phase_12, p0_all,
                                                     bounds=bounds)

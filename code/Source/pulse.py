@@ -47,7 +47,8 @@ class SimPulse:
         self.energy = photon_energy_ev
         self.theta = np.pi * theta if theta is not None else None
         self.phi = np.pi * phi if phi is not None else None
-        self.pulse_time_grid, self.pulse_map, self.abs_flu, self.ref_flu, self.trans_flu, self.rel_err = self.get_pulse_map()
+        (self.pulse_time_grid, self.pulse_map, self.abs_flu, self.ref_flu, self.trans_flu, self.rel_err
+         , self.abs_flu_per_block) = self.get_pulse_map()
         
     def get_for_all_layers(self, array):
         # This method takes 1d array defined on N blocks of the sample and returns the data stored in this array for all
@@ -92,9 +93,9 @@ class SimPulse:
         pump_time_grid = np.append(pump_time_grid, end_pump_time+1e-15)
         pump_grid = np.append(pump_grid, 0.)
 
-        pump_map, abs_flu, ref_flu, trans_flu, rel_err = self.depth_profile(pump_grid)
+        pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block = self.depth_profile(pump_grid)
 
-        return pump_time_grid, pump_map, abs_flu, ref_flu, trans_flu, rel_err
+        return pump_time_grid, pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
 
     def depth_profile(self, pump_grid):
         # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abeles'
@@ -113,6 +114,7 @@ class SimPulse:
 
         max_intensity = self.peak_intensity
         powers = np.array([])
+        abs_flu_per_block = []
 
         if self.method == 'LB':
 
@@ -134,8 +136,9 @@ class SimPulse:
                     continue
                 pen_red = np.divide((np.arange(mat_blocks[i])+already_penetrated)*dz_sam[first_layer:last_layer],
                                     pendep_sam[first_layer:last_layer]).astype(float)
-                powers = np.append(powers, max_intensity/pendep_sam[first_layer:last_layer]
-                                   * np.exp(-pen_red))
+                power_in_block = max_intensity/pendep_sam[first_layer:last_layer] * np.exp(-pen_red)
+                powers = np.append(powers, power_in_block)
+                abs_flu_per_block.append(np.sum(power_in_block*dz_sam[first_layer:last_layer])*self.fluence)
                 max_intensity = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
                 already_penetrated = 1
@@ -150,7 +153,7 @@ class SimPulse:
             assert self.Sam.n_comp_arr.any() is not None, 'Please define a refractive index for every constituent'\
                                                                'of the sample within the definition of the sample.'
             assert self.energy is not None and self.theta is not None and self.phi is not None, \
-                'For the chosen method, make sure photon energy, theta and phi are defined.'
+                'For the chosen pulse computation method, make sure photon energy, theta and phi are defined.'
 
             # N is the number of blocks/constituents in the sample, so all in all we have N+2 blocks in the system,
             # considering vacuum before and after the sample:
@@ -275,6 +278,14 @@ class SimPulse:
             F_z_s = np.abs(e_y_in_sample)**2 if self.phi != 0 else 0
             F_z = F_z_p + F_z_s
 
+            # extra loop to compute the absorbed fluence per material block:
+            first_layer = 0
+            for i, last_layer in enumerate(self.Sam.mat_blocks):
+                last_layer += first_layer
+                abs_flu_per_block.append(np.sum(q_prop[first_layer: last_layer] * F_z[first_layer: last_layer]
+                                                * dz_sam[first_layer: last_layer])*self.fluence)
+                first_layer = last_layer
+
             # and finally the absorbed power densities:
             powers = self.peak_intensity*q_prop*F_z
             abs_flu = self.fluence * np.sum(F_z * dz_sam*q_prop)
@@ -284,7 +295,7 @@ class SimPulse:
 
             excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
 
-        return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err
+        return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
 
     def visualize(self, axis, fit=None, save_fig=False, save_file=None):
         # This method plots the spatial/temporal/both dependencies of the pump pulse.
@@ -407,10 +418,11 @@ class SimPulse:
 
         print('Absorption profile computed with Abeles\' matrix method.')
         print('F = ', str(self.fluence), ' mJ/cm^2')
-        print('F_a_sim =', self.abs_flu, 'mJ/cm^2')
-        print('F_r =', self.ref_flu, 'mJ/cm^2')
-        print('F_t =', self.trans_flu, 'mJ/cm^2')
-        print('F_a = F - F_r - F_t=', self.fluence-self.trans_flu-self.ref_flu, 'mJ/cm^2')
+        print('F_a_sim =', self.abs_flu, ' mJ/cm^2')
+        print('F_r =', self.ref_flu, ' mJ/cm^2')
+        print('F_t =', self.trans_flu, ' mJ/cm^2')
+        print('F_a = F - F_r - F_t = ', self.fluence-self.trans_flu-self.ref_flu, ' mJ/cm^2')
+        print('F_a_sim per block of different materials: ', self.abs_flu_per_block, ' mJ/cm^2')
         print('Relative error due to finite layer size: ', np.round(100*(self.abs_flu-(self.fluence-self.trans_flu-self.ref_flu))/self.abs_flu, 2), '%')
         print()
         return
