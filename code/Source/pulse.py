@@ -33,7 +33,8 @@ class SimPulse:
         # abs_flu (float). The absorbed fluence calculated for the sample structure, without errors for
         # finite timesteps.
         # ref_flu (float). The reflected fluence calculated for the sample structure, without timestep errors
-        # rel_err (float). Error for absorbed fluence due to finite layer size in percent, rounded to 0.1 %
+        # rel_err (float). Error for absorbed fluence due to finite layer size in percent, rounded to 0.01 %
+        # abs_flu_per_block (list). List of the absorbed fluences of each material block in the sample in mJ/cm^2
 
 
         self.pulse_width = pulse_width
