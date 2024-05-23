@@ -367,29 +367,6 @@ class SimPulse:
 
             plt.show()
 
-            if fit is not None:
-                if fit == 'exp':
-                    def fit_func(depth, pen_dep):
-                        return np.exp(-depth/pen_dep)
-                elif fit == 'lin':
-                    def fit_func(depth, slope):
-                        return 1-(slope*depth)
-                excited_depth = sample_depth[self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :] != 0].astype(float)
-                excited_depth -= excited_depth[0]
-                to_fit = self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :] / norm
-                to_fit = to_fit[to_fit != 0]
-                p0 = 30e-9
-                pen_dep, cv = scipy.optimize.curve_fit(fit_func, excited_depth, to_fit, p0)
-                plt.plot(excited_depth, to_fit, ls='dotted', lw=3, label='Abeles\' method')
-                plt.plot(excited_depth, fit_func(excited_depth, pen_dep[0]), ls ='--', label='fit with pen_dep=' + str(pen_dep[0]*1e9) + 'nm')
-                plt.legend(fontsize=14)
-                plt.xlabel(r'depth of excited sample [m]', fontsize=16)
-                plt.ylabel(r'Absorbed Power density [PW/$m^3$]', fontsize=16)
-                if save_fig:
-                    assert save_file is not None, 'If you wish to save, please introduce a name for the file with save_file=\'name\''
-                    plt.savefig('Results/' + save_file + '.pdf')
-                plt.show()
-
         else:
             dz_sam = self.Sam.get_params_from_blocks('dz')
             sample_depth = np.cumsum(dz_sam)-dz_sam[0]
