@@ -608,7 +608,7 @@ class SimAnalysis(SimComparePlot):
         time_diff = np.diff(sim_delay)
         dm_dt = mag_diff / time_diff
 
-        def exp3(t, tau_e, dtau_eA, dA_12, A_1, tau_3):
+        def exp3(t, tau_e, dtau_eA, dA_12, A_1, tau_3, A_4, tau_4):
             # define the missing parameters with respect to the given ones:
             A_2 = A_1 + dA_12
             tau_m = tau_e*(1+dA_12/A_1)+dtau_eA
@@ -616,27 +616,44 @@ class SimAnalysis(SimComparePlot):
             # define the terms 2,3,4 and add them to get an array of length of len(t):
             term_ep = -tau_e*(A_1-A_2)/(tau_e-tau_m)*np.exp(-t/tau_e)
             term_mag = -(A_2*tau_e-A_1*tau_m)/(tau_e-tau_m)*np.exp(-t/tau_m)
-            term_remag = A_1*np.exp(-t/tau_3)
-            combined_func = term_ep + term_mag + term_remag
-
+            term_remag_1 = A_1*np.exp(-t/tau_3)
+            term_remag_2 = A_4*np.exp(-t/tau_4)
+            combined_func = term_ep + term_mag + term_remag_1 + term_remag_2
             return combined_func
 
-        lower_bounds = [0, 0, 0, 0, 0]
-        upper_bounds = [np.inf, np.inf, np.inf, np.inf, np.inf]
-        bounds = np.array([lower_bounds, upper_bounds])
+        def exp4(t, tau_e, dtau_me, tau_re1, tau_re2, A_e, A_m, A_re1, A_re2):
+            tau_m = tau_e + dtau_me
+            term_ep = A_e*np.exp(-t/tau_e)
+            term_em = A_m*np.exp(-t/tau_m)
+            term_re1 = A_re1*np.exp(-t/tau_re1)
+            term_re2 = A_re2*np.exp(-t/tau_re2)
 
-        p0_all = [0.1e-12, 3e-12, 1e-2, 0.03, 0.8e-10]
+            combined = term_ep + term_em + term_re1 + term_re2
+            return combined
 
-        popt_all, cv_all = scipy.optimize.curve_fit(exp3, delay_phase_12, mag_phase_12, p0_all,
-                                                    bounds=bounds)
+        lower_bounds4 = [0., 0., 0., 0., -np.inf, -np.inf, 0., 0.]
+        upper_bounds4 = [1e-11, 8e-10, 1e-9, 1e-8, 0, 0, np.inf, np.inf]
+        bounds4 = np.array([lower_bounds4, upper_bounds4])
+        p0_all4 = [2e-13, 6e-12, 1e-10, 1e-9, -3e-2, -8e-3, 2e-2, 1e-2]
+        popt_all4, cv_all4 = scipy.optimize.curve_fit(exp4, delay_phase_12, mag_phase_12, p0_all4,
+                                                    bounds=bounds4)
+        plt.plot(delay_phase_12, exp4(delay_phase_12, *popt_all4), label='fit')
+        plt.plot(delay_phase_12, exp4(delay_phase_12, *p0_all4), label='initial')
 
-        plt.plot(delay_phase_12, exp3(delay_phase_12, *popt_all), label='fit')
-        plt.plot(delay_phase_12, exp3(delay_phase_12, *p0_all), label='initial')
+        # lower_bounds3 = [0, 0, 0, 0, 0, 0, 0]
+        # upper_bounds3 = [np.inf, np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]
+        # bounds3 = np.array([lower_bounds3, upper_bounds3])
+        # p0_all3 = [0.1e-12, 3e-12, 1e-2, 0.03, 0.8e-10, 1e-3, 1e-9]
+        # popt_all3, cv_all3 = scipy.optimize.curve_fit(exp3, delay_phase_12, mag_phase_12, p0_all3,
+        #                                             bounds=bounds3)
+        # plt.plot(delay_phase_12, exp3(delay_phase_12, *popt_all3), label='fit')
+        # plt.plot(delay_phase_12, exp3(delay_phase_12, *p0_all3), label='initial')
+
         plt.plot(delay_phase_12, mag_phase_12, label='sim')
         plt.legend()
         plt.show()
 
-        print('a1,a3, tau0, tau2, tau3, e_tau, e_tau_a = ', popt_all)
+        # print('a1,a3, tau0, tau2, tau3, e_tau, e_tau_a = ', popt_all3)
 
         # # Residual analysis
         # residuals = mag_phase_12 - exp3(delay_phase_12, *popt_all)

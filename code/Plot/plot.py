@@ -379,7 +379,7 @@ class SimPlot:
             # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
             mat_sep_marks = np.append(mat_sep_marks, y_axis[-1])
 
-            colors=['red', 'blue', 'green']
+            colors=['blue', 'red', 'green', 'orange', 'purple']
 
             if key == 'tp':
                 # add surfaces in yz-plane to distinguish sample constituents (we overwrite x_mesh):
