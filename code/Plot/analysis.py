@@ -3,6 +3,8 @@ import scipy
 from matplotlib import pyplot as plt
 from scipy import constants as sp
 from scipy import interpolate as ip
+from scipy import optimize as op
+from matplotlib import colors as mplcol
 
 from .plot import SimComparePlot
 from .plot import SimPlot
@@ -43,9 +45,10 @@ class SimAnalysis(SimComparePlot):
         plt.show()
         return
 
-    def plot_dmdt(self):
+    @staticmethod
+    def plot_dmdt():
         m = np.linspace(0, 1, num=100)
-        tem = np.arange(0, 300)
+        tem = np.arange(0, 70)
 
         R_CGT = SimAnalysis.get_R(asf=0.05, gep=15e16, Tdeb=200, Tc=65, Vat=1e-28, mu_at=4)
         R_FGT = SimAnalysis.get_R(asf=0.04, gep=1.33e18, Tdeb=190, Tc=220, Vat=1.7e-29, mu_at=2)
@@ -62,19 +65,26 @@ class SimAnalysis(SimComparePlot):
         dm_dt_CrI3 = R_CrI3 * m * tem[:, np.newaxis] / 61 * (1 - m / SimAnalysis.Brillouin(tem, m, 1.5, 61))
 
         tem_mesh, m_mesh = np.meshgrid(tem, m)
-        fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
-        surf = ax.plot_surface(m_mesh, tem_mesh, dm_dt_CGT.T, cmap='inferno',
-                               linewidth=0, antialiased=True, alpha=0.3)
-        surf = ax.plot_surface(m_mesh, tem_mesh, dm_dt_FGT.T, cmap='Blues',
-                               linewidth=0, antialiased=True, alpha=0.3)
+        norm = mplcol.Normalize(vmin=-9e-37, vmax=9e-37)
+        # fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(8, 6))
+        # surf = ax.plot_surface(m_mesh, tem_mesh, dm_dt_CGT.T, cmap='bwr',
+        #                        linewidth=0, antialiased=True, alpha=0.8, vmin=-9e-37, vmax=9e-37)
+        surf = ax.pcolormesh(m_mesh, tem_mesh, dm_dt_CGT.T, antialiased=True, cmap='bwr', shading='nearest', norm=norm)
+        # surf = ax.plot_surface(m_mesh, tem_mesh, dm_dt_FGT.T, cmap='Blues',
+        #                        linewidth=0, antialiased=True, alpha=0.3)
         plt.colorbar(surf, label=r'dm/dt', shrink=0.5, aspect=10)
 
         # ax.plot(mag_rec, te_rec, color='black', lw=3.0)
 
-        ax.set_xlabel(r'magnetization', fontsize=16)
-        ax.set_ylabel(r'temperature', fontsize=16)
-        ax.set_title(r'Map of Magnetization rate', fontsize=18)
-
+        ax.set_xlabel(r'Magnetization', fontsize=16)
+        ax.set_ylabel(r'Temperature', fontsize=16)
+        ax.set_title(r'Map of magnetization rate', fontsize=18)
+        ax.hlines(65, 0, 1, lw=1.0, color='black', ls='dashed')
+        # ax.view_init(5, 30)
+        ax.set_xlim(0,1)
+        ax.set_ylim(0, 69)
+        plt.savefig('Results/CGT Paper/dm_dt.pdf')
         plt.show()
         return
 
@@ -120,7 +130,8 @@ class SimAnalysis(SimComparePlot):
 
         return term_1+term_2
 
-    def create_mean_mag_map(self):
+    @staticmethod
+    def create_mean_mag_map(S, Tc):
         # This function computes the mean field mean magnetization map by solving the self-consistent equation m=B(m, T)
         # As an output we get an interpolation function of the mean field magnetization at any temperature T<=T_c (this can of course be extended to T>T_c with zeros).
 
@@ -135,9 +146,10 @@ class SimAnalysis(SimComparePlot):
             #   (ii) (electron) temperature (scalar)
             # As an output we get the Brillouin function evaluated at (i), (ii) (scalar)
 
-            eta = self.J * m / sp.k / T / self.Tc
-            c1 = (2 * self.S + 1) / (2 * self.S)
-            c2 = 1 / (2 * self.S)
+            J = 3*S/(S+1)*sp.k*Tc
+            eta = J * m / sp.k / T / Tc
+            c1 = (2 * S + 1) / (2 * S)
+            c2 = 1 / (2 * S)
             bri_func = c1 / np.tanh(c1 * eta) - c2 / np.tanh(c2 * eta)
             return bri_func
 
@@ -149,7 +161,7 @@ class SimAnalysis(SimComparePlot):
 
         # Define a function to find the intersection of m and B(m, T) for given T with scipy:
         def find_intersection_sp(m, Bm, m0):
-            return ip.fsolve(lambda x: m(x) - Bm(x), m0)
+            return op.fsolve(lambda x: m(x) - Bm(x), m0)
 
         # Find meq for every temperature, starting point for the search being (1-T/Tc)^(1/2), fill the list
         for i, T in enumerate(temp_grid[1:]):
@@ -164,7 +176,140 @@ class SimAnalysis(SimComparePlot):
             # Append it to list me(T)
             meq_list.append(meq[0])
         meq_list[-1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
+        temp_grid = np.append(temp_grid, 10.)
+        meq_list.append(0.)
         return ip.interp1d(temp_grid, meq_list)
+
+
+    @staticmethod
+    def show_mean_field_mag(S, Tc, savepath):
+        temps = np.linspace(0,1.5, 150)
+        m_eq = SimAnalysis.create_mean_mag_map(S, Tc)
+
+        plt.figure(figsize=(8, 6))
+        plt.plot(temps, m_eq(temps), lw=2.0)
+        plt.xlabel(r'T/T_C', fontsize=16)
+        plt.ylabel(r'm$_{\rm{eq}}$', fontsize=16)
+        plt.title(r'Mean field magnetization curve', fontsize=18)
+        plt.xlim(0, 1.5)
+        plt.ylim(-0.01, 1.01)
+        plt.savefig(savepath)
+        plt.show()
+
+        return
+
+    @staticmethod
+    def plot_review_answer():
+
+        meq = SimAnalysis.create_mean_mag_map(S=1.5, Tc=65.)
+
+        t_15nm = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/delay.npy')
+        te_15nm_raw = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/tes.npy')
+        mag_15nm_raw = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/ms.npy')
+        tp_15nm_raw = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/tps.npy')
+        te_15nm = np.sum(te_15nm_raw, axis=1)/7
+        mag_15nm = np.sum(mag_15nm_raw, axis=1)/7
+        tp_15nm = np.sum(tp_15nm_raw[:, 7:14], axis=1)/7
+        meq_15nm = meq(te_15nm/65.)
+        t_TC_15nm = finderb(0.6476, t_15nm*1e9)[0]
+
+        t_90nm = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/delay.npy')
+        te_90nm_raw = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/tes.npy')
+        mag_90nm_raw = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/ms.npy')
+        tp_90nm_raw = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/tps.npy')
+        te_90nm = np.sum(te_90nm_raw, axis=1)/45
+        mag_90nm = np.sum(mag_90nm_raw, axis=1)/45
+        tp_90nm = np.sum(tp_90nm_raw[:, 7:52], axis=1)/45
+        meq_90nm = meq(te_90nm/65.)
+        t_TC_90nm = finderb(1.2084, t_90nm*1e9)[0]
+
+        fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[0.6476, 5], layout='compressed')
+        fig.suptitle(r'15 nm CGT', fontsize=18)
+
+        axs[0][0].plot(t_15nm[:t_TC_15nm]*1e9, mag_15nm[:t_TC_15nm], lw=2.0, label='m(t)')
+        axs[0][0].plot(t_15nm[:t_TC_15nm]*1e9, meq_15nm[:t_TC_15nm], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        axs[0][0].set_ylabel(r'magnetization', fontsize=16)
+        axs[0][0].set_xlim(-0.1, 0.6476)
+        # axs[0][0].legend(fontsize=14, loc='center right')
+        axs[0][0].set_ylim(-0.01, 1.01)
+
+        axs[0][1].plot(t_15nm[t_TC_15nm:]*1e9, mag_15nm[t_TC_15nm:], lw=2.0, label='m(t)')
+        axs[0][1].plot(t_15nm[t_TC_15nm:]*1e9, meq_15nm[t_TC_15nm:], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        # axs[0][1].set_ylabel(r'av. magnetization', fontsize=16)
+        axs[0][1].yaxis.tick_right()
+        axs[0][1].set_xlim(0.6476, 5)
+        axs[0][1].legend(fontsize=14, loc='center right')
+        axs[0][1].set_ylim(-0.01, 1.01)
+
+        axs[1][0].plot(t_15nm[:t_TC_15nm]*1e9, -(mag_15nm-meq_15nm)[:t_TC_15nm], lw=2.0, color='purple')
+        axs[1][0].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
+        axs[1][0].set_ylabel(r'm$_{\rm{eq}}$(t)-m(t)', fontsize=16)
+
+        axs[1][1].plot(t_15nm[t_TC_15nm:]*1e9, -(mag_15nm-meq_15nm)[t_TC_15nm:], lw=2.0, color='purple')
+        axs[1][1].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
+        axs[1][1].yaxis.tick_right()
+        # axs[1][1].set_ylabel(r'm$_{eq}$(t)-m(t)', fontsize=16)
+
+        axs[2][0].plot(t_15nm[:t_TC_15nm]*1e9, te_15nm[:t_TC_15nm], lw=2.0, label=r'T$_e$', color='red')
+        axs[2][0].plot(t_15nm[:t_TC_15nm]*1e9, tp_15nm[:t_TC_15nm], lw=2.0, label=r'T$_p$', color='darkgreen')
+        axs[2][0].set_ylabel(r'Temperature [K]', fontsize=16)
+        # axs[2][0].set_xlabel(r'delay [ns]', fontsize=16)
+        axs[2][0].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
+        # axs[2][0].legend(fontsize=14, loc='center right')
+
+        axs[2][1].plot(t_15nm[t_TC_15nm:]*1e9, te_15nm[t_TC_15nm:], lw=2.0, label=r'T$_e$', color='red')
+        axs[2][1].plot(t_15nm[t_TC_15nm:]*1e9, tp_15nm[t_TC_15nm:], lw=2.0, label=r'T$_p$', color='darkgreen')
+        # axs[2][1].set_ylabel(r'Temperature [K]', fontsize=16)
+        axs[2][1].yaxis.tick_right()
+        axs[2][1].set_xlabel(r'delay [ns]', fontsize=16)
+        axs[2][1].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
+        axs[2][1].legend(fontsize=14, loc='center right')
+        plt.savefig('Results/CGT Paper/15nm_review_reply.pdf')
+        plt.show()
+
+        fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[1.2084, 5], layout='compressed')
+        fig.suptitle(r'90 nm CGT', fontsize=18)
+
+        axs[0][0].plot(t_90nm[:t_TC_90nm]*1e9, mag_90nm[:t_TC_90nm], lw=2.0, label='m(t)')
+        axs[0][0].plot(t_90nm[:t_TC_90nm]*1e9, meq_90nm[:t_TC_90nm], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        axs[0][0].set_ylabel(r'magnetization', fontsize=16)
+        axs[0][0].set_xlim(-0.1, 1.2084)
+        # axs[0][0].legend(fontsize=14, loc='center right')
+        axs[0][0].set_ylim(-0.01, 1.01)
+
+        axs[0][1].plot(t_90nm[t_TC_90nm:]*1e9, mag_90nm[t_TC_90nm:], lw=2.0, label='m(t)')
+        axs[0][1].plot(t_90nm[t_TC_90nm:]*1e9, meq_90nm[t_TC_90nm:], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        # axs[0][1].set_ylabel(r'av. magnetization', fontsize=16)
+        axs[0][1].yaxis.tick_right()
+        axs[0][1].set_xlim(1.2084, 5)
+        axs[0][1].legend(fontsize=14, loc='upper right')
+        axs[0][1].set_ylim(-0.01, 1.01)
+
+        axs[1][0].plot(t_90nm[:t_TC_90nm]*1e9, -(mag_90nm-meq_90nm)[:t_TC_90nm], lw=2.0, color='purple')
+        axs[1][0].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
+        axs[1][0].set_ylabel(r'm$_{\rm{eq}}$(t)-m(t)', fontsize=16)
+
+        axs[1][1].plot(t_90nm[t_TC_90nm:]*1e9, -(mag_90nm-meq_90nm)[t_TC_90nm:], lw=2.0, color='purple')
+        axs[1][1].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
+        axs[1][1].yaxis.tick_right()
+        # axs[1][1].set_ylabel(r'm$_{eq}$(t)-m(t)', fontsize=16)
+
+        axs[2][0].plot(t_90nm[:t_TC_90nm]*1e9, te_90nm[:t_TC_90nm], lw=2.0, label=r'T$_e$', color='red')
+        axs[2][0].plot(t_90nm[:t_TC_90nm]*1e9, tp_90nm[:t_TC_90nm], lw=2.0, label=r'T$_p$', color='darkgreen')
+        axs[2][0].set_ylabel(r'Temperature [K]', fontsize=16)
+        # axs[2][0].set_xlabel(r'delay [ns]', fontsize=16)
+        axs[2][0].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
+        # axs[2][0].legend(fontsize=14, loc='center right')
+
+        axs[2][1].plot(t_90nm[t_TC_90nm:]*1e9, te_90nm[t_TC_90nm:], lw=2.0, label=r'T$_e$', color='red')
+        axs[2][1].plot(t_90nm[t_TC_90nm:]*1e9, tp_90nm[t_TC_90nm:], lw=2.0, label=r'T$_p$', color='darkgreen')
+        # axs[2][1].set_ylabel(r'Temperature [K]', fontsize=16)
+        axs[2][1].yaxis.tick_right()
+        axs[2][1].set_xlabel(r'delay [ns]', fontsize=16)
+        axs[2][1].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
+        axs[2][1].legend(fontsize=14, loc='center right')
+        plt.savefig('Results/CGT Paper/90nm_review_reply.pdf')
+        plt.show()
 
     @staticmethod
     def get_umd_data(mat):
