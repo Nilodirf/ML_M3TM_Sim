@@ -199,117 +199,78 @@ class SimAnalysis(SimComparePlot):
         return
 
     @staticmethod
-    def plot_review_answer():
+    def plot_m_meq(file, num_cgt_layers, save_file_name):
 
+        # create mean mag map:
         meq = SimAnalysis.create_mean_mag_map(S=1.5, Tc=65.)
+        # load data:
+        t = np.load('Results/' + file + '/delay.npy')
+        te_raw = np.load('Results/' + file + '/tes.npy')
+        mag_raw = np.load('Results/' + file + '/ms.npy')
+        tp_raw = np.load('Results/' + file + '/tps.npy')
+        te = np.sum(te_raw, axis=1)/num_cgt_layers
+        mag = np.sum(mag_raw, axis=1)/num_cgt_layers
+        tp = np.sum(tp_raw[:, 7:7+num_cgt_layers], axis=1)/num_cgt_layers
 
-        t_15nm = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/delay.npy')
-        te_15nm_raw = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/tes.npy')
-        mag_15nm_raw = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/ms.npy')
-        tp_15nm_raw = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/tps.npy')
-        te_15nm = np.sum(te_15nm_raw, axis=1)/7
-        mag_15nm = np.sum(mag_15nm_raw, axis=1)/7
-        tp_15nm = np.sum(tp_15nm_raw[:, 7:14], axis=1)/7
-        meq_15nm = meq(te_15nm/65.)
-        t_TC_15nm = finderb(0.6476, t_15nm*1e9)[0]
+        # find meq(Te(t)):
+        meq = meq(te/65.)
 
-        t_90nm = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/delay.npy')
-        te_90nm_raw = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/tes.npy')
-        mag_90nm_raw = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/ms.npy')
-        tp_90nm_raw = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/tps.npy')
-        te_90nm = np.sum(te_90nm_raw, axis=1)/45
-        mag_90nm = np.sum(mag_90nm_raw, axis=1)/45
-        tp_90nm = np.sum(tp_90nm_raw[:, 7:52], axis=1)/45
-        meq_90nm = meq(te_90nm/65.)
-        t_TC_90nm = finderb(1.2084, t_90nm*1e9)[0]
+        # find timestep of T_C crossing: therefore we seek for dmeq/dt>0
+        dmeq_dt = np.diff(meq)
+        t_TC = 0
+        for i, dmeq in enumerate(dmeq_dt):
+            if dmeq > 0:
+                t_TC = i
+                break
+        time_to_break = t[t_TC]*1e9
+        if time_to_break < 1e-2:
+            time_to_break = 1
+            t_TC = finderb(1, t*1e9)[0]
 
-        fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[0.6476, 5], layout='compressed')
-        fig.suptitle(r'15 nm CGT', fontsize=18)
+        fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[time_to_break, 5], layout='compressed')
 
-        axs[0][0].plot(t_15nm[:t_TC_15nm]*1e9, mag_15nm[:t_TC_15nm], lw=2.0, label='m(t)')
-        axs[0][0].plot(t_15nm[:t_TC_15nm]*1e9, meq_15nm[:t_TC_15nm], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        axs[0][0].plot(t[:t_TC]*1e9, mag[:t_TC], lw=2.0, label='m(t)')
+        axs[0][0].plot(t[:t_TC]*1e9, meq[:t_TC], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
         axs[0][0].set_ylabel(r'magnetization', fontsize=16)
-        axs[0][0].set_xlim(-0.1, 0.6476)
+        axs[0][0].set_xlim(-0.1, time_to_break)
         # axs[0][0].legend(fontsize=14, loc='center right')
         axs[0][0].set_ylim(-0.01, 1.01)
 
-        axs[0][1].plot(t_15nm[t_TC_15nm:]*1e9, mag_15nm[t_TC_15nm:], lw=2.0, label='m(t)')
-        axs[0][1].plot(t_15nm[t_TC_15nm:]*1e9, meq_15nm[t_TC_15nm:], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        axs[0][1].plot(t[t_TC:]*1e9, mag[t_TC:], lw=2.0, label='m(t)')
+        axs[0][1].plot(t[t_TC:]*1e9, meq[t_TC:], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
         # axs[0][1].set_ylabel(r'av. magnetization', fontsize=16)
         axs[0][1].yaxis.tick_right()
-        axs[0][1].set_xlim(0.6476, 5)
+        axs[0][1].set_xlim(time_to_break, 5)
         axs[0][1].legend(fontsize=14, loc='center right')
         axs[0][1].set_ylim(-0.01, 1.01)
 
-        axs[1][0].plot(t_15nm[:t_TC_15nm]*1e9, -(mag_15nm-meq_15nm)[:t_TC_15nm], lw=2.0, color='purple')
+        axs[1][0].plot(t[:t_TC]*1e9, -(mag-meq)[:t_TC], lw=2.0, color='purple')
         axs[1][0].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
         axs[1][0].set_ylabel(r'm$_{\rm{eq}}$(t)-m(t)', fontsize=16)
 
-        axs[1][1].plot(t_15nm[t_TC_15nm:]*1e9, -(mag_15nm-meq_15nm)[t_TC_15nm:], lw=2.0, color='purple')
+        axs[1][1].plot(t[t_TC:]*1e9, -(mag-meq)[t_TC:], lw=2.0, color='purple')
         axs[1][1].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
         axs[1][1].yaxis.tick_right()
         # axs[1][1].set_ylabel(r'm$_{eq}$(t)-m(t)', fontsize=16)
 
-        axs[2][0].plot(t_15nm[:t_TC_15nm]*1e9, te_15nm[:t_TC_15nm], lw=2.0, label=r'T$_e$', color='red')
-        axs[2][0].plot(t_15nm[:t_TC_15nm]*1e9, tp_15nm[:t_TC_15nm], lw=2.0, label=r'T$_p$', color='darkgreen')
+        axs[2][0].plot(t[:t_TC]*1e9, te[:t_TC], lw=2.0, label=r'T$_e$', color='red')
+        axs[2][0].plot(t[:t_TC]*1e9, tp[:t_TC], lw=2.0, label=r'T$_p$', color='darkgreen')
         axs[2][0].set_ylabel(r'Temperature [K]', fontsize=16)
         # axs[2][0].set_xlabel(r'delay [ns]', fontsize=16)
         axs[2][0].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
         # axs[2][0].legend(fontsize=14, loc='center right')
 
-        axs[2][1].plot(t_15nm[t_TC_15nm:]*1e9, te_15nm[t_TC_15nm:], lw=2.0, label=r'T$_e$', color='red')
-        axs[2][1].plot(t_15nm[t_TC_15nm:]*1e9, tp_15nm[t_TC_15nm:], lw=2.0, label=r'T$_p$', color='darkgreen')
+        axs[2][1].plot(t[t_TC:]*1e9, te[t_TC:], lw=2.0, label=r'T$_e$', color='red')
+        axs[2][1].plot(t[t_TC:]*1e9, tp[t_TC:], lw=2.0, label=r'T$_p$', color='darkgreen')
         # axs[2][1].set_ylabel(r'Temperature [K]', fontsize=16)
         axs[2][1].yaxis.tick_right()
         axs[2][1].set_xlabel(r'delay [ns]', fontsize=16)
         axs[2][1].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
         axs[2][1].legend(fontsize=14, loc='center right')
-        plt.savefig('Results/CGT Paper/15nm_review_reply.pdf')
+        plt.savefig('Results' + save_file_name)
         plt.show()
 
-        fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[1.2084, 5], layout='compressed')
-        fig.suptitle(r'90 nm CGT', fontsize=18)
-
-        axs[0][0].plot(t_90nm[:t_TC_90nm]*1e9, mag_90nm[:t_TC_90nm], lw=2.0, label='m(t)')
-        axs[0][0].plot(t_90nm[:t_TC_90nm]*1e9, meq_90nm[:t_TC_90nm], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
-        axs[0][0].set_ylabel(r'magnetization', fontsize=16)
-        axs[0][0].set_xlim(-0.1, 1.2084)
-        # axs[0][0].legend(fontsize=14, loc='center right')
-        axs[0][0].set_ylim(-0.01, 1.01)
-
-        axs[0][1].plot(t_90nm[t_TC_90nm:]*1e9, mag_90nm[t_TC_90nm:], lw=2.0, label='m(t)')
-        axs[0][1].plot(t_90nm[t_TC_90nm:]*1e9, meq_90nm[t_TC_90nm:], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
-        # axs[0][1].set_ylabel(r'av. magnetization', fontsize=16)
-        axs[0][1].yaxis.tick_right()
-        axs[0][1].set_xlim(1.2084, 5)
-        axs[0][1].legend(fontsize=14, loc='upper right')
-        axs[0][1].set_ylim(-0.01, 1.01)
-
-        axs[1][0].plot(t_90nm[:t_TC_90nm]*1e9, -(mag_90nm-meq_90nm)[:t_TC_90nm], lw=2.0, color='purple')
-        axs[1][0].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
-        axs[1][0].set_ylabel(r'm$_{\rm{eq}}$(t)-m(t)', fontsize=16)
-
-        axs[1][1].plot(t_90nm[t_TC_90nm:]*1e9, -(mag_90nm-meq_90nm)[t_TC_90nm:], lw=2.0, color='purple')
-        axs[1][1].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
-        axs[1][1].yaxis.tick_right()
-        # axs[1][1].set_ylabel(r'm$_{eq}$(t)-m(t)', fontsize=16)
-
-        axs[2][0].plot(t_90nm[:t_TC_90nm]*1e9, te_90nm[:t_TC_90nm], lw=2.0, label=r'T$_e$', color='red')
-        axs[2][0].plot(t_90nm[:t_TC_90nm]*1e9, tp_90nm[:t_TC_90nm], lw=2.0, label=r'T$_p$', color='darkgreen')
-        axs[2][0].set_ylabel(r'Temperature [K]', fontsize=16)
-        # axs[2][0].set_xlabel(r'delay [ns]', fontsize=16)
-        axs[2][0].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
-        # axs[2][0].legend(fontsize=14, loc='center right')
-
-        axs[2][1].plot(t_90nm[t_TC_90nm:]*1e9, te_90nm[t_TC_90nm:], lw=2.0, label=r'T$_e$', color='red')
-        axs[2][1].plot(t_90nm[t_TC_90nm:]*1e9, tp_90nm[t_TC_90nm:], lw=2.0, label=r'T$_p$', color='darkgreen')
-        # axs[2][1].set_ylabel(r'Temperature [K]', fontsize=16)
-        axs[2][1].yaxis.tick_right()
-        axs[2][1].set_xlabel(r'delay [ns]', fontsize=16)
-        axs[2][1].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
-        axs[2][1].legend(fontsize=14, loc='center right')
-        plt.savefig('Results/CGT Paper/90nm_review_reply.pdf')
-        plt.show()
+        return
 
     @staticmethod
     def get_umd_data(mat):

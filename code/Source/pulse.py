@@ -143,7 +143,7 @@ class SimPulse:
                 max_intensity = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
                 already_penetrated = 1
-            abs_flu = np.sum(powers*dz_sam) * (np.sqrt(2*np.pi)*self.pulse_width*10)
+            abs_flu = np.sum(powers*dz_sam) * (np.sqrt(2*np.pi)*self.pulse_width/10)
             trans_flu = self.fluence-abs_flu
             ref_flu = 0
             rel_err = None
