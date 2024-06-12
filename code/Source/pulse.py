@@ -139,7 +139,7 @@ class SimPulse:
                                     pendep_sam[first_layer:last_layer]).astype(float)
                 power_in_block = max_intensity/pendep_sam[first_layer:last_layer] * np.exp(-pen_red)
                 powers = np.append(powers, power_in_block)
-                abs_flu_per_block.append(np.sum(power_in_block*dz_sam[first_layer:last_layer])*self.fluence)
+                abs_flu_per_block.append(np.sum(power_in_block*dz_sam[first_layer:last_layer])*np.sqrt(2*np.pi)*self.pulse_width/10)
                 max_intensity = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
                 already_penetrated = 1

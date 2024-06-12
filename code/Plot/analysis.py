@@ -45,6 +45,30 @@ class SimAnalysis(SimComparePlot):
         plt.show()
         return
 
+    def plot_spin_acc(self, S, Tc):
+
+        plt.figure(figsize=(8, 4))
+        plt.xlabel(r'delay [ns]', fontsize=16)
+        plt.ylabel(r'$m-m_{\rm{eq}}$', fontsize=16)
+        plt.xscale('linear')
+        plt.xlim(-0.1, 5)
+        plt.hlines(0, -0.1, 5, color='black', lw=1.5, ls='dashed')
+        labels=[r'0.1 mJ/cm$^2$', r'0.2 mJ/cm$^2$', r'0.3 mJ/cm$^2$', r'0.4 mJ/cm$^2$', r'0.5 mJ/cm$^2$']
+
+        meq = SimAnalysis.create_mean_mag_map(S=S, Tc=Tc)
+        for i, file in enumerate(self.files):
+            delays, mags, tes, tps = self.get_data(file)
+
+            mag_av = np.sum(mags, axis=1) / len(mags[0])
+            te_av = np.sum(tes, axis=1) / len(tes[0])
+            meq_t = meq(te_av/Tc)
+
+            plt.plot(delays*1e9-0.001, mag_av-meq_t, lw=2.0, label=labels[i])
+
+        plt.legend(fontsize=14)
+        plt.show()
+        return
+
     @staticmethod
     def plot_dmdt():
         m = np.linspace(0, 1, num=100)
@@ -54,11 +78,37 @@ class SimAnalysis(SimComparePlot):
         R_FGT = SimAnalysis.get_R(asf=0.04, gep=1.33e18, Tdeb=190, Tc=220, Vat=1.7e-29, mu_at=2)
         R_CrI3 = SimAnalysis.get_R(asf=0.175, gep=4.05e16, Tdeb=134, Tc=61, Vat=1.35e-28, mu_at=3.87)
 
-        # mag_av = np.sum(self.mags, axis=1) / len(self.mags[0])
-        # te_av = np.sum(self.tes, axis=1) / len(self.mags[0])
-        # start_plot = np.where(mag_av == np.amin(mag_av))[0][0]
-        # te_rec = te_av[start_plot:]
-        # mag_rec = mag_av[start_plot:]
+        # also plot simulation data in linestyle, from point of remagnetization:
+        sim_1_t = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/delay.npy')
+        sim_1_te = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/tes.npy')
+        sim_1_te = np.sum(sim_1_te, axis=1)/7
+        sim_1_mag = np.load('Results/CGT Paper/15nm_fl_0.5_pristine/ms.npy')
+        sim_1_mag = np.sum(sim_1_mag, axis=1) / 7
+        print(np.amax(sim_1_te))
+
+        sim_2_t = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/delay.npy')
+        sim_2_te = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/tes.npy')
+        sim_2_te = np.sum(sim_2_te, axis=1) / len(sim_2_te[0])
+        sim_2_mag = np.load('Results/CGT Paper/90nm_fl_0.5_pristine/ms.npy')
+        sim_2_mag = np.sum(sim_2_mag, axis=1) / len(sim_2_mag[0])
+
+        meq = SimAnalysis.create_mean_mag_map(S=1.5, Tc=65.)
+
+        sim_1_meq = meq(sim_1_te/65.)
+        sim_1_dmeq = np.diff(sim_1_meq)
+        index_1 = finderb(0.64, sim_1_t*1e9)[0]
+
+        sim_2_meq = meq(sim_2_te/65.)
+        sim_2_dmeq = np.diff(sim_2_meq)
+        index_2 = finderb(1.2, sim_2_t*1e9)[0]
+
+        print(sim_1_t[index_1])
+        print(sim_2_t[index_2])
+
+        sim_1_te_plot = sim_1_te[index_1:]
+        sim_1_mag_plot = sim_1_mag[index_1:]
+        sim_2_te_plot = sim_2_te[index_2:]
+        sim_2_mag_plot = sim_2_mag[index_2:]
 
         dm_dt_CGT = R_CGT*m*tem[:, np.newaxis]/65*(1-m/SimAnalysis.Brillouin(tem, m, 1.5, 65))
         dm_dt_FGT = R_FGT * m * tem[:, np.newaxis] / 220 * (1 - m / SimAnalysis.Brillouin(tem, m, 2, 220))
@@ -80,10 +130,20 @@ class SimAnalysis(SimComparePlot):
         ax.set_xlabel(r'Magnetization', fontsize=16)
         ax.set_ylabel(r'Temperature', fontsize=16)
         ax.set_title(r'Map of magnetization rate', fontsize=18)
-        ax.hlines(65, 0, 1, lw=1.0, color='black', ls='dashed')
+        ax.hlines(65, 0, 1, lw=1.0, color='black', ls='solid')
         # ax.view_init(5, 30)
         ax.set_xlim(0,1)
         ax.set_ylim(0, 69)
+
+        # plot simulation data:
+        ax.plot(sim_1_mag_plot, sim_1_te_plot, color='darkgreen', lw=2, label=r'15nm CGT')
+        ax.plot(sim_2_mag_plot, sim_2_te_plot, color='magenta', lw=2, label=r'90nm CGT')
+
+        # plot meq:
+        temps = np.linspace(0, 1, 100)
+        meq_plot = meq(temps)
+        ax.plot(meq_plot, temps*65, lw=1, color='black', ls='dashed', alpha=1)
+        ax.legend(fontsize=14, loc='lower left')
         plt.savefig('Results/CGT Paper/dm_dt.pdf')
         plt.show()
         return
@@ -176,7 +236,7 @@ class SimAnalysis(SimComparePlot):
             # Append it to list me(T)
             meq_list.append(meq[0])
         meq_list[-1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
-        temp_grid = np.append(temp_grid, 10.)
+        temp_grid = np.append(temp_grid, 100.)
         meq_list.append(0.)
         return ip.interp1d(temp_grid, meq_list)
 
@@ -215,25 +275,14 @@ class SimAnalysis(SimComparePlot):
         # find meq(Te(t)):
         meq = meq(te/65.)
 
-        # find timestep of T_C crossing: therefore we seek for dmeq/dt>0
-        dmeq_dt = np.diff(meq)
-        t_TC = 0
-        for i, dmeq in enumerate(dmeq_dt):
-            if dmeq > 0:
-                t_TC = i
-                break
-        time_to_break = t[t_TC]*1e9
-        if time_to_break < 1e-2:
-            time_to_break = 1
-            t_TC = finderb(1, t*1e9)[0]
+        time_to_break = 0.01
+        t_TC = finderb(time_to_break, t*1e9)[0]
+        fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[1, 5], layout='compressed')
 
-        fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[time_to_break, 5], layout='compressed')
-
-        axs[0][0].plot(t[:t_TC]*1e9, mag[:t_TC], lw=2.0, label='m(t)')
-        axs[0][0].plot(t[:t_TC]*1e9, meq[:t_TC], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        axs[0][0].plot(t[:t_TC]*1e12, mag[:t_TC], lw=2.0, label='m(t)')
+        axs[0][0].plot(t[:t_TC]*1e12, meq[:t_TC], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
         axs[0][0].set_ylabel(r'magnetization', fontsize=16)
-        axs[0][0].set_xlim(-0.1, time_to_break)
-        # axs[0][0].legend(fontsize=14, loc='center right')
+        axs[0][0].set_xlim(-0.1, time_to_break*1e3)
         axs[0][0].set_ylim(-0.01, 1.01)
 
         axs[0][1].plot(t[t_TC:]*1e9, mag[t_TC:], lw=2.0, label='m(t)')
@@ -244,20 +293,21 @@ class SimAnalysis(SimComparePlot):
         axs[0][1].legend(fontsize=14, loc='center right')
         axs[0][1].set_ylim(-0.01, 1.01)
 
-        axs[1][0].plot(t[:t_TC]*1e9, -(mag-meq)[:t_TC], lw=2.0, color='purple')
-        axs[1][0].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
+        axs[1][0].plot(t[:t_TC]*1e12, -(mag-meq)[:t_TC], lw=2.0, color='purple')
+        axs[1][0].hlines(y=0, xmin=-0.01, xmax=time_to_break*1e3, color='black', ls='dashed', alpha=0.8)
         axs[1][0].set_ylabel(r'm$_{\rm{eq}}$(t)-m(t)', fontsize=16)
 
         axs[1][1].plot(t[t_TC:]*1e9, -(mag-meq)[t_TC:], lw=2.0, color='purple')
         axs[1][1].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
         axs[1][1].yaxis.tick_right()
+        axs[1][1].set_ylim(-0.89, 0.05)
         # axs[1][1].set_ylabel(r'm$_{eq}$(t)-m(t)', fontsize=16)
 
-        axs[2][0].plot(t[:t_TC]*1e9, te[:t_TC], lw=2.0, label=r'T$_e$', color='red')
-        axs[2][0].plot(t[:t_TC]*1e9, tp[:t_TC], lw=2.0, label=r'T$_p$', color='darkgreen')
+        axs[2][0].plot(t[:t_TC]*1e12, te[:t_TC], lw=2.0, label=r'T$_e$', color='red')
+        axs[2][0].plot(t[:t_TC]*1e12, tp[:t_TC], lw=2.0, label=r'T$_p$', color='darkgreen')
         axs[2][0].set_ylabel(r'Temperature [K]', fontsize=16)
-        # axs[2][0].set_xlabel(r'delay [ns]', fontsize=16)
-        axs[2][0].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
+        axs[2][0].set_xlabel(r'delay [ps]', fontsize=16)
+        axs[2][0].hlines(y=65, xmin=-0.01, xmax=time_to_break*1e3, lw=1.5, color='black', ls='solid', label=r'T$_C$')
         # axs[2][0].legend(fontsize=14, loc='center right')
 
         axs[2][1].plot(t[t_TC:]*1e9, te[t_TC:], lw=2.0, label=r'T$_e$', color='red')
@@ -267,7 +317,7 @@ class SimAnalysis(SimComparePlot):
         axs[2][1].set_xlabel(r'delay [ns]', fontsize=16)
         axs[2][1].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
         axs[2][1].legend(fontsize=14, loc='center right')
-        plt.savefig('Results' + save_file_name)
+        plt.savefig('Results/' + save_file_name)
         plt.show()
 
         return

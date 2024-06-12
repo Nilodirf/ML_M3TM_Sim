@@ -4,9 +4,12 @@ import os
 import time
 from scipy import constants as sp
 from datetime import datetime
+import warnings
 
 from .finderb import finderb
 
+# supress printing of runtime warnings:
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class SimDynamics:
     # This is the main Simulation class that holds all methods to compute dynamics of the extended M3TM.
