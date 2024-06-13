@@ -49,7 +49,7 @@ class SimAnalysis(SimComparePlot):
 
         plt.figure(figsize=(8, 4))
         plt.xlabel(r'delay [ns]', fontsize=16)
-        plt.ylabel(r'$m-m_{\rm{eq}}$', fontsize=16)
+        plt.ylabel(r'dm/dt', fontsize=16)
         plt.xscale('linear')
         plt.xlim(-0.1, 5)
         plt.hlines(0, -0.1, 5, color='black', lw=1.5, ls='dashed')
@@ -60,10 +60,12 @@ class SimAnalysis(SimComparePlot):
             delays, mags, tes, tps = self.get_data(file)
 
             mag_av = np.sum(mags, axis=1) / len(mags[0])
+            dmag_dt = np.diff(mag_av)/np.diff(delays)
+            dtt = np.cumsum(np.diff(delays*1e9))
             te_av = np.sum(tes, axis=1) / len(tes[0])
             meq_t = meq(te_av/Tc)
 
-            plt.plot(delays*1e9-0.001, mag_av-meq_t, lw=2.0, label=labels[i])
+            plt.plot(dtt, dmag_dt, lw=2.0, label=labels[i])
 
         plt.legend(fontsize=14)
         plt.show()
@@ -183,7 +185,7 @@ class SimAnalysis(SimComparePlot):
     def Brillouin(temps, mags, spin, Tc):
         pref_1 = (2*spin+1)/(2*spin)
         pref_2 = 1/(2*spin)
-        x = 3*Tc*mags/temps[:, np.newaxis]*spin/(spin+1)
+        x = 3*Tc*mags/temps*spin/(spin+1)
 
         term_1 = pref_1/np.tanh(pref_1*x)
         term_2 = -pref_2/np.tanh(pref_2*x)
@@ -242,17 +244,28 @@ class SimAnalysis(SimComparePlot):
 
 
     @staticmethod
-    def show_mean_field_mag(S, Tc, savepath):
+    def plot_mean_field_mag(S, Tc, savepath):
         temps = np.linspace(0,1.5, 150)
+        mags = np.linspace(-0.1, 1, 110)
         m_eq = SimAnalysis.create_mean_mag_map(S, Tc)
 
+        bs_1 = SimAnalysis.Brillouin(temps=300, mags=mags, spin=1.5, Tc=65)
+        bs_2 = SimAnalysis.Brillouin(temps=70, mags=mags, spin=1.5, Tc=65)
+        bs_3 = SimAnalysis.Brillouin(temps=50, mags=mags, spin=1.5, Tc=65)
+
         plt.figure(figsize=(8, 6))
-        plt.plot(temps, m_eq(temps), lw=2.0)
-        plt.xlabel(r'T/T_C', fontsize=16)
-        plt.ylabel(r'm$_{\rm{eq}}$', fontsize=16)
-        plt.title(r'Mean field magnetization curve', fontsize=18)
-        plt.xlim(0, 1.5)
-        plt.ylim(-0.01, 1.01)
+        plt.plot(mags, mags, lw=2.0, ls='dashed', alpha=0.4, color='black')
+        plt.plot(mags, bs_1, lw=2.0, label=r'T=300 K')
+        plt.plot(mags, bs_2, lw=2.0, label=r'T=70 K')
+        plt.plot(mags, bs_3, lw=2.0, label=r'T=50 K')
+        plt.scatter(0, 0, label=r'm$_{\rm{eq}}$(T>T_C)', color='red', s=50)
+        plt.scatter(m_eq(50/Tc), m_eq(50/Tc), label=r'm$_{\rm{eq}}$(T=50 K)', color='red', s=50)
+
+        plt.xlabel(r'm', fontsize=16)
+        plt.ylabel(r'B$_S(m, T)$', fontsize=16)
+        plt.xlim(-0.05, 1.01)
+        plt.ylim(-0.05, 1.01)
+        plt.legend(fontsize=14)
         plt.savefig(savepath)
         plt.show()
 
@@ -274,33 +287,34 @@ class SimAnalysis(SimComparePlot):
 
         # find meq(Te(t)):
         meq = meq(te/65.)
+        bs = SimAnalysis.Brillouin(temps=te, mags=mag, spin=1.5, Tc=65.)
 
         time_to_break = 0.01
         t_TC = finderb(time_to_break, t*1e9)[0]
         fig, axs = plt.subplots(3, 2, sharex='col', figsize=(8, 6), width_ratios=[1, 5], layout='compressed')
 
-        axs[0][0].plot(t[:t_TC]*1e12, mag[:t_TC], lw=2.0, label='m(t)')
-        axs[0][0].plot(t[:t_TC]*1e12, meq[:t_TC], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
+        axs[0][0].plot(t[:t_TC]*1e12, mag[:t_TC], lw=2.0)
+        axs[0][0].plot(t[:t_TC]*1e12, bs[:t_TC], lw=2.0)
+        axs[0][0].plot(t[:t_TC]*1e12, meq[:t_TC], lw=2.0, alpha=0.4, color='black')
         axs[0][0].set_ylabel(r'magnetization', fontsize=16)
         axs[0][0].set_xlim(-0.1, time_to_break*1e3)
         axs[0][0].set_ylim(-0.01, 1.01)
 
-        axs[0][1].plot(t[t_TC:]*1e9, mag[t_TC:], lw=2.0, label='m(t)')
-        axs[0][1].plot(t[t_TC:]*1e9, meq[t_TC:], lw=2.0, label=r'm$_{\rm{eq}}$(Te(t))')
-        # axs[0][1].set_ylabel(r'av. magnetization', fontsize=16)
+        axs[0][1].plot(t[t_TC:]*1e9, mag[t_TC:], lw=2.0, label=r'm(t)')
+        axs[0][1].plot(t[t_TC:]*1e9, bs[t_TC:], lw=2.0, label=r'B$_S$(m(t), Te(t))')
+        axs[0][1].plot(t[t_TC:]*1e9, meq[t_TC:], lw=2.0, alpha=0.4, color='black', label=r'm$_{\rm{eq}}(t)$')
         axs[0][1].yaxis.tick_right()
         axs[0][1].set_xlim(time_to_break, 5)
-        axs[0][1].legend(fontsize=14, loc='center right')
+        axs[0][1].legend(fontsize=14, loc='lower right')
         axs[0][1].set_ylim(-0.01, 1.01)
 
-        axs[1][0].plot(t[:t_TC]*1e12, -(mag-meq)[:t_TC], lw=2.0, color='purple')
+        axs[1][0].plot(t[:t_TC]*1e12, (bs-mag)[:t_TC], lw=2.0, color='purple')
         axs[1][0].hlines(y=0, xmin=-0.01, xmax=time_to_break*1e3, color='black', ls='dashed', alpha=0.8)
-        axs[1][0].set_ylabel(r'm$_{\rm{eq}}$(t)-m(t)', fontsize=16)
+        axs[1][0].set_ylabel(r'B$_S$(t)-m(t)', fontsize=16)
 
-        axs[1][1].plot(t[t_TC:]*1e9, -(mag-meq)[t_TC:], lw=2.0, color='purple')
+        axs[1][1].plot(t[t_TC:]*1e9, (bs-mag)[t_TC:], lw=2.0, color='purple')
         axs[1][1].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
         axs[1][1].yaxis.tick_right()
-        axs[1][1].set_ylim(-0.89, 0.05)
         # axs[1][1].set_ylabel(r'm$_{eq}$(t)-m(t)', fontsize=16)
 
         axs[2][0].plot(t[:t_TC]*1e12, te[:t_TC], lw=2.0, label=r'T$_e$', color='red')
