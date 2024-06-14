@@ -45,15 +45,40 @@ class SimAnalysis(SimComparePlot):
         plt.show()
         return
 
-    def plot_spin_acc(self, S, Tc):
+    def plot_spin_acc(self, S, Tc, save_path):
 
-        plt.figure(figsize=(8, 4))
-        plt.xlabel(r'delay [ns]', fontsize=16)
-        plt.ylabel(r'dm/dt', fontsize=16)
-        plt.xscale('linear')
-        plt.xlim(-0.1, 5)
-        plt.hlines(0, -0.1, 5, color='black', lw=1.5, ls='dashed')
-        labels=[r'0.1 mJ/cm$^2$', r'0.2 mJ/cm$^2$', r'0.3 mJ/cm$^2$', r'0.4 mJ/cm$^2$', r'0.5 mJ/cm$^2$']
+        fig, axs = plt.subplots(2, 2, sharex='col', sharey='row', width_ratios=[1, 5], figsize=(8, 5))
+
+        axs[1][1].set_xlabel(r'delay [ns]', fontsize=16)
+        axs[1][1].set_ylabel(r'norm. dm/dt', fontsize=16)
+        axs[1][1].yaxis.set_label_position("right")
+        axs[0][1].hlines(0, -0.1, 5, color='black', lw=1.5, ls='dashed')
+        axs[0][0].hlines(0, -0.1, 5, color='black', lw=1.5, ls='dashed')
+
+        # no lines between subplots top and bottom
+        axs[0][0].spines.bottom.set_visible(False)
+        axs[0][1].spines.bottom.set_visible(False)
+        axs[1][1].spines.top.set_visible(False)
+        axs[1][0].spines.top.set_visible(False)
+
+        # adjust ticks
+        axs[0][0].xaxis.tick_top()
+        axs[0][1].xaxis.tick_top()
+        axs[0][0].tick_params(labeltop=False)
+        axs[1][0].tick_params(labeltop=False)
+        axs[1][0].xaxis.tick_bottom()
+        axs[1][1].xaxis.tick_bottom()
+        axs[0][1].yaxis.tick_right()
+        axs[1][1].yaxis.tick_right()
+
+        # restrict data shown
+        axs[0][0].set_xlim(-1e-3, 1e-2)
+        axs[0][0].set_ylim(0, 0.01)
+        axs[1][0].set_ylim(-1.05, -1e-5)
+        axs[1][1].set_xlim(0.01, 5)
+
+        plt.subplots_adjust(wspace=0, hspace=0)
+        labels=[r'0.5 mJ/cm$^2$', r'0.4 mJ/cm$^2$', r'0.3 mJ/cm$^2$', r'0.2 mJ/cm$^2$', r'0.1 mJ/cm$^2$']
 
         meq = SimAnalysis.create_mean_mag_map(S=S, Tc=Tc)
         for i, file in enumerate(self.files):
@@ -65,9 +90,16 @@ class SimAnalysis(SimComparePlot):
             te_av = np.sum(tes, axis=1) / len(tes[0])
             meq_t = meq(te_av/Tc)
 
-            plt.plot(dtt, dmag_dt, lw=2.0, label=labels[i])
+            if i == 0:
+                norm = np.amax(np.abs(dmag_dt))
 
-        plt.legend(fontsize=14)
+            axs[0][0].plot(dtt-0.001, dmag_dt/norm, lw=2.0, label=labels[i])
+            axs[0][1].plot(dtt-0.001, dmag_dt/norm, lw=2.0, label=labels[i])
+            axs[1][0].plot(dtt-0.001, dmag_dt/norm, lw=2.0, label=labels[i])
+            axs[1][1].plot(dtt-0.001, dmag_dt/norm, lw=2.0, label=labels[i])
+
+        axs[1][1].legend(fontsize=14)
+        plt.savefig('Results/' + save_path)
         plt.show()
         return
 
@@ -305,7 +337,7 @@ class SimAnalysis(SimComparePlot):
         axs[0][1].plot(t[t_TC:]*1e9, meq[t_TC:], lw=2.0, alpha=0.4, color='black', label=r'm$_{\rm{eq}}(t)$')
         axs[0][1].yaxis.tick_right()
         axs[0][1].set_xlim(time_to_break, 5)
-        axs[0][1].legend(fontsize=14, loc='lower right')
+        axs[0][1].legend(fontsize=14, loc='upper center')
         axs[0][1].set_ylim(-0.01, 1.01)
 
         axs[1][0].plot(t[:t_TC]*1e12, (bs-mag)[:t_TC], lw=2.0, color='purple')
