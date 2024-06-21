@@ -7,22 +7,20 @@ from scipy import optimize as op
 from matplotlib import colors as mplcol
 
 from .plot import SimComparePlot
-from .plot import SimPlot
 from ..Source.finderb import finderb
-from ..Source.finderb import finder_nosort
 
 class SimAnalysis(SimComparePlot):
     def __init__(self, files):
         super().__init__(files)
 
-    def plot_spin_acc(self, save_path):
+    def plot_spin_acc(self, labels, save_path):
         # This method plots the magnetization rate dm/dt of a list of simulations over time, normalized to the maximum
-        # rate of the first simulation given. The plot is divided into four subplots to allow for different zoom effects
-        # in time and amplitude.
-        # ATTENTION: LABELS MUST BE MANUALLY INCLUDED BELOW
+        # rate of the FIRST simulation given, so self.files[0]. The plot is divided into four subplots to allow for
+        # different zoom effects in time and amplitude.
 
         # Input:
         # self (class object). The object in use. Specifically, self.files must be defined
+        # labels (list of strings). Labels for the simulation data
         # save_path. A relative path from 'Results/' denoting where the plot should be saved
 
         # Returns:
@@ -55,16 +53,17 @@ class SimAnalysis(SimComparePlot):
         axs[1][1].yaxis.tick_right()
 
         # restrict data shown
-        axs[0][0].set_xlim(-1e-3, 1e-2)
-        axs[0][0].set_ylim(0, 0.01)
-        axs[1][0].set_ylim(-1.05, -1e-5)
-        axs[1][1].set_xlim(0.01, 5)
+        axs[0][0].set_xlim(-1e-3, 1e-2)  # top left ([0][0]) and bottom left ([1][0]) x limits
+        axs[0][0].set_ylim(0, 0.01)  # top left ([0][0]) and top right ([0][1]) y limits
+        axs[1][0].set_ylim(-1.05, -1e-5)  # bottom left ([1][0]) and bottom right ([1][1]) y limits
+        axs[1][1].set_xlim(0.01, 5)  # bottom right ([1][1]) and top right ([0][1]) y limits
 
         # no gaps between subplots
         plt.subplots_adjust(wspace=0, hspace=0)
 
-        # labels: INSERT MANUALLY!
-        labels=[r'0.5 mJ/cm$^2$', r'0.4 mJ/cm$^2$', r'0.3 mJ/cm$^2$', r'0.2 mJ/cm$^2$', r'0.1 mJ/cm$^2$']
+        # check amount of labels:
+        assert len(labels) == len(self.files), 'Introduce as many labels as datasets you want to plot'
+        norm = 1
 
         # plot all data:
         for i, file in enumerate(self.files):
@@ -176,6 +175,11 @@ class SimAnalysis(SimComparePlot):
     def plot_m_meq(file, num_cgt_layers, save_file_name):
         # This method creates a plot like figure 1 in the document for review response.
 
+        # Input:
+        # file (string). Filepath relative to Results of the simulation data you want to plot
+        # num_cgt_layers (int). Number of CGT layers in the simulation
+        # save_file_sanme (string). Filepath to save the figure relative to Results.
+
         # create mean mag map:
         meq = SimAnalysis.create_mean_mag_map(S=1.5, Tc=65.)
         # load data:
@@ -217,18 +221,15 @@ class SimAnalysis(SimComparePlot):
         axs[1][1].plot(t[t_TC:] * 1e9, (bs - mag)[t_TC:], lw=2.0, color='purple')
         axs[1][1].hlines(y=0, xmin=-0.1, xmax=5, color='black', ls='dashed', alpha=0.8)
         axs[1][1].yaxis.tick_right()
-        # axs[1][1].set_ylabel(r'm$_{eq}$(t)-m(t)', fontsize=16)
 
         axs[2][0].plot(t[:t_TC] * 1e12, te[:t_TC], lw=2.0, label=r'T$_e$', color='red')
         axs[2][0].plot(t[:t_TC] * 1e12, tp[:t_TC], lw=2.0, label=r'T$_p$', color='darkgreen')
         axs[2][0].set_ylabel(r'Temperature [K]', fontsize=16)
         axs[2][0].set_xlabel(r'delay [ps]', fontsize=16)
         axs[2][0].hlines(y=65, xmin=-0.01, xmax=time_to_break * 1e3, lw=1.5, color='black', ls='solid', label=r'T$_C$')
-        # axs[2][0].legend(fontsize=14, loc='center right')
 
         axs[2][1].plot(t[t_TC:] * 1e9, te[t_TC:], lw=2.0, label=r'T$_e$', color='red')
         axs[2][1].plot(t[t_TC:] * 1e9, tp[t_TC:], lw=2.0, label=r'T$_p$', color='darkgreen')
-        # axs[2][1].set_ylabel(r'Temperature [K]', fontsize=16)
         axs[2][1].yaxis.tick_right()
         axs[2][1].set_xlabel(r'delay [ns]', fontsize=16)
         axs[2][1].hlines(y=65, xmin=-0.1, xmax=5, lw=1.5, color='black', ls='solid', label=r'T$_C$')
