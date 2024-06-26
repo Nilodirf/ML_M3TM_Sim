@@ -32,13 +32,13 @@ sample.add_layers(material=cgt, layers=45,  dz=2e-9, kappap_int='av', pen_dep=30
 sample.add_layers(material=sio2, layers=150, dz=2e-9, kappap_int='av', pen_dep=1)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='LB', pulse_width=60e-15, fluence=0.4, delay=1e-12)
+pulse = SimPulse(sample=sample, method='LB', pulse_width=60e-15, fluence=0.5, delay=1e-12)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-9, ini_temp=6., solver='RK45', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=25e-9, ini_temp=6., solver='RK45', max_step=1e-12)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='CGT/fluence dependence/thick_flu_0.4')
+sim.save_data(solution, save_file='CGT/fluence dependence/thick_flu_0.5')

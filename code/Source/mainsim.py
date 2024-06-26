@@ -532,6 +532,7 @@ class SimDynamics:
         params_file.write('Absolute tolerance of solver: ' + str(self.atol) + '\n')
         params_file.write('Maximum timestep of integration: ' + str(self.max_step) + ' s' +'\n')
         params_file.write('Initial temperature: ' + str(self.ini_temp) + ' [K]' + '\n')
+        params_file.write('Simulation time span: ' + str(self.end_time*1e9) + ' [ns]' + '\n')
         params_file.write('##Sample parameters' + '\n')
         params_file.write('Materials: ' + str([mat.name for mat in mats]) + '\n')
         params_file.write('Constituents: ' + str([mat for mat in self.Sam.constituents]) + '\n')

@@ -1,5 +1,6 @@
 import numpy as np
 import scipy
+import os
 from matplotlib import pyplot as plt
 from scipy import constants as sp
 from scipy import interpolate as ip
@@ -8,12 +9,14 @@ from matplotlib import colors as mplcol
 
 from .plot import SimComparePlot
 from ..Source.finderb import finderb
+from ..Source.finderb import finder_nosort
 
 class SimAnalysis(SimComparePlot):
     def __init__(self, files):
         super().__init__(files)
 
-    def plot_spin_acc(self, labels, save_path):
+    @staticmethod
+    def plot_spin_acc(files, labels, save_path):
         # This method plots the magnetization rate dm/dt of a list of simulations over time, normalized to the maximum
         # rate of the FIRST simulation given, so self.files[0]. The plot is divided into four subplots to allow for
         # different zoom effects in time and amplitude.
@@ -54,20 +57,24 @@ class SimAnalysis(SimComparePlot):
 
         # restrict data shown
         axs[0][0].set_xlim(-1e-3, 1e-2)  # top left ([0][0]) and bottom left ([1][0]) x limits
-        axs[0][0].set_ylim(0, 0.01)  # top left ([0][0]) and top right ([0][1]) y limits
+        axs[0][0].set_ylim(0, 0.006)  # top left ([0][0]) and top right ([0][1]) y limits
         axs[1][0].set_ylim(-1.05, -1e-5)  # bottom left ([1][0]) and bottom right ([1][1]) y limits
-        axs[1][1].set_xlim(0.01, 5)  # bottom right ([1][1]) and top right ([0][1]) y limits
+        axs[1][1].set_xlim(0.01, 19)  # bottom right ([1][1]) and top right ([0][1]) y limits
 
         # no gaps between subplots
         plt.subplots_adjust(wspace=0, hspace=0)
 
         # check amount of labels:
-        assert len(labels) == len(self.files), 'Introduce as many labels as datasets you want to plot'
+        assert len(labels) == len(files), 'Introduce as many labels as datasets you want to plot'
         norm = 1
 
         # plot all data:
-        for i, file in enumerate(self.files):
-            delays, mags, tes, tps = self.get_data(file)
+        for i, path in enumerate(files):
+
+            delays = np.load(path + 'delay.npy')
+            mags = np.load(path + 'ms.npy')
+            tes = np.load(path + 'tes.npy')
+            tps = np.load(path + 'tps.npy')
 
             mag_av = np.sum(mags, axis=1) / len(mags[0])
             dmag_dt = np.diff(mag_av)/np.diff(delays)
@@ -238,3 +245,102 @@ class SimAnalysis(SimComparePlot):
         plt.show()
 
         return
+
+    @staticmethod
+    def save_dm_dt_ft(file, max_freq, num_freq, save_path):
+
+        # This method creates and saves the Fourier transform of the dm/dt signal of a simulation.
+
+        # Input:
+        # file (string). Save path of the simulation file
+        # max_freq (float). Maximum frequency to be calculated in Hz.
+        # num_freq (int). Number of frequencies to be considered.
+        # save_path (string). Save path of the Fourier transform, saved in a file called 'dm_dt_fft.npy'
+        # The save file holds 2D numpy array of dimension (2, num_freq), where the first line holds num_freq equidistant
+        # frequencies from 0 to max_freq and the second line holds the corresponding FT of dm/dt
+
+        # Returns:
+        # None. void function
+
+        plt.figure(figsize=(8, 5))
+
+        delays = np.load(file + 'delay.npy')
+        mags = np.load(file + 'ms.npy')
+
+        mag_av = np.sum(mags, axis=1) / len(mags[0])
+        dmag_dt = np.diff(mag_av)/np.diff(delays)
+        dt = np.diff(delays)
+        dtt = np.cumsum(dt)
+        freqs = np.linspace(0, max_freq, num_freq)
+        fft = np.empty(len(freqs), dtype=complex)
+        for j, freq in enumerate(freqs):
+            fft[j] = np.sum(dt * dmag_dt*np.exp(1j*2*np.pi*freq*dtt))
+        freqs_fft = np.array([freqs, fft])
+
+        np.save(save_path + '.npy', freqs_fft)
+
+        return
+
+    @staticmethod
+    def plot_fft_dm_dt(files, x_axis, x_label, save_path):
+
+        # This function plots the dominant frequencies of the FFT created with SimAnalysis.save_dm_dt_ft() for a number
+        # of files over an x-axis of choice
+
+        # Input:
+        #
+
+        # Returns:
+        #
+
+        fft_max = []
+
+        assert len(files) == len(x_axis), 'The number of files must match the number of x_axis datapoints'
+
+        for i, file in enumerate(files):
+            freqs_fft = np.load(file)
+            freqs = freqs_fft[0]
+            fft = freqs_fft[1]
+
+            fft_max_index = finder_nosort(np.amax(np.abs(fft)), np.abs(fft))
+            fft_max.append(freqs[fft_max_index])
+
+        plt.figure(figsize=(8, 5))
+        plt.scatter(x_axis, np.array(fft_max)*1e-9, s=70, color='orange')
+        plt.xlabel(x_label, fontsize=16)
+        plt.ylabel(r'F$_D$ [GHz]', fontsize=16)
+        plt.savefig(save_path)
+        plt.show()
+
+    @staticmethod
+    def compare_plot_fft_dm_dt(files, x_axis, x_label, save_path):
+
+        assert len(files[0]) == len(x_axis), 'The number of files must match the number of x_axis datapoints'
+
+        fft_max = [[] for _ in range(len(files))]
+        colors = ['blue', 'orange']
+
+        fig, ax1 = plt.subplots(figsize=(8, 5))
+        ax1.set_xlabel(x_label, fontsize=16, color='black')
+        ax1.set_ylabel(r'F$_D$ [GHz]', fontsize=16, color='black')
+
+        ax2 = ax1.twinx()
+        axs = (ax1, ax2)
+
+        for i, row in enumerate(files):
+            for j, file in enumerate(row):
+                freqs_fft = np.load(file)
+                freqs = freqs_fft[0]
+                fft = freqs_fft[1]
+
+                fft_max_index = finder_nosort(np.amax(np.abs(fft)), np.abs(fft))
+                fft_max[i].append(freqs[fft_max_index])
+
+            excess = np.amax(fft_max[i])-np.amin(fft_max[i])*0.001
+            axs[i].set_ylim(np.amin(fft_max[i])-excess, np.amax(fft_max[i])+excess)
+            axs[i].tick_params(axis='y', labelcolor=colors[i])
+            axs[i].scatter(x_axis, np.array(fft_max[i]), s=70, color=colors[i])
+
+        fig.tight_layout()
+        plt.savefig(save_path)
+        plt.show()

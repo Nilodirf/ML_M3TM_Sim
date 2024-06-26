@@ -18,7 +18,7 @@ plotter.map_plot(key='tp', kind='surface', save_fig=True, filename='fullsam_tp',
 
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
-# plotter.line_plot(key='tp', average=False, save_fig=False)
+plotter.line_plot(key='tp', average=False, save_fig=False)
 # plotter.line_plot(key='te', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
 # plotter.line_plot(key='tp', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
 
