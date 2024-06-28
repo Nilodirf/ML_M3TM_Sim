@@ -71,15 +71,12 @@ class SimAnalysis(SimComparePlot):
         # plot all data:
         for i, path in enumerate(files):
 
-            delays = np.load(path + 'delay.npy')
-            mags = np.load(path + 'ms.npy')
-            tes = np.load(path + 'tes.npy')
-            tps = np.load(path + 'tps.npy')
+            delays = np.load(path + '/delay.npy')
+            mags = np.load(path + '/ms.npy')
 
             mag_av = np.sum(mags, axis=1) / len(mags[0])
             dmag_dt = np.diff(mag_av)/np.diff(delays)
             dtt = np.cumsum(np.diff(delays*1e9))
-            te_av = np.sum(tes, axis=1) / len(tes[0])
 
             # THE FIRST FILE IN SELF.FILES SHOULD BE THE ONE WITH THE HIGHEST DEMAGNETIZATION RATE
             # TO GET PROPER NORMALIZATION
@@ -167,13 +164,11 @@ class SimAnalysis(SimComparePlot):
 
             # Get meq:
             meq = find_intersection_sp(mag, Brillouin_2, np.sqrt(1 - T))
-            if meq[
-                0] < 0:  # This is a comletely unwarranted fix for values of meq<0 at temperatures very close to Tc, that fsolve produces. It seems to work though, as the interpolated function plotted by plot_mean_mags() seems clean.
+            if meq[0] < 0:  # This is a comletely unwarranted fix for values of meq<0 at temperatures very close to Tc, that fsolve produces. It seems to work though, as the interpolated function plotted by plot_mean_mags() seems clean.
                 meq[0] *= -1
             # Append it to list me(T)
             meq_list.append(meq[0])
-        meq_list[
-            -1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
+        meq_list[-1] = 0  # This fixes slight computational errors to fix m_eq(Tc)=0 (it produces something like m_eq[-1]=1e-7)
         temp_grid = np.append(temp_grid, 100.)
         meq_list.append(0.)
         return ip.interp1d(temp_grid, meq_list)
@@ -183,9 +178,13 @@ class SimAnalysis(SimComparePlot):
         # This method creates a plot like figure 1 in the document for review response.
 
         # Input:
+
         # file (string). Filepath relative to Results of the simulation data you want to plot
         # num_cgt_layers (int). Number of CGT layers in the simulation
-        # save_file_sanme (string). Filepath to save the figure relative to Results.
+        # save_file_name (string). Filepath to save the figure relative to Results.
+
+        # Returns:
+        # __void function__
 
         # create mean mag map:
         meq = SimAnalysis.create_mean_mag_map(S=1.5, Tc=65.)
@@ -254,13 +253,13 @@ class SimAnalysis(SimComparePlot):
         # Input:
         # file (string). Save path of the simulation file
         # max_freq (float). Maximum frequency to be calculated in Hz.
-        # num_freq (int). Number of frequencies to be considered.
+        # num_freq (int). Number of frequencies to be considered (in range [o, max_freq]).
         # save_path (string). Save path of the Fourier transform, saved in a file called 'dm_dt_fft.npy'
         # The save file holds 2D numpy array of dimension (2, num_freq), where the first line holds num_freq equidistant
         # frequencies from 0 to max_freq and the second line holds the corresponding FT of dm/dt
 
         # Returns:
-        # None. void function
+        # __void function__
 
         plt.figure(figsize=(8, 5))
 
@@ -284,14 +283,17 @@ class SimAnalysis(SimComparePlot):
     @staticmethod
     def plot_fft_dm_dt(files, x_axis, x_label, save_path):
 
-        # This function plots the dominant frequencies of the FFT created with SimAnalysis.save_dm_dt_ft() for a number
+        # This function plots the dominant frequencies of the FT created with SimAnalysis.save_dm_dt_ft() for a number
         # of files over an x-axis of choice
 
         # Input:
-        #
+        # files (list). List of absolute paths of the files of Fourier Transforms you want to evaluate
+        # x_axis (list). List of the corresponding x-axis values for each file
+        # x_label (string). The x-axis label for the simulations to plot
+        # save_path (string). Absolute path to save the figure to (including data format ending)
 
         # Returns:
-        #
+        # __void function__
 
         fft_max = []
 
@@ -311,6 +313,7 @@ class SimAnalysis(SimComparePlot):
         plt.ylabel(r'F$_D$ [GHz]', fontsize=16)
         plt.savefig(save_path)
         plt.show()
+        return
 
     @staticmethod
     def compare_plot_fft_dm_dt(files, x_axis, x_label, save_path):
@@ -344,3 +347,39 @@ class SimAnalysis(SimComparePlot):
         fig.tight_layout()
         plt.savefig(save_path)
         plt.show()
+
+        return
+
+    @staticmethod
+    def plot_max_magrate_distance(files, x_axis, x_label, save_path):
+
+        max_time_diffs = []
+
+        for i, file in enumerate(files):
+            delays = np.load(file + '/delay.npy')
+            mags = np.load(file + '/ms.npy')
+
+            tes = np.load(file + '/tes.npy')
+            te_av = np.sum(tes, axis=1) / len(tes[0])
+            plt.plot(delays, te_av, label=str(x_axis[i]))
+            plt.legend()
+            plt.show()
+
+            mag_av = np.sum(mags, axis=1) / len(mags[0])
+            dmag_dt = np.diff(mag_av) / np.diff(delays)
+            dtt = np.cumsum(np.diff(delays * 1e9))
+
+            dm_dt_max_index = finder_nosort(np.amax(dmag_dt), dmag_dt)
+            dm_dt_min_index = finder_nosort(np.amin(dmag_dt), dmag_dt)
+
+            time_diff = dtt[dm_dt_max_index]-dtt[dm_dt_min_index]
+            max_time_diffs.append(time_diff)
+
+        plt.figure(figsize=(7, 4))
+        plt.scatter(x_axis, max_time_diffs)
+        plt.xlabel(x_label, fontsize=16)
+        plt.ylabel(r'$\Delta t_m$ [ns]', fontsize = 16)
+        plt.savefig(save_path)
+        plt.show()
+
+        return
