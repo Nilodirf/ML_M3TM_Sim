@@ -570,8 +570,8 @@ class SimDynamics:
                           + ' [mJ/cm^2]' + '\n')
         params_file.write('Relative error due to finite layer size: ' + str(self.Pulse.rel_err) + ' %' + '\n')
         params_file.write('##Interface parameters' + '\n')
-        params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int) + ' [W/m/K]' + '\n')
-        params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int) + ' [W/m/K]' + '\n')
+        params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int/self.Sam.dz_arr[1:]*1e-9) + ' [GW/m^2/K]' + '\n')
+        params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int/self.Sam.dz_arr[1:]*1e-9) + ' [GW/m^2/K]' + '\n')
         params_file.close()
 
         return

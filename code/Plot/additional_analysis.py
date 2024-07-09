@@ -263,8 +263,8 @@ class SimAnalysis(SimComparePlot):
 
         plt.figure(figsize=(8, 5))
 
-        delays = np.load(file + 'delay.npy')
-        mags = np.load(file + 'ms.npy')
+        delays = np.load(file + '/delay.npy')
+        mags = np.load(file + '/ms.npy')
 
         mag_av = np.sum(mags, axis=1) / len(mags[0])
         dmag_dt = np.diff(mag_av)/np.diff(delays)
@@ -301,8 +301,8 @@ class SimAnalysis(SimComparePlot):
 
         for i, file in enumerate(files):
             freqs_fft = np.load(file)
-            freqs = freqs_fft[0]
-            fft = freqs_fft[1]
+            freqs = np.real(freqs_fft)[0]
+            fft = np.real(freqs_fft)[1]
 
             fft_max_index = finder_nosort(np.amax(np.abs(fft)), np.abs(fft))
             fft_max.append(freqs[fft_max_index])
@@ -311,6 +311,7 @@ class SimAnalysis(SimComparePlot):
         plt.scatter(x_axis, np.array(fft_max)*1e-9, s=70, color='orange')
         plt.xlabel(x_label, fontsize=16)
         plt.ylabel(r'F$_D$ [GHz]', fontsize=16)
+        plt.xscale('log')
         plt.savefig(save_path)
         plt.show()
         return
@@ -359,11 +360,8 @@ class SimAnalysis(SimComparePlot):
             delays = np.load(file + '/delay.npy')
             mags = np.load(file + '/ms.npy')
 
-            tes = np.load(file + '/tes.npy')
-            te_av = np.sum(tes, axis=1) / len(tes[0])
-            plt.plot(delays, te_av, label=str(x_axis[i]))
-            plt.legend()
-            plt.show()
+            # tes = np.load(file + '/tes.npy')
+            # te_av = np.sum(tes, axis=1) / len(tes[0])
 
             mag_av = np.sum(mags, axis=1) / len(mags[0])
             dmag_dt = np.diff(mag_av) / np.diff(delays)

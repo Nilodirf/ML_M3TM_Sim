@@ -51,3 +51,4 @@ for l in cgt_layers:
 
         # Save the data in a file with the desired name
         sim.save_data(solution, save_file='CGT/fluence dependence/' + thickness + '_flu_' + str(f))
+

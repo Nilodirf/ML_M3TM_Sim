@@ -420,7 +420,7 @@ class SimAnalysis(SimComparePlot):
                 sim_data = SimPlot(loop_file)
                 delay, tes, tps, mags = sim_data.get_data()[:4]
                 if loop_mat == 'cgt_thin':
-                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=2e-9, layer_thick=14e-9, norm=True)
+                    mags = SimAnalysis.get_kerr(mags=mags, pen_dep=2e-9, layer_thick=1e-9, norm=True)
                 else:
                     mags = SimAnalysis.get_kerr(mags=mags, pen_dep=2e-9, layer_thick=1e-9, norm=True)
 

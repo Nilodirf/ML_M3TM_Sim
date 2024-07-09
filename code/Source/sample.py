@@ -50,8 +50,10 @@ class SimSample:
         # material (object). A material previously defined with the materials class
         # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
         # layers (int). Number of layers with depth material.dz to be added to the sample
-        # kappap_int (float/string). Phononic interface heat conductivity to the last block of the sample
-        # kappae_int (float/string). Electronic interface heat conductivity to the last block of the sample
+        # kappap_int (float/string). Phononic thermal interface conductance at the interface
+        # to the previously added material in W/m^2/K
+        # kappae_int (float/string). Electronic thermal interface conductance at the interface
+        # to the previously added material in W/m^2/K
         # n_comp (complex float). Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate.
 
         # Returns:
@@ -79,35 +81,8 @@ class SimSample:
             else:
                 kappae_int = 0.
 
-            if kappap_int == 'min':
-                self.kappa_p_int = \
-                    np.append(self.kappa_p_int, np.amin(np.array([self.mat_arr[-1].kappap, material.kappap])))
-
-            elif kappap_int == 'max':
-                self.kappa_p_int = \
-                    np.append(self.kappa_p_int, np.amax(np.array([self.mat_arr[-1].kappap, material.kappap])))
-
-            elif kappap_int == 'av':
-                self.kappa_p_int = \
-                    np.append(self.kappa_p_int, (self.mat_arr[-1].kappap + material.kappap) / 2)
-
-            else:
-                self.kappa_p_int = np.append(self.kappa_p_int, kappap_int)
-
-            if kappae_int == 'min':
-                self.kappa_e_int = \
-                    np.append(self.kappa_e_int, np.amin(np.array([self.mat_arr[-1].kappae, material.kappae])))
-
-            elif kappae_int == 'max':
-                self.kappa_e_int = \
-                    np.append(self.kappa_e_int, np.amax(np.array([self.mat_arr[-1].kappae, material.kappae])))
-
-            elif kappae_int == 'av':
-                self.kappa_e_int = \
-                    np.append(self.kappa_e_int, (self.mat_arr[-1].kappae + material.kappae) / 2)
-
-            else:
-                self.kappa_e_int = np.append(self.kappa_e_int, kappae_int)
+            self.kappa_p_int = np.append(self.kappa_p_int, kappap_int*dz)
+            self.kappa_e_int = np.append(self.kappa_e_int, kappae_int*dz)
 
         self.mat_arr = np.append(self.mat_arr, np.array([material for _ in range(layers)]))
         self.len = self.get_len()

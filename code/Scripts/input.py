@@ -27,18 +27,19 @@ bp = SimMaterials(name='BP', tdeb=370, vat=1e-28, ce_gamma=107, cp_max=2.17e6, k
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
 sample = SimSample()
-sample.add_layers(material=hbn, layers=7, dz=2e-9, pen_dep=1)
-sample.add_layers(material=cgt, layers=45,  dz=2e-9, kappap_int='av', pen_dep=30e-9)
-sample.add_layers(material=sio2, layers=150, dz=2e-9, kappap_int='av', pen_dep=1)
+sample.add_layers(material=hbn, layers=7, dz=2e-9, pen_dep=1, n_comp=2.1+0j)
+sample.add_layers(material=cgt, layers=7,  dz=2e-9, kappap_int=2.5e9, pen_dep=30e-9, n_comp=4.+1.8j)
+sample.add_layers(material=sio2, layers=150, dz=2e-9, kappap_int=0.1e9, pen_dep=1, n_comp=1.45)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='LB', pulse_width=60e-15, fluence=0.1, delay=1e-12)
+pulse = SimPulse(sample=sample, method='LB', pulse_width=60e-15, fluence=0.5, delay=1e-12, photon_energy_ev=1.55, phi=1/2, theta=0)
+pulse.visualize(axis='z')
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=15e-9, ini_temp=6., solver='RK45', max_step=1e-12)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=5e-9, ini_temp=6., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='CGT/fluence dependence/thick_flu_0.1')
+sim.save_data(solution, save_file='CGT Paper/TBC_100')
