@@ -12,7 +12,7 @@ from ..Source.mainsim import SimDynamics
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
 hbn = SimMaterials(name='hBN', tdeb=400, vat=1e-28, ce_gamma=0., cp_max=2.645e6, kappap=5.0,
                    kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0., cp_method='Debye')
-cgt = SimMaterials(name='CGT', tdeb=200, vat=1e-28, ce_gamma=737.87, cp_max=1.38e6,
+cgt = SimMaterials(name='CGT', tdeb=200, vat=1e-28, ce_gamma=737.87, cp_max=1.5e6,
                    kappap=1., kappae=0.0016, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05, cp_method='Debye')
 sio2 = SimMaterials(name='SiO2', tdeb=403, vat=1e-28, ce_gamma=0., cp_max=1.9e6, kappap=1.5,
                     kappae=0., gep=0, spin=0, tc=0., muat=0., asf=0., cp_method='Debye')
@@ -32,7 +32,7 @@ sample.add_layers(material=cgt, layers=7,  dz=2e-9, kappap_int=2.5e9, pen_dep=30
 sample.add_layers(material=sio2, layers=150, dz=2e-9, kappap_int=0.1e9, pen_dep=1, n_comp=1.45)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='Abeles', pulse_width=60e-15, fluence=0.5, delay=1e-12, photon_energy_ev=1.55, phi=1/2, theta=0)
+pulse = SimPulse(sample=sample, method='Abeles', pulse_width=60e-15, fluence=0.5, delay=1e-12, photon_energy_ev=1.55, phi=1/2, theta=1/4)
 pulse.visualize(axis='z')
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
