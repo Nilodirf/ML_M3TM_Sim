@@ -285,6 +285,14 @@ class SimPulse:
             F_z_s = np.abs(e_y_in_sample) ** 2 if self.phi != 0 else 0
             F_z = F_z_p + F_z_s
 
+            # extra loop to compute the absorbed fluence per material block:
+            first_layer = 0
+            for i, last_layer in enumerate(self.Sam.mat_blocks):
+                last_layer += first_layer
+                abs_flu_per_block.append(np.sum(q_prop[first_layer: last_layer] * F_z[first_layer: last_layer]
+                                                * dz_sam[first_layer: last_layer])*self.fluence)
+                first_layer = last_layer
+
             # and finally the absorbed power densities:
             powers = self.peak_intensity * q_prop * F_z
             abs_flu = self.fluence * np.sum(F_z * dz_sam * q_prop)
