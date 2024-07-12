@@ -4,7 +4,7 @@ from ..Plot.plot import SimComparePlot
 
 # THIS SETUP IS TO look at cp/kp changes in cap/substrate:
 
-thin_thick_files = ['CGT Paper/15nm_fl_0.5_pristine', 'CGT Paper/match_sim_thin', 'CGT Paper/TBC_100']
+thin_thick_files = ['CGT Paper/15nm_fl_0.5_pristine', 'CGT Paper/TBC_100_2', 'CGT Paper/TBC_100']
 
 compare_plotter_thinthick = SimComparePlot(thin_thick_files)
 

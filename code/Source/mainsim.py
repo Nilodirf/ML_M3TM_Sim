@@ -5,6 +5,7 @@ import time
 from scipy import constants as sp
 from datetime import datetime
 import warnings
+from matplotlib import pyplot as plt
 
 from .finderb import finderb
 
@@ -111,6 +112,12 @@ class SimDynamics:
 
         start_time = time.time()
 
+        # include CGT spin specific heat from spin entropy:
+        spin_ent = np.loadtxt('input_data/CGT/spin_entropy.txt')
+        cs_temps = spin_ent[:, 0]
+        spin_ents = spin_ent[:, 1]
+        cs = np.gradient(spin_ents, cs_temps)*cs_temps
+
         len_sam = self.Sam.len
         len_sam_te = self.Sam.len_te
         el_mask = self.Sam.el_mask
@@ -167,7 +174,7 @@ class SimDynamics:
                                                                                 kappa_p_dz_pref, j_sam, spin_sam,
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
-                                                                                vat_sam),
+                                                                                vat_sam, cs_temps, cs),
                             t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method=self.solver,
                             max_step=self.max_step)
 
@@ -235,7 +242,7 @@ class SimDynamics:
                            mag_mask, el_mask, ce_gamma_sam,
                            cp_sam_grid, cp_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
                            kappa_p_dz_pref, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                           ms_sam, mag_num, vat_sam):
+                           ms_sam, mag_num, vat_sam, cs_temps, cs):
         # This method joins other static methods to compute the increments of all three subsystems. It gets passed to
         # solve_ivp in the self.get_mag_map() method.
 
@@ -271,7 +278,7 @@ class SimDynamics:
             cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
-        ce_sam_t = np.multiply(ce_gamma_sam, te)
+        ce_sam_t = np.multiply(ce_gamma_sam, te) #+ cs[finderb(te, cs_temps)[0]]
 
         dtp_dt = np.zeros(len_sam)
 
