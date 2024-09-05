@@ -109,7 +109,7 @@ class SimPlot:
             layer_labels_mag = np.concatenate(np.array([[materials[i] + '_' + position.replace(' ', '')
                                               for position in positions_line]
                                               for i, positions_line in enumerate(positions) if mu_ats[i] != 0], dtype=object))
-
+            print(layer_labels_mag)
             layer_thicknesses_mag = np.concatenate(np.array([[thicknesses[i] for _ in positions_line]
                                                              for i, positions_line in enumerate(positions) if
                                                              mu_ats[i] != 0], dtype=object)) * 1e9
@@ -759,7 +759,5 @@ class SimComparePlot:
                                                                    'without file format with filename=...'
             plt.savefig('Results/' + str(filename) + '.pdf')
         plt.show()
-
-
 
         return None

@@ -5,7 +5,7 @@ from ..Plot.plot import SimComparePlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='CGT Paper/TBC_100')
+plotter = SimPlot(file='CGT Paper/sharp_angle')
 
 # plotter.convert_to_dat()
 
@@ -22,7 +22,7 @@ plotter.map_plot(key='tp', kind='surface', save_fig=False, filename='fullsam_tp'
 # plotter.line_plot(key='te', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
 # plotter.line_plot(key='tp', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
 
-# plotter.line_plot(key='mag', average=False, save_fig=False, norm=False)
+plotter.line_plot(key='mag', average=True, save_fig=False, norm=False)
 
 # plotter.te_tp_plot(max_time=6.5, average=False, save_fig=False,  filename='te_tp_thick', tp_layers=[2, 12], color_scales=['Greens_r', 'Blues_r'])  #8,84 for thick, 8,
 

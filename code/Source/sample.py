@@ -65,24 +65,17 @@ class SimSample:
 
         if self.len > 0:
             assert kappap_int is not None and \
-                   (type(kappap_int) == float or kappap_int == 'min' or kappap_int == 'max' or kappap_int == 'av'), \
-                'Please introduce phononic diffusion interface constant using kappap_int = <value> (in W/m/K) or ' \
-                '"max" or "min" to either set the value manually or use the larger/smaller value of ' \
-                'phononic heat conductivities of the adjacent materials.'
+                   (type(kappap_int) == float), 'Introduce phononic diffusion interface constant using kappap_int = <value> (in MW/m^2/K)'
 
             if material.ce_gamma != 0 and self.mat_arr[-1].ce_gamma != 0:
                 assert kappae_int is not None and \
-                       (type(kappae_int) == float or kappae_int == 'min' or kappae_int == 'max' or kappae_int == 'av'), \
-                    'Please introduce electronic diffusion interface constant using ' \
-                    'kappap_int = <value> (in W/m/K) ' \
-                    'or "max" or "min" to either set the value manually or use the larger/smaller value of ' \
-                    'electronic heat conductivities of the adjacent materials.'
+                       (type(kappae_int) == float), 'Introduce electronic diffusion interface constant using kappap_int = <value> (in MW/m^2/K) '
 
             else:
                 kappae_int = 0.
 
-            self.kappa_p_int = np.append(self.kappa_p_int, kappap_int*dz)
-            self.kappa_e_int = np.append(self.kappa_e_int, kappae_int*dz)
+            self.kappa_p_int = np.append(self.kappa_p_int, kappap_int*dz*1e6)
+            self.kappa_e_int = np.append(self.kappa_e_int, kappae_int*dz*1e6)
 
         self.mat_arr = np.append(self.mat_arr, np.array([material for _ in range(layers)]))
         self.len = self.get_len()

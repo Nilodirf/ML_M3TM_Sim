@@ -401,6 +401,9 @@ class SimPulse:
         # None. Void function
 
         print('Absorption profile computed with', str(self.method), ' method.')
+        if self.method == 'Abeles':
+            print('Incident angle to smaple normal:', str(self.theta/np.pi), ' pi')
+            print('Polarization angle to indicent plane:', str(self.phi/np.pi), ' pi')
         print('F = ', str(self.fluence), ' mJ/cm^2')
         print('F_a_sim =', self.abs_flu, ' mJ/cm^2')
         print('F_r =', self.ref_flu, ' mJ/cm^2')
