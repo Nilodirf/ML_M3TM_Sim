@@ -2,11 +2,10 @@ import numpy as np
 
 from ..Plot.plot import SimComparePlot
 
-# THIS SETUP IS TO look at cp/kp changes in cap/substrate:
+e_term_files = ['therm_time_tests/0.0', 'therm_time_tests/2e-14', 'therm_time_tests/3e-14', 'therm_time_tests/4e-14',
+                'therm_time_tests/5e-14', 'therm_time_tests/6e-14', 'therm_time_tests/7e-14', 'therm_time_tests/8e-14',
+                'therm_time_tests/9e-14']
 
-thin_thick_files = ['CGT Paper/15nm_fl_0.5_pristine', 'CGT Paper/TBC_100_2', 'CGT Paper/TBC_100']
+compare_plotter = SimComparePlot(e_term_files)
 
-compare_plotter_thinthick = SimComparePlot(thin_thick_files)
-
-compare_plotter_thinthick.kerr_plot(pen_dep=15e-9, layer_thickness=2.0e-9, min_time=0, max_time=5000, save_fig=False,
-                                     filename='thin_thick_compare', norm=False)
+compare_plotter.compare_sims(key='te', min_layers=[0 for i in e_term_files], max_layers=[1 for i in e_term_files])

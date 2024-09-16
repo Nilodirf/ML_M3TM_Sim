@@ -715,23 +715,10 @@ class SimComparePlot:
 
         return
 
-    def parameter_2d_scan(self):
-
-        plt.figure(figsize=(8, 6))
-
-        for file in self.files:
-            delay, mags = SimComparePlot.get_data(file)[0:2]
-
-            delay = delay * 1e12
-
-            zero_time = finderb(0., delay)[0]
-
-    def compare_samples(self, key, min_layers, max_layers, colors, labels, save_fig=False, filename=None):
+    def compare_sims(self, key, min_layers, max_layers, labels=None, save_fig=False, filename=None):
 
         assert len(min_layers) == len(self.files) and len(max_layers) == len(self.files), 'Introduce as many min ' \
                                                                                           'and max layers as files.'
-        assert len(colors) == len(self.files) and len(labels) == len (self.files), 'Introduce as many colors as files.'
-        assert key == 'te' or key == 'tp' or key == 'mag', 'Valid keys for plotting subsystems are te, tp and mag.'
 
         plt.figure(figsize=(8, 6))
 
@@ -748,15 +735,19 @@ class SimComparePlot:
                 y = np.sum(mags[:, min_layers[i]: max_layers[i]], axis=1)/(max_layers[i]-min_layers[i])
                 y_label = r'magnetization'
 
-            plt.plot(delays*1e12, y, color=colors[i], label=labels[i])
+            if labels is None:
+                labels = [str(file) for file in self.files]
+
+            plt.plot(delays*1e12, y, label=labels[i])
 
         plt.legend(fontsize=16)
         plt.xlabel(r'delay [ps]', fontsize=20)
         plt.ylabel(y_label, fontsize=20)
 
-        if save_fig == True:
-            assert filename is not None and type(filename) == str, 'If you want to save the figure, introuce a filename' \
-                                                                   'without file format with filename=...'
+        if save_fig:
+            assert filename is not None and type(filename) == str, 'If you want to save the figure,' \
+                                                                   ' introduce a filename' \
+                                                                   'without suffix with filename=...'
             plt.savefig('Results/' + str(filename) + '.pdf')
         plt.show()
 

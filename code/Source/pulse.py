@@ -1,5 +1,4 @@
 import numpy as np
-import scipy
 import os
 from matplotlib import pyplot as plt
 from scipy import constants as sp
@@ -8,22 +7,26 @@ from ..Source.finderb import finderb
 
 
 class SimPulse:
-    # This class lets us define te pulse for excitation of the sample
+    # This class lets us define te pulse for excitation of the sample. To be exact, it defines the interaction of
+    # thermalized electrons with the laser pulse. In case of finite thermalization time of the excited electrons,
+    # the gaussian pulse shape gets convoluted with another gaussian to account for the effect of non-thermal electrons
 
-    def __init__(self, sample, pulse_width, fluence, delay, method, photon_energy_ev=None, theta=None, phi=None):
+    def __init__(self, sample, pulse_width, fluence, delay, method, therm_time=None,
+                 photon_energy_ev=None, theta=None, phi=None):
         # Input:
         # sample (object). Sample in use
         # pulse_width (float). Sigma of gaussian pulse shape in s
         # fluence (float). Fluence of the laser pulse in mJ/cm**2. Converted to J/m**2
         # delay (float). time-delay of the pulse peak after simulation start in s (Let the magnetization relax
         # to equilibrium before injecting the pulse
-        # method (String). The method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abele'
+        # method (String). The method to calculate the pulse excitation map. Either 'LB' for Lambert-Beer or 'Abeles'
         # for the matrix formulation calculating the profile via the Fresnel equations.
-        # energy (float). Energy of the optical laser pulse in eV. Only necessary for method 'Abele'
+        # therm_time (float). thermalization time of photo-excited electrons in s.
+        # photon_energy_eV (float). Energy of the optical laser pulse in eV. Only necessary for method 'Abeles'
         # theta (float). Angle of incidence of the pump pulse in respect to the sample plane normal in units of pi, so
-        # between 0 and 1/2.
+        # between 0 and 1/2. Only necessary for method 'Abeles'
         # phi (float). Angle of polarized E-field of optical pulse in respect to incidence plane in units of pi, so
-        # between 0 and 1/2.
+        # between 0 and 1/2. Only necessary for method 'Abeles'
 
         # Also returns:
         # peak_intensity (float). Peak power per area (intensity) of the pulse in W/m**2.
@@ -36,7 +39,6 @@ class SimPulse:
         # rel_err (float). Error for absorbed fluence due to finite layer size in percent, rounded to 0.01 %
         # abs_flu_per_block (list). List of the absorbed fluences of each material block in the sample in mJ/cm^2
 
-
         self.pulse_width = pulse_width
         self.fluence = fluence
         self.delay = delay
@@ -45,6 +47,7 @@ class SimPulse:
         self.method = method
         assert self.method == 'LB' or self.method == 'Abeles', 'Chose one of the methods \'LB\' (for Lambert-Beer)' \
                                                               ' or \' Abeles\' (for computation of Fresnel equations).'
+        self.therm_time = therm_time
         self.energy = photon_energy_ev
         self.theta = np.pi * theta if theta is not None else None
         self.phi = np.pi * phi if phi is not None else None
@@ -65,38 +68,83 @@ class SimPulse:
         return np.concatenate(np.array([[array[i] for _ in range(self.Sam.mat_blocks[i])] for i in range(len(self.Sam.mat_blocks))], dtype=object)).astype(complex)
 
     def get_pulse_map(self):
-        # This method creates a time grid and a spatially independent pulse excitation of gaussian shape
-        # on this time grid.
-        # The pulse is confined to nonzero values in the range of [start_pump_time, end_pump_time]
-        # to save computation time. After this time, there follows one entry defining zero pump power
-        # for all later times. At each timestep in the grid, the spatial dependence of the pulse is multiplied
-        # via self.depth_profile
+        # This method creates a time grid and a time and space independent pulse excitation on said time grid.
+        # Computation of time and space dependence are outsourced to their own methods.
 
         # Input:
         # self (object). The pulse defined by the parameters above
 
         # Returns:
-        # pump_time_grid (numpy array). 1d-array of the time grid on which the pulse is defined
-        # pump_map (numpy array). 2d-array of the corresponding pump energies on the time grid (first dimension)
-        # and for the whole sample (second dimension)
+        # pump_time_grid (numpy array). 1d-array of the time grid on which the therm. electron-pulse interaction
+        # is defined
+        # pump_map (numpy array). 2d-array of the corresponding aborbed energies of the therm. electrons
+        # on the interaction time grid (first dimension) and for the whole sample (second dimension)
+        # abs_flu (float). Total absorbed fluence of the sample
+        # ref_flu (float). Total reflected fluence
+        # trans_flu (float). Total transmitted fluence
+        # rel_err (float). Relative error of numerical and analytical "exact" absorbed fluence
+        # abs_flu_per_block (numpy array). 1d array of the absorbed fluences per block of materials.
+
+        pump_time_grid, interaction_grid = self.time_profile()
+        pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block = self.depth_profile(interaction_grid)
+
+        return pump_time_grid, pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
+
+    def time_profile(self):
+        # This method computes the time dependence of the pulse excitation, including the effect of finite
+        # thermalization time of the pump pulse according to Eq. 4 in
+        # International Journal of Heat and Mass Transfer 47 (2004) 2261–2268
+        # The pulse is confined to nonzero values in the range of [start_pump_time, end_pump_time]
+        # to save computation time. After this time, there follows one entry defining zero pump power
+        # for all later times.
+
+        # Input:
+        # self (reference). The pulse object in use
+
+        # Returns:
+        # interaction (numpy array). 1d array of the timegrid on which the pulse excitation and thermalized electrons
+        # interact
+        # pump_grid (numpy array). 1d array of the corresponding pump intensity values normalized to sqrt(2pi)
+
         p_del = self.delay
         sigma = self.pulse_width
-        start_pump_time = p_del-10*sigma
-        end_pump_time = p_del+10*sigma
+        start_pump_time = p_del - 10 * sigma
+        end_pump_time = p_del + 10 * sigma
 
         raw_pump_time_grid = np.arange(start_pump_time, end_pump_time, 1e-16)
         until_pump_start_time = np.arange(0, start_pump_time, 1e-16)
         pump_time_grid = np.append(until_pump_start_time, raw_pump_time_grid)
 
-        raw_pump_grid = np.exp(-((raw_pump_time_grid-p_del)/sigma)**2/2)
+        raw_pump_grid = np.exp(-((raw_pump_time_grid - p_del) / sigma) ** 2 / 2)
         pump_grid = np.append(np.zeros_like(until_pump_start_time), raw_pump_grid)
 
-        pump_time_grid = np.append(pump_time_grid, end_pump_time+1e-15)
-        pump_grid = np.append(pump_grid, 0.)
+        interaction_time_grid = pump_time_grid
+        interaction_grid = pump_grid
 
-        pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block = self.depth_profile(pump_grid)
+        if self.therm_time is not None and self.therm_time > 0.:
+            # extend the pulse interaction time to the time of (more or less) full thermalization of electrons:
+            end_interaction_time = end_pump_time + 4 * self.therm_time
+            after_pulse_time = np.arange(end_pump_time, end_interaction_time, 1e-16)
+            interaction_time_grid = np.append(interaction_time_grid, after_pulse_time)
+            pump_grid = np.append(pump_grid, np.zeros_like(after_pulse_time))
 
-        return pump_time_grid, pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
+            # round time grids:
+            np.round(pump_time_grid, 16)
+            np.round(interaction_time_grid, 16)
+
+            # compute the lag function:
+            gaussian_lag = 1-np.exp(-(interaction_time_grid/self.therm_time)**2)
+            gaussian_lag_shifted = np.roll(gaussian_lag, 1)
+            gaussian_lag_shifted[0] = 0.
+
+            # convolute:
+            interaction_grid = np.cumsum(pump_grid*(gaussian_lag-gaussian_lag_shifted))
+
+        interaction_time_grid = np.append(pump_time_grid, end_pump_time + 1e-15)
+        interaction_grid = np.append(interaction_grid, 0.)
+
+        return interaction_time_grid, interaction_grid
+
 
     def depth_profile(self, pump_grid):
         # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abeles'
@@ -304,14 +352,14 @@ class SimPulse:
 
         return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
 
-    def visualize(self, axis, fit=None, save_fig=False, save_file=None):
+    def visualize(self, axis, save_fig=False, save_file=None):
         # This method plots the spatial/temporal/both dependencies of the pump pulse.
 
         # Input:
         # self (object). The pulse object in use
         # axis (String). Chose whether to plot the temporal profile ('t'), the spatial profile of absorption ('z')
         # or both ('tz')
-        # save_fig (boolean). Wheather to save the figure of the absorption profile
+        # save_fig (boolean). Whether to save the figure of the absorption profile
         # save_file (string). Name of the file to save pulse absorption visualization if save_fig=True
 
         # Returns:

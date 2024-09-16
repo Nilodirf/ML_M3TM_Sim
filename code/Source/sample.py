@@ -14,6 +14,7 @@ class SimSample:
         # mat_blocks (list of lists). Containing the number of subsequent layers of the same material in each sub_list.
         # el_mask (boolean array). Mask showing at which position materials with itinerant electrons are placed.
         # mag_mask (boolean array). Mask showing at which position magnetic materials are placed.
+        # tp2_mask (boolean array). Mask showing at which positions a second phononic system is to be considered
         # mats, mat_ind (list, list). List of the different materials in the sample and their positions.
         # mag_num (int). Number of magnetic materials in the sample.
         # kappa_p_int (numpy array). 1d-array of the interface constants of phononic heat diffusion. Starts empty,
@@ -21,6 +22,7 @@ class SimSample:
         # kappa_e_int (numpy array). 1d-array of the interface constants of electronic heat diffusion. Starts empty,
         # recalculated after adding of layers
         # len_te (int). Number of layers that have free electrons (determined with el_mask)
+        # len_tp2 (int). Numer of layers that have free electrons (determined with tp2_mask)
         # el_mag_mask (boolean array). Array of the length of numbers of layers that hold free electrons, True if
         # also magnetic, False if not
         # n_comp_arr (numpy array). 1d-array of the complex refractive indices of the sample constituents (blocks)
@@ -31,11 +33,13 @@ class SimSample:
         self.mat_blocks = self.get_material_changes()
         self.el_mask = self.get_free_electron_mask()
         self.mag_mask = self.get_magdyn_mask()
+        self.tp2_mask = self.get_tp2_mask()
         self.mats, self.mat_ind = np.array([]), np.array([])
         self.mag_num = self.get_num_mag_mat()
         self.kappa_p_int = np.array([])
         self.kappa_e_int = np.array([])
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
+        self.len_tp2 = int(np.sum(np.ones(self.len)[self.tp2_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
         self.n_comp_arr = np.array([])
         self.pen_dep_arr = np.array([])
@@ -65,11 +69,13 @@ class SimSample:
 
         if self.len > 0:
             assert kappap_int is not None and \
-                   (type(kappap_int) == float), 'Introduce phononic diffusion interface constant using kappap_int = <value> (in MW/m^2/K)'
+                   (type(kappap_int) == float), 'Introduce phononic diffusion interface constant ' \
+                                                'using kappap_int = <value> (in MW/m^2/K)'
 
             if material.ce_gamma != 0 and self.mat_arr[-1].ce_gamma != 0:
                 assert kappae_int is not None and \
-                       (type(kappae_int) == float), 'Introduce electronic diffusion interface constant using kappap_int = <value> (in MW/m^2/K) '
+                       (type(kappae_int) == float), 'Introduce electronic diffusion interface constant ' \
+                                                    'using kappap_int = <value> (in MW/m^2/K) '
 
             else:
                 kappae_int = 0.
@@ -94,7 +100,8 @@ class SimSample:
         return self.mat_arr
 
     def get_params_from_blocks(self, param):
-        # This method returns parameters defined for blocks of the sample for each layer within (e.g. pen_dep, n_comp_arr, dz)
+        # This method returns parameters defined for blocks of the sample for each block of layers within this class
+        # and returns the same values projected onto a 1d array for all layers individually.
 
         # Input:
         # self (object). The sample object in use
@@ -105,15 +112,18 @@ class SimSample:
 
         if param == 'pen_dep':
             return np.concatenate(np.array(
-                [[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
+                [[self.pen_dep_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))],
+                dtype=object))
 
         elif param == 'n_comp':
             return np.concatenate(np.array(
-                [[self.n_comp_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
+                [[self.n_comp_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))],
+                dtype=object))
 
         elif param == 'dz':
             return np.concatenate(np.array(
-                [[self.dz_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))], dtype=object))
+                [[self.dz_arr[i] for _ in range(self.mat_blocks[i])] for i in range(len(self.mat_blocks))],
+                dtype=object))
 
     def get_params(self, param):
         # This method lets us read out the parameters of all layers in the sample
@@ -227,6 +237,20 @@ class SimSample:
         magdyn_mask = self.get_params('muat') != 0
 
         return magdyn_mask
+
+    def get_tp2_mask(self):
+        # This method creates a mask for the layers where a second phonon system is to be considered and computed.
+
+        # Input:
+        # self (object). The sample in use
+
+        # Returns:
+        # tp2_mask (boolean array). 1d-array selecting the layers where dynamics of a second phonon system
+        # shall be computed.
+
+        tp2_mask = self.get_params('gpp') != 0
+
+        return tp2_mask
 
     def get_el_mag_mask(self):
         # This method creates a mask for free-electron layers, filtering out non-magnetic ones. Important for handling

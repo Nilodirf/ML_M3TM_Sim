@@ -3,6 +3,8 @@
 # Unless explicitly stated otherwise, all parameters are to be put in SI units.
 # Short documentation of the simulation setup is given before each block here.
 
+import numpy as np
+
 # Import classes from other files to set up materials, sample, pulse and the dynamical functions:
 from ..Source.mats import SimMaterials
 from ..Source.sample import SimSample
@@ -11,44 +13,39 @@ from ..Source.mainsim import SimDynamics
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
 hbn = SimMaterials(name='hBN', tdeb=400, vat=1e-28, ce_gamma=0., cp_max=2.645e6, kappap=5.0,
-                   kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0.)
+                   kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0., cp_method='Debye')
 cgt = SimMaterials(name='CGT', tdeb=200, vat=1e-28, ce_gamma=737.87, cp_max=1.38e6,
-                   kappap=1., kappae=0.0016, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05)
+                   kappap=1., kappae=0.0016, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05, cp_method='Debye')
 sio2 = SimMaterials(name='SiO2', tdeb=403, vat=1e-28, ce_gamma=0., cp_max=1.9e6, kappap=1.5,
-                    kappae=0., gep=0, spin=0, tc=0., muat=0., asf=0.)
+                    kappae=0., gep=0, spin=0, tc=0., muat=0., asf=0., cp_method='Debye')
 fgt = SimMaterials(name='FGT', tdeb=190, vat=1.7e-29, ce_gamma=1561., cp_max=2e6,
-                   kappap=0.5, kappae=0.25, gep=1e18, spin=2, tc=220., muat=1.5, asf=0.06)
+                   kappap=0.5, kappae=0.25, gep=1e18, spin=2, tc=220., muat=1.5, asf=0.06, cp_method='Debye')
 cri3 = SimMaterials(name='CrI3', tdeb=134, vat=1.35e-28, ce_gamma=550., cp_max=1.23e6,
-                   kappap=1.36, kappae=0., gep=4e16, spin=1.5, tc=61., muat=4, asf=0.175)
+                    kappap=1.36, kappae=0., gep=4e16, spin=1.5, tc=61., muat=4, asf=0.175, cp_method='Debye')
 bp = SimMaterials(name='BP', tdeb=370, vat=1e-28, ce_gamma=107, cp_max=2.17e6, kappap=6.5,
-                  kappae=0.01, gep=0.9e15, spin=0, tc=0., muat=0., asf=0.)
+                  kappae=0.01, gep=0.9e15, spin=0, tc=0., muat=0., asf=0., cp_method='Debye')
 
 
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
-fluence_list = [0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05]
-cgt_layers = [7, 45]
+sample = SimSample()
+# sample.add_layers(material=hbn, layers=7, dz=2e-9, pen_dep=1)
+sample.add_layers(material=cgt, layers=1, dz=2e-9, kappap_int=0., pen_dep=30e-9)
+# sample.add_layers(material=sio2, layers=150, dz=2e-9, kappap_int='av', pen_dep=1)
 
-for l in cgt_layers:
-    if l == 7:
-        thickness = 'thin'
-    else:
-        thickness = 'thick'
-    for f in fluence_list:
-        sample = SimSample()
-        sample.add_layers(material=hbn, layers=7, dz=2e-9, pen_dep=1)
-        sample.add_layers(material=cgt, layers=l, dz=2e-9, kappap_int='av', pen_dep=30e-9)
-        sample.add_layers(material=sio2, layers=150, dz=2e-9, kappap_int='av', pen_dep=1)
+therm_times=np.arange(0, 11)*1e-14
 
-        # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-        pulse = SimPulse(sample=sample, method='LB', pulse_width=60e-15, fluence=f, delay=1e-12)
+for tt in therm_times:
 
-        # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-        sim = SimDynamics(sample=sample, pulse=pulse, end_time=18e-9, ini_temp=6., solver='RK45', max_step=1e-13)
+    # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
+    pulse = SimPulse(sample=sample, method='LB', pulse_width=60e-15, fluence=0.3, delay=1e-12, therm_time=tt)
 
-        # Run the simulation by calling the function that creates the map of all three baths
-        solution = sim.get_t_m_maps()
+    # Initialize the simulation with starting temperature and final time,
+    # the solver to be used and the maximum timestep:
+    sim = SimDynamics(sample=sample, pulse=pulse, end_time=1e-11, ini_temp=6., solver='RK45', max_step=1e-13)
 
-        # Save the data in a file with the desired name
-        sim.save_data(solution, save_file='CGT/fluence dependence/' + thickness + '_flu_' + str(f))
+    # Run the simulation by calling the function that creates the map of all three baths
+    solution = sim.get_t_m_maps()
 
+    # Save the data in a file with the desired name
+    sim.save_data(solution, save_file='therm_time_tests/'+str(tt))
