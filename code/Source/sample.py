@@ -11,11 +11,11 @@ class SimSample:
         # Also returns (all recalculated after addition of layers with self.add_layers):
         # mat_arr (numpy array) 1d-array of the materials at their respective positions in the sample
         # len (int). Number of layers in the sample
-        # mat_blocks (list of lists). Containing the number of subsequent layers of the same material in each sub_list.
-        # el_mask (boolean array). Mask showing at which position materials with itinerant electrons are placed.
-        # mag_mask (boolean array). Mask showing at which position magnetic materials are placed.
+        # mat_blocks (list of lists). Containing the number of subsequent layers of the same material in each sub_list
+        # el_mask (boolean array). Mask showing at which position materials with itinerant electrons are placed
+        # mag_mask (boolean array). Mask showing at which position magnetic materials are placed
         # tp2_mask (boolean array). Mask showing at which positions a second phononic system is to be considered
-        # mats, mat_ind (list, list). List of the different materials in the sample and their positions.
+        # mats, mat_ind (list, list). List of the different materials in the sample and their positions
         # mag_num (int). Number of magnetic materials in the sample.
         # kappa_p_int (numpy array). 1d-array of the interface constants of phononic heat diffusion. Starts empty,
         # recalculated after adding of layers
@@ -88,9 +88,11 @@ class SimSample:
         self.mat_blocks = self.get_material_changes()
         self.el_mask = self.get_free_electron_mask()
         self.mag_mask = self.get_magdyn_mask()
+        self.tp2_mask = self.get_tp2_mask()
         self.mats, self.mat_ind = self.get_mat_positions()
         self.mag_num = self.get_num_mag_mat()
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
+        self.len_tp2 = int(np.sum(np.ones(self.len)[self.tp2_mask]))
         self.el_mag_mask = self.get_el_mag_mask()
         self.n_comp_arr = np.append(self.n_comp_arr, n_comp)
         self.pen_dep_arr = np.append(self.pen_dep_arr, pen_dep)
@@ -171,6 +173,8 @@ class SimSample:
             kappa_p_sam[-1, 1] = 0.
             kappa_p_sam[:, 0] = np.roll(kappa_p_sam[:, 1], shift=1, axis=0)
             return kappa_p_sam
+        elif param == 'cp2_T':
+            return [mat.cp2_T_grid for mat in self.mats], [mat.cp2_T for mat in self.mats]
         else:
             return np.array([mat.__dict__[param] for mat in self.mat_arr])
 
