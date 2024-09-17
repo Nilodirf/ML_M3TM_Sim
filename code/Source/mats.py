@@ -57,7 +57,7 @@ class SimMaterials:
 
         self.tein = 0.75*tdeb
         self.cp_T_grid, self.cp_T = self.create_cp_T(self.cp_method, self.cp_max)
-        self.gpp = 0.
+        self.gpp = 0
         self.cp2_T_grid, self_cp2_T = None, None
         if muat == 0:
             self.R = 0

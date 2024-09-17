@@ -61,8 +61,10 @@ class SimDynamics:
 
         start_time = time.time()
 
-        len_sam = self.Sam.len
+        tem_mod = self.select_temp_dynamics()  # set things to None here
+        mag_mod = self.select_mag_dynamics()  # here as well!
 
+        len_sam = self.Sam.len
         len_sam_te = self.Sam.len_te
         el_mask = self.Sam.el_mask
         mag_mask = self.Sam.mag_mask
@@ -82,6 +84,7 @@ class SimDynamics:
         kappa_e_dz_pref = np.divide(kappa_e_sam, np.power(dz_sam, 2)[..., np.newaxis])[el_mask]
         kappa_p_dz_pref = np.divide(kappa_p_sam, np.power(dz_sam, 2)[..., np.newaxis])
         gpp_sam = self.Sam.get_params('gpp')
+        mat_tp2_ind = self.Sam.mat_tp2_ind
         j_sam = self.Sam.get_params('J')[mag_mask]
         spin_sam = self.Sam.get_params('spin')[mag_mask]
         arbsc_sam = self.Sam.get_params('arbsc')[mag_mask]
@@ -97,9 +100,6 @@ class SimDynamics:
         self.Pulse.show_info()
         print('Starting simulation')
         print()
-
-        tem_mod = self.select_temp_dynamics()  # set things to None here
-        mag_mod = self.select_mag_dynamics()  # here as well!
 
         te0, tp0 = self.initialize_temperature()  # different initializations with different sample setups!
         if mag_num != 0:
@@ -119,7 +119,8 @@ class SimDynamics:
         ts = np.concatenate((te0, tp0))
         config0 = np.concatenate((ts, fss_eq))
 
-        all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, len_sam, len_sam_te,
+        all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, tem_mod, mag_mod,
+                                                                                len_sam, len_sam_te,
                                                                                 mat_ind, el_mag_mask,
                                                                                 mag_mask, el_mask, ce_gamma_sam,
                                                                                 cp_sam_grid, cp_sam,
@@ -128,7 +129,8 @@ class SimDynamics:
                                                                                 kappa_p_dz_pref, j_sam, spin_sam,
                                                                                 arbsc_sam, s_up_eig_sq_sam,
                                                                                 s_dn_eig_sq_sam, ms_sam, mag_num,
-                                                                                vat_sam),
+                                                                                vat_sam, cp2_sam_grid, cp2_sam, gpp_sam,
+                                                                                tp2_mask, mat_tp2_ind),
                             t_span=(0, self.time_grid[-1]), y0=config0, t_eval=self.time_grid, method=self.solver,
                             max_step=self.max_step)
 
@@ -171,6 +173,8 @@ class SimDynamics:
         # tem_mod (object). Temperature model that holds the necessary dynamical functions
 
         if self.Sam.len_tp2 == 0:
+            self.Sam.gpp = None
+            self.Sam.tp2_mask = None
             if self.Sam.len == 1:
                 tem_mod = Sim11LL()
             else:
@@ -229,23 +233,27 @@ class SimDynamics:
         # Returns:
         # fss0 (numpy array). 1d-array of the initial spin configuration in reach magnetic layer
 
-        fss0 = []
+        if self.Sam.mag_num > 0:
+            fss0 = []
 
-        for mat in self.Sam.mat_arr:
-            if mat.muat != 0:
-                fss0.append(np.zeros(int(2*mat.spin+1)))
+            for mat in self.Sam.mat_arr:
+                if mat.muat != 0:
+                    fss0.append(np.zeros(int(2*mat.spin+1)))
 
-        fss0 = np.array(fss0)
-        fss0[:, 0] = 1
+            fss0 = np.array(fss0)
+            fss0[:, 0] = 1
+
+        else:
+            fss0 = np.array([None])
 
         return fss0
 
     @staticmethod
-    def get_t_m_increments(timestep, te_tp_fs_flat, len_sam, len_sam_te, mat_ind, el_mag_mask,
+    def get_t_m_increments(timestep, te_tp_fs_flat, tem_mod, mag_mod, len_sam, len_sam_te, mat_ind, el_mag_mask,
                            mag_mask, el_mask, ce_gamma_sam,
                            cp_sam_grid, cp_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
                            kappa_p_dz_pref, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                           ms_sam, mag_num, vat_sam):
+                           ms_sam, mag_num, vat_sam, cp2_sam_grid, cp2_sam, gpp_sam, tp2_mask, mat_tp2_ind):
         # This method joins other static methods to compute the increments of all three subsystems. It gets passed to
         # solve_ivp in the self.get_mag_map() method.
 
@@ -255,51 +263,32 @@ class SimDynamics:
         # Returns:
         # all_increments_flat (numpy array). Flattened 1d-array of the increments of T_e, T_p
         # and fs (spin-level occupation in the magnetic material)
+
+        # separate data:
         te = te_tp_fs_flat[:len_sam_te]
         tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
+        fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
+        fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
 
-        if mag_num != 0:
-            fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
-            fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
+        # magnetization dynamics:
+        mag = mag_mod.get_mag(fss, ms_sam, spin_sam)
+        dfs_dt = mag_mod.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
+                                     mag, fss, te, tp[:len_sam][mag_mask], el_mag_mask)
+        dm_dt = mag_mod.get_mag(dfs_dt, ms_sam, spin_sam)
+        mag_en_t = mag_mod.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
+        dfs_dt_flat = dfs_dt.flatten()
 
-            mag = SimMagnetism.get_mag(fss, ms_sam, spin_sam)
-            dfs_dt = SimMagnetism.mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
-                                              mag, fss, te, tp[mag_mask], el_mag_mask)
-            dm_dt = SimMagnetism.get_mag(dfs_dt, ms_sam, spin_sam)
-
-            mag_en_t = SimMagnetism.get_mag_en_incr(mag, dm_dt, j_sam, vat_sam)
-
-            dfs_dt_flat = dfs_dt.flatten()
-        else:
-            mag_en_t = 0
-            dfs_dt_flat = np.zeros(1)
-
-        # compute local interactions of temperatures and pulse:
-        cp_sam_t = np.zeros(len_sam)
-        for i, ind_list in enumerate(mat_ind):
-            cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
-            cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
+        # get temperature dependent parameters for temperature dynamics:
+        ce_sam_t = tem_mod.get_ce_t(te, ce_gamma_sam)
+        cp_sam_t = tem_mod.get_cp_t(tp[:len_sam], cp_sam_grid, cp_sam, mat_ind)
+        cp2_sam_t = tem_mod.get_cp_t(tp[len_sam:], cp2_sam_grid, cp2_sam, mat_tp2_ind)
         pulse_time = finderb(timestep, pulse_time_grid)[0]
         pulse_t = pulse_map[pulse_time][el_mask]
-        ce_sam_t = np.multiply(ce_gamma_sam, te)
 
-        dtp_dt = np.zeros(len_sam)
-
-        dte_dt, dtp_dt[el_mask] = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t[el_mask], gep_sam, te,
-                                                               tp[el_mask], pulse_t, mag_en_t, el_mag_mask)
-
-        # compute diffusion in temperature systems if the sample contains more than one layer:
-        if len(te) == 1:
-            dte_dt_diff = np.zeros(1)
-        else:
-            dte_dt_diff = SimTemperatures.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp[el_mask])
-        if len(tp) == 1:
-            dtp_dt_diff = np.zeros(1)
-        else:
-            dtp_dt_diff = SimTemperatures.phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp)
-
-        dte_dt += dte_dt_diff
-        dtp_dt += dtp_dt_diff
+        # temperature dynamics
+        dte_dt, dtp_dt= tem_mod.temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask,
+                                                   el_mag_mask, kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam,
+                                                   cp2_sam_t)
 
         # bring data of increments back into 1d array shape:
         dtep_dt = np.concatenate((dte_dt, dtp_dt))

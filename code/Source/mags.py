@@ -147,7 +147,7 @@ class SimNoMag(SimMagnetism):
 
     @staticmethod
     def get_mag(fs, ms_sam, spin_sam):
-        pass
+        return 0
 
     @staticmethod
     def get_mag_en_incr(mag, dm_dt, j_sam, vat_sam):

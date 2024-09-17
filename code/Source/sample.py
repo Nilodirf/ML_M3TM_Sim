@@ -45,6 +45,7 @@ class SimSample:
         self.pen_dep_arr = np.array([])
         self.dz_arr = np.array([])
         self.constituents = np.array([])
+        self.mat_tp2_ind = []
 
     def add_layers(self, material, dz, layers, kappap_int=None, kappae_int=None, n_comp=None, pen_dep=None):
         # This method lets us add layers to the sample. It also automatically recalculates other sample properties.
@@ -98,6 +99,7 @@ class SimSample:
         self.pen_dep_arr = np.append(self.pen_dep_arr, pen_dep)
         self.dz_arr = np.append(self.dz_arr, dz)
         self.constituents = np.append(self.constituents, material.name)
+        self. mat_tp2_ind = self.get_mat_tp2_positions()
 
         return self.mat_arr
 
@@ -278,7 +280,7 @@ class SimSample:
         # self (object). The sample in use
 
         # Returns:
-        # mats (list). List of the constituents of the sample, starting with the one closest to the laser pulse.
+        # mats (list). List of the different materials in the sample, starting with the one closest to the laser pulse.
         # mat_ind (list). List of the positions of each layer of material in the sample, positions stored in arrays
 
         mats = []
@@ -293,6 +295,30 @@ class SimSample:
                     mat_indices[j].append(i)
 
         return mats, [np.array(ind_list) for ind_list in mat_indices]
+
+    def get_mat_tp2_positions(self):
+        # This method determines the positions of the tp2 entries of each material with two phononic subsystems
+        # in the array tp2 = tp[SimDynamics.SimSample.len(sam):]
+
+        # Input:
+        # self (Reference). Reference to sample object in use
+
+        # Returns
+        # mat_tp2_indices (list). List of numpy arrays containing the indices of materials with two phononic subsystems
+        # in the tp2 array in the main simulation loop
+
+        mat_tp2s = [mat for mat in sample.mats if mat.gpp != 0]
+        mat_tp2_indices = []
+        start_pos = 0
+        for i, mat in enumerate(mat_tp2s):
+            n_mat = 0
+            for all_mat in self.mat_arr:
+                if all_mat == mat:
+                    n_mat +=1
+            mat_tp2_indices.apped(np.arange(start_pos, start_pos+n_mat))
+            start_pos += mat_tp2_indices[i][-1]
+
+        return mat_tp2_indices
 
     def get_num_mag_mat(self):
         # This method merely counts the number of magnetic materials in the sample, determined by whether the atomic
