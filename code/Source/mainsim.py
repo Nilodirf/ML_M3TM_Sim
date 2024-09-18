@@ -66,6 +66,7 @@ class SimDynamics:
 
         len_sam = self.Sam.len
         len_sam_te = self.Sam.len_te
+        len_sam_tp2 = self.Sam.len_tp2
         el_mask = self.Sam.el_mask
         mag_mask = self.Sam.mag_mask
         tp2_mask = self.Sam.tp2_mask
@@ -94,8 +95,8 @@ class SimDynamics:
         ms_sam = self.Sam.get_params('ms')
         vat_sam = self.Sam.get_params('vat')[mag_mask]
 
-        print('++++++++++++++++++++++++++++ Simulation setup complete ++++++++++++++++++++++++++++')
         print()
+        print('++++++++++++++++++++++++++++ Simulation setup complete ++++++++++++++++++++++++++++')
         self.Sam.show_info()
         self.Pulse.show_info()
         print('Starting simulation')
@@ -120,7 +121,7 @@ class SimDynamics:
         config0 = np.concatenate((ts, fss_eq))
 
         all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, tem_mod, mag_mod,
-                                                                                len_sam, len_sam_te,
+                                                                                len_sam, len_sam_te, len_sam_tp2,
                                                                                 mat_ind, el_mag_mask,
                                                                                 mag_mask, el_mask, ce_gamma_sam,
                                                                                 cp_sam_grid, cp_sam,
@@ -173,8 +174,6 @@ class SimDynamics:
         # tem_mod (object). Temperature model that holds the necessary dynamical functions
 
         if self.Sam.len_tp2 == 0:
-            self.Sam.gpp = None
-            self.Sam.tp2_mask = None
             if self.Sam.len == 1:
                 tem_mod = Sim11LL()
             else:
@@ -185,6 +184,7 @@ class SimDynamics:
         else:
             if self.Sam.len == 1 and self.Sam.len_te == 1:
                 tem_mod = Sim12LL()
+                print('At least I got here haha')
             else:
                 print('There is no implemented method that fits the sample construction!')
                 exit()
@@ -249,8 +249,8 @@ class SimDynamics:
         return fss0
 
     @staticmethod
-    def get_t_m_increments(timestep, te_tp_fs_flat, tem_mod, mag_mod, len_sam, len_sam_te, mat_ind, el_mag_mask,
-                           mag_mask, el_mask, ce_gamma_sam,
+    def get_t_m_increments(timestep, te_tp_fs_flat, tem_mod, mag_mod, len_sam, len_sam_te, len_sam_tp2,
+                           mat_ind, el_mag_mask, mag_mask, el_mask, ce_gamma_sam,
                            cp_sam_grid, cp_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
                            kappa_p_dz_pref, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
                            ms_sam, mag_num, vat_sam, cp2_sam_grid, cp2_sam, gpp_sam, tp2_mask, mat_tp2_ind):
@@ -266,8 +266,8 @@ class SimDynamics:
 
         # separate data:
         te = te_tp_fs_flat[:len_sam_te]
-        tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam]
-        fss_flat = te_tp_fs_flat[len_sam_te+len_sam:]
+        tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam+len_sam_tp2]
+        fss_flat = te_tp_fs_flat[len_sam_te+len_sam+len_sam_tp2:]
         fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
 
         # magnetization dynamics:
@@ -286,9 +286,9 @@ class SimDynamics:
         pulse_t = pulse_map[pulse_time][el_mask]
 
         # temperature dynamics
-        dte_dt, dtp_dt= tem_mod.temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask,
-                                                   el_mag_mask, kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam,
-                                                   cp2_sam_t)
+        dte_dt, dtp_dt = tem_mod.temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask, el_mag_mask,
+                                          kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t,
+                                          len_sam_tp2, len_sam)
 
         # bring data of increments back into 1d array shape:
         dtep_dt = np.concatenate((dte_dt, dtp_dt))
@@ -313,7 +313,7 @@ class SimDynamics:
         sim_delay = sim_results.t
         sim_results = sim_results.y.T
         tes = sim_results[:, :self.Sam.len_te]
-        tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len]
+        tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len+self.Sam.len_tp2]
 
         if self.Sam.mag_num != 0:
             fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
@@ -361,6 +361,12 @@ class SimDynamics:
             os.makedirs(sim_path)
         for file in os.listdir(sim_path):
             os.remove(os.path.join(sim_path, file))
+
+        if self.Sam.len_tp2 > 0:
+            sim_tp2s = np.zeros(self.Sam.len)
+            sim_tp2s[self.Sam.tp2_mask] = sim_tps[self.Sam.len:]
+            sim_tps  = sim_tps[:self.Sam.len]
+            np.save(sim_path + '/tp2s.npy', sim_tp2s)
 
         np.save(sim_path + '/tes.npy', sim_tes)
         np.save(sim_path + '/tps.npy', sim_tps)

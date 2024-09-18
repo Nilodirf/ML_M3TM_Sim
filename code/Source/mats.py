@@ -58,7 +58,7 @@ class SimMaterials:
         self.tein = 0.75*tdeb
         self.cp_T_grid, self.cp_T = self.create_cp_T(self.cp_method, self.cp_max)
         self.gpp = 0
-        self.cp2_T_grid, self_cp2_T = None, None
+        self.cp2_T_grid, self.cp2_T = None, None
         if muat == 0:
             self.R = 0
             self.J = 0
@@ -154,7 +154,7 @@ class SimMaterials:
         return heat_capacities
 
     def add_phonon_subsystem(self, gpp, cp2_method, cp2_max):
-        # This methods adds parameters of phonon-phonon coupling and heat capacity of a second phononic heat capacity
+        # This method adds parameters of phonon-phonon coupling and heat capacity of a second phononic heat capacity
         # to the initiated material.
 
         # Input:
@@ -184,3 +184,5 @@ class SimMaterials:
         plt.ylabel(r'$C_p$(T) [MJ/(m$^3$K)]', fontsize=16)
         plt.plot(self.cp_T_grid, np.array(self.cp_T)*1e-6, lw=2.0)
         plt.show()
+
+        return

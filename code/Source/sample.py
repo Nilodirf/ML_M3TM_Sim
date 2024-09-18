@@ -307,15 +307,15 @@ class SimSample:
         # mat_tp2_indices (list). List of numpy arrays containing the indices of materials with two phononic subsystems
         # in the tp2 array in the main simulation loop
 
-        mat_tp2s = [mat for mat in sample.mats if mat.gpp != 0]
+        mat_tp2s = [mat for mat in self.mats if mat.gpp != 0]
         mat_tp2_indices = []
         start_pos = 0
         for i, mat in enumerate(mat_tp2s):
             n_mat = 0
             for all_mat in self.mat_arr:
                 if all_mat == mat:
-                    n_mat +=1
-            mat_tp2_indices.apped(np.arange(start_pos, start_pos+n_mat))
+                    n_mat += 1
+            mat_tp2_indices.append(np.arange(start_pos, start_pos+n_mat))
             start_pos += mat_tp2_indices[i][-1]
 
         return mat_tp2_indices

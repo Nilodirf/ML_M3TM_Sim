@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import constants as sp
+from scipy.integrate import solve_ivp
 
 
 class SimMagnetism:

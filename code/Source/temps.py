@@ -37,7 +37,7 @@ class SimTemperatures:
         de_dt[el_mag_mask] = mag_en_t
         de_dt = np.divide(de_dt, ce_sam_t)
 
-        dp_dt = -np.divide(e_p_coupling, cp_sam_t)
+        dp_dt = -np.divide(e_p_coupling, cp_sam_t[el_mask])
 
         return de_dt, dp_dt
 
@@ -112,34 +112,63 @@ class SimTemperatures:
 
     @staticmethod
     def get_ce_t(te, ce_sam):
+        # This method computes the electronic heat capacity of all layers of the sample. For now, only the linear
+        # Sommerfeld approximation is implemented.
+
+        # Input:
+        # te (numpy array). 1d array of the electron temperatures of all relevant layers
+        # ce_sam (numpy array). 1d array of the Sommerfeld coefficients of all relevant layers
+
+        # Returns:
+        # ce_sam*te (numpy array). 1d array of the Sommerfeld heat capacities of all relevant layers
+
         return ce_sam*te
 
     @staticmethod
     def get_cp_t(tp, cp_sam_grid, cp_sam, index_list):
+        # This method looks up the closest precomputed values of phononic heat capacities available and returns the
+        # phononic heat capacities for each requested layer in the sample
+
+        # Input:
+        # tp (numpy array). 1d array of the phononic temperatures in question
+        # cp_sam_grid (numpy array). 2d array holding the temperatures for which the lattice heat capacity was
+        # pre-computed (2nd dimension) for each material in the sample (1st dimension)
+        # cp_sam (numpy array). 2d array with the corresponding values of heat capacity to cp_sam_grid
+        # index_list (list). List of numpy arrays that holds the indices of layer positions (2nd dimension) of each
+        # requested material in the sample (1st dimension)
+
+        # Returns:
+        # cp_sam_t (numpy array). 1d-array of the lattice heat capcities for each requested layer of the sample
+
         cp_sam_t = np.zeros_like(tp)
         for i, ind_list in enumerate(index_list):
             cp_sam_grid_t = finderb(tp[ind_list], cp_sam_grid[i])
             cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
 
+        return cp_sam_t
+
     @staticmethod
     def temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask, el_mag_mask,
-                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t):
-        raise NotImplementedError("Subclasses must override this method")
+                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t, len_sam_tp2, len_sam):
+        # This method must be overwritten by selecting a proper temperature model in the main simulation function.
+        # It is merely a placeholder.
+
+        raise NotImplementedError("Subclasses must override the SimTemperatures.temp_dyn() method.")
 
 
 class Sim11DD(SimTemperatures):
     @staticmethod
     def temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask, el_mag_mask,
-                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t):
+                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t, len_sam_tp2, len_sam):
         # This method combines the update functions defined in SimTemperatures for a setup of a 2TM with N>1 layers with
         # electronic subsystem, thus including diffusion calculation in e and p subsystems.
 
         dtp_dt = np.zeros(len_sam)
 
-        dte_dt, dtp_dt[el_mask] = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp[el_mask], pulse_t,
-                                                               mag_en_t, el_mag_mask)
+        dte_dt, dtp_dt[el_mask] = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t, mag_en_t,
+                                                               el_mask,  el_mag_mask)
 
-        dte_dt += SimTemperatures.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp)
+        dte_dt += SimTemperatures.electron_diffusion(kappa_e_dz_pref, ce_sam_t, te, tp[el_mask])
 
         dtp_dt += SimTemperatures.phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp)
 
@@ -149,14 +178,14 @@ class Sim11DD(SimTemperatures):
 class Sim11LD(SimTemperatures):
     @staticmethod
     def temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask, el_mag_mask,
-                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t):
+                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t, len_sam_tp2, len_sam):
         # This method combines the update functions defined in SimTemperatures for a setup of a 2TM with N>1 layers with
         # only 1 layer with el. subsystem, thus including diffusion calculation in only p subsystem.
 
         dtp_dt = np.zeros(len_sam)
 
-        dte_dt, dtp_dt[el_mask] = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp[el_mask], pulse_t,
-                                                      mag_en_t, el_mag_mask)
+        dte_dt, dtp_dt[el_mask] = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t, mag_en_t,
+                                                               el_mask,  el_mag_mask)
 
         dtp_dt += SimTemperatures.phonon_diffusion(kappa_p_dz_pref, cp_sam_t, tp)
 
@@ -166,12 +195,12 @@ class Sim11LD(SimTemperatures):
 class Sim11LL(SimTemperatures):
     @staticmethod
     def temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask, el_mag_mask,
-                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t):
+                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t, len_sam_tp2, len_sam):
         # This method combines the update functions defined in SimTemperatures for a setup of a 2TM 1 layer,
         # thus no temperature diffusion is computed.
 
-        dte_dt, dtp_dt = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t,
-                                                      mag_en_t, el_mag_mask)
+        dte_dt, dtp_dt = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t, mag_en_t,
+                                                      el_mask,  el_mag_mask)
 
         return dte_dt, dtp_dt
 
@@ -179,28 +208,17 @@ class Sim11LL(SimTemperatures):
 class Sim12LL(SimTemperatures):
     @staticmethod
     def temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask, el_mag_mask,
-                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t):
+                 kappa_e_dz_pref, kappa_p_dz_pref, tp2_mask, gpp_sam, cp2_sam_t, len_sam_tp2, len_sam):
         # This method combines the update functions defined in SimTemperatures for a setup of a 1+2TM 1 layer,
         # thus no temperature diffusion is computed, but phonon_phonon coupling is.
 
-        tp1 = tp[:len(tp)-len(tp[tp2_mask])]
-        tp2 = tp[len(tp)-len(tp[tp2_mask]):]
+        tp1 = tp[:len_sam-len_sam_tp2]
+        tp2 = tp[len_sam-len_sam_tp2:]
 
-        dte_dt, dtp1_dt = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp1[el_mask], pulse_t,
-                                                      mag_en_t, el_mag_mask)
+        dte_dt, dtp1_dt = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t, mag_en_t,
+                                                       el_mask,  el_mag_mask)
         dtp1_dt_pp, dtp2_dt = SimTemperatures.phonon_phonon_coupling(gpp_sam, cp_sam_t, cp2_sam_t, tp1[tp2_mask], tp2)
-        dtp1_dt += dtp1_dt_pp
+        dtp1_dt[tp2_mask] += dtp1_dt_pp
         dtp_dt = np.concatenate(dtp1_dt, dtp2_dt)
 
         return dte_dt, dtp_dt
-
-
-# Somehow initialize temperatures beforehand to figure out which function to use, probably have to do
-# if len(sam) > 1 and len_te > 1:
-#   tempdyn = Sim11DD(some_input_I_guess)
-# elif len(sam) > 1 and len_te == 1:
-#   tempdyn = Sim11ND(some_input_I_guess)
-# elif len(sam) > 1 and len_te > 1 and len_tp2 >0:
-#   tempdyn = Sim21DD(some_input_I_guess)
-
-## some_input_I_guess is unnecessary!!
