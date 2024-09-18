@@ -28,7 +28,6 @@ sample.add_layers(material=cgt, layers=1,  dz=2e-9, kappap_int=100., pen_dep=30e
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
 pulse = SimPulse(sample=sample, method='Abeles', pulse_width=60e-15, fluence=0.5, delay=1e-12, photon_energy_ev=1.55, phi=1/2, theta=1/2*8/9)
-pulse.visualize(axis='z')
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
 sim = SimDynamics(sample=sample, pulse=pulse, end_time=1e-11, ini_temp=6., solver='RK23', max_step=1e-13)

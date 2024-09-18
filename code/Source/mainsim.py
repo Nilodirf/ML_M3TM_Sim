@@ -184,7 +184,6 @@ class SimDynamics:
         else:
             if self.Sam.len == 1 and self.Sam.len_te == 1:
                 tem_mod = Sim12LL()
-                print('At least I got here haha')
             else:
                 print('There is no implemented method that fits the sample construction!')
                 exit()
@@ -313,10 +312,10 @@ class SimDynamics:
         sim_delay = sim_results.t
         sim_results = sim_results.y.T
         tes = sim_results[:, :self.Sam.len_te]
-        tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len+self.Sam.len_tp2]
+        tps = sim_results[:, self.Sam.len_te:self.Sam.len_te + self.Sam.len + self.Sam.len_tp2]
 
         if self.Sam.mag_num != 0:
-            fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len:]
+            fss_flat = sim_results[:, self.Sam.len_te + self.Sam.len + self.Sam.len_tp2:]
             fss = np.reshape(fss_flat, (len(sim_delay), self.Sam.mag_num,
                              int(2*self.Sam.get_params('spin')[self.Sam.mag_mask][0]+1)))
             mags = self.get_mag_results(fss)
@@ -363,9 +362,9 @@ class SimDynamics:
             os.remove(os.path.join(sim_path, file))
 
         if self.Sam.len_tp2 > 0:
-            sim_tp2s = np.zeros(self.Sam.len)
-            sim_tp2s[self.Sam.tp2_mask] = sim_tps[self.Sam.len:]
-            sim_tps  = sim_tps[:self.Sam.len]
+            sim_tp2s = np.zeros((len(sim_tps), self.Sam.len_tp2))
+            sim_tp2s[:, self.Sam.tp2_mask] = sim_tps[: ,self.Sam.len:]
+            sim_tps = sim_tps[:, :self.Sam.len]
             np.save(sim_path + '/tp2s.npy', sim_tp2s)
 
         np.save(sim_path + '/tes.npy', sim_tes)

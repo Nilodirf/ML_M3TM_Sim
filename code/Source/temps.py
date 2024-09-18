@@ -212,13 +212,13 @@ class Sim12LL(SimTemperatures):
         # This method combines the update functions defined in SimTemperatures for a setup of a 1+2TM 1 layer,
         # thus no temperature diffusion is computed, but phonon_phonon coupling is.
 
-        tp1 = tp[:len_sam-len_sam_tp2]
-        tp2 = tp[len_sam-len_sam_tp2:]
+        tp1 = tp[:len_sam]
+        tp2 = tp[len_sam:]
 
-        dte_dt, dtp1_dt = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp, pulse_t, mag_en_t,
+        dte_dt, dtp1_dt = SimTemperatures.loc_temp_dyn(ce_sam_t, cp_sam_t, gep_sam, te, tp1, pulse_t, mag_en_t,
                                                        el_mask,  el_mag_mask)
         dtp1_dt_pp, dtp2_dt = SimTemperatures.phonon_phonon_coupling(gpp_sam, cp_sam_t, cp2_sam_t, tp1[tp2_mask], tp2)
         dtp1_dt[tp2_mask] += dtp1_dt_pp
-        dtp_dt = np.concatenate(dtp1_dt, dtp2_dt)
+        dtp_dt = np.concatenate((dtp1_dt, dtp2_dt))
 
         return dte_dt, dtp_dt
