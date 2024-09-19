@@ -130,15 +130,25 @@ class SimMagnetism:
         return mag * dm_dt * j_sam / vat_sam
 
     @staticmethod
-    def separate(fss_flat, mag_num, spin_sam):
-        # This method stacks the occupations of spin levels in
+    def stack(fss_flat, mag_num, spin_sam):
+        # This method stacks the occupations of spin levels in all magnetic layers of the sample.
+
+        # Input:
+        # fss_flat (numpy array). 1d array of the flattened spin level occupations
+        # mag_num (int). Number of magnetic layers in the sample
+        # spin_sam (numpy array). 1d array of the effective spins of magnetic layers in the sample
+
+        # Returns:
+        # fss_flat (numpy array). 2d array of the occupations of spin levels (2nd dimension) in all magnetic layers
+        # (1st dimension)
+
         fss = np.reshape(fss_flat, (mag_num, (int(2 * spin_sam[0] + 1))))
 
         return fss
 
 
 class SimNoMag(SimMagnetism):
-    # This class defines the trivial magnetization methods in case the simulated sample has no magnetic subsystem
+    # This class defines the trivial magnetization methods in case the simulated sample has no magnetic subsystem.
 
     @staticmethod
     def equilibrate_mag(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, fs0, te0, tp0,
@@ -151,7 +161,7 @@ class SimNoMag(SimMagnetism):
 
     @staticmethod
     def mag_occ_dyn(j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam, mag, fs, te, tp, el_mag_mask):
-        return np.array([None])
+        return np.array([0])
 
     @staticmethod
     def get_mag(fs, ms_sam, spin_sam):
@@ -162,5 +172,5 @@ class SimNoMag(SimMagnetism):
         return 0
 
     @staticmethod
-    def separate(fss_flat, mag_num, spin_sam):
-        return np.array([None])
+    def stack(fss_flat, mag_num, spin_sam):
+        return np.array([0])

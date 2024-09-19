@@ -5,7 +5,7 @@ from ..Plot.plot import SimComparePlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='CGT Paper/sharp_angle')
+plotter = SimPlot(file='m4tm_test/bla')
 
 # plotter.convert_to_dat()
 
@@ -14,13 +14,13 @@ plotter = SimPlot(file='CGT Paper/sharp_angle')
 
 # plotter.map_plot(key='mag', kind='surface', max_time=2000, save_fig=False, filename='tutorial_mag', show_title=False, color_scale='inferno', vmin=0, vmax=1)
 # plotter.map_plot(key='te', kind='surface', save_fig=False, filename='fullsam_te', show_title=False, color_scale='Reds')
-plotter.map_plot(key='tp', kind='surface', save_fig=False, filename='fullsam_tp', show_title=False, color_scale='Blues')
+# plotter.map_plot(key='te', kind='surface', save_fig=False, filename='fullsam_tp', show_title=False, color_scale='Blues')
 
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
 # plotter.line_plot(key='tp', average=False, save_fig=False)
-# plotter.line_plot(key='te', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
-# plotter.line_plot(key='tp', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
+plotter.line_plot(key='te', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
+plotter.line_plot(key='tp', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
 
 plotter.line_plot(key='mag', average=True, save_fig=False, norm=False)
 

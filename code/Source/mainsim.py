@@ -266,7 +266,7 @@ class SimDynamics:
         # separate data:
         te, tp = tem_mod.separate(te_tp_fs_flat, len_sam, len_sam_te, len_sam_tp2)
         fss_flat = np.delete(te_tp_fs_flat, slice(0, len_sam + len_sam_te + len_sam_tp2))
-        fss = mag_mod.separate(fss_flat, mag_num, spin_sam)
+        fss = mag_mod.stack(fss_flat, mag_num, spin_sam)
 
         # magnetization dynamics:
         mag = mag_mod.get_mag(fss, ms_sam, spin_sam)

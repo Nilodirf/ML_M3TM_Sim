@@ -34,7 +34,7 @@ class SimTemperatures:
         e_p_coupling = np.multiply(gep_sam, (tp[el_mask] - te))
 
         de_dt = e_p_coupling + pulse_t
-        de_dt[el_mag_mask] = mag_en_t
+        de_dt[el_mag_mask] += mag_en_t
         de_dt = np.divide(de_dt, ce_sam_t)
 
         dp_dt = -np.divide(e_p_coupling, cp_sam_t[el_mask])

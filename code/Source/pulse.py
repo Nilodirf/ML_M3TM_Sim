@@ -77,7 +77,7 @@ class SimPulse:
         # Returns:
         # pump_time_grid (numpy array). 1d-array of the time grid on which the therm. electron-pulse interaction
         # is defined
-        # pump_map (numpy array). 2d-array of the corresponding aborbed energies of the therm. electrons
+        # pump_map (numpy array). 2d-array of the corresponding absorbed energies of the therm. electrons
         # on the interaction time grid (first dimension) and for the whole sample (second dimension)
         # abs_flu (float). Total absorbed fluence of the sample
         # ref_flu (float). Total reflected fluence
