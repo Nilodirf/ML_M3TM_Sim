@@ -182,7 +182,9 @@ class SimMaterials:
         plt.figure(figsize=(8, 6))
         plt.xlabel(r'Temperature [K]', fontsize=16)
         plt.ylabel(r'$C_p$(T) [MJ/(m$^3$K)]', fontsize=16)
-        plt.plot(self.cp_T_grid, np.array(self.cp_T)*1e-6, lw=2.0)
+        plt.plot(self.cp_T_grid, np.array(self.cp_T)*1e-6, lw=2.0, label=r'$C_{p}$')
+        if self.cp2_T_grid is not None and self.cp2_T is not None:
+            plt.plot(self.cp2_T_grid, np.array(self.cp2_T)*1e-6, lw=2.0, label = r'$C_{p2}$')
         plt.show()
 
         return

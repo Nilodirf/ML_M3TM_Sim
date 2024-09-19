@@ -146,6 +146,23 @@ class SimTemperatures:
             cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
 
         return cp_sam_t
+    @staticmethod
+    def separate(te_tp_fs_flat, len_sam, len_sam_te, len_sam_tp2):
+        # This method separates the electron and phonon temperatures from the 1 dimensional increments of all subsystems
+        # computed in SimDynamics.get_t_m_increments()
+
+        # Input:
+        # te_p_fs_flat (numpy array). 1d array of the concatenated increments
+        # len_sam, len_sam_te, len_sam_tp2 (ints). Number of layers in the sample, with electron temperature, with two
+        # phonon systems
+
+        # Returns:
+        # te, tp (numpy arrays). 1d arrays of the electronic and phononic temperatures
+
+        te = te_tp_fs_flat[:len_sam_te]
+        tp = te_tp_fs_flat[len_sam_te:len_sam_te+len_sam+len_sam_tp2]
+
+        return te, tp
 
     @staticmethod
     def temp_dyn(te, tp, ce_sam_t, cp_sam_t, gep_sam, pulse_t, mag_en_t, el_mask, el_mag_mask,
