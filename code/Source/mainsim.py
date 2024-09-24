@@ -7,7 +7,6 @@ from datetime import datetime
 
 from .finderb import finderb
 
-from .temps import SimTemperatures
 from .temps import Sim11LL
 from .temps import Sim11LD
 from .temps import Sim11DD

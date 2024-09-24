@@ -26,7 +26,8 @@ class SimMaterials:
         # in J/m**3/K (set to 0 if no itinerant electrons)
         # cp_max (float). Maximal phononic heat capacity in W/m**3/K. Temperature dependence
         # is computed with Einstein model or Debye model depending on the parameter:
-        # cp_method (String). 'Einstein' for Einstein model, 'Debye' for Debye model
+        # cp_method (String). 'Einstein' for Einstein model, 'Debye' for Debye model, any other string must be a file
+        # location that can be read out with np.loadtxt()
 
         # Also returns:
         # tein (float). The approximate Einstein temperature in relation to the Debye temperature.

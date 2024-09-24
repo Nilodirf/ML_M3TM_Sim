@@ -118,14 +118,11 @@ class SimPulse:
         raw_pump_grid = np.exp(-((raw_pump_time_grid - p_del) / sigma) ** 2 / 2)
         pump_grid = np.append(np.zeros_like(until_pump_start_time), raw_pump_grid)
 
-        interaction_time_grid = pump_time_grid
-        interaction_grid = pump_grid
-
         if self.therm_time is not None and self.therm_time > 0.:
             # extend the pulse interaction time to the time of (more or less) full thermalization of electrons:
             end_interaction_time = end_pump_time + 4 * self.therm_time
             after_pulse_time = np.arange(end_pump_time, end_interaction_time, 1e-16)
-            interaction_time_grid = np.append(interaction_time_grid, after_pulse_time)
+            interaction_time_grid = np.append(pump_time_grid, after_pulse_time)
             pump_grid = np.append(pump_grid, np.zeros_like(after_pulse_time))
 
             # round time grids:
@@ -140,11 +137,15 @@ class SimPulse:
             # convolute:
             interaction_grid = np.cumsum(pump_grid*(gaussian_lag-gaussian_lag_shifted))
 
-        interaction_time_grid = np.append(pump_time_grid, end_pump_time + 1e-15)
+        else:
+            interaction_time_grid = pump_time_grid
+            interaction_grid = pump_grid
+            end_interaction_time = end_pump_time
+
+        interaction_time_grid = np.append(interaction_time_grid, end_interaction_time + 1e-15)
         interaction_grid = np.append(interaction_grid, 0.)
 
         return interaction_time_grid, interaction_grid
-
 
     def depth_profile(self, pump_grid):
         # This method computes the depth dependence of the laser pulse. Either from Lambert-Beer law or from Abeles'
@@ -187,11 +188,17 @@ class SimPulse:
                                     pendep_sam[first_layer:last_layer]).astype(float)
                 power_in_block = max_intensity/pendep_sam[first_layer:last_layer] * np.exp(-pen_red)
                 powers = np.append(powers, power_in_block)
-                abs_flu_per_block.append(np.sum(power_in_block*dz_sam[first_layer:last_layer])*np.sqrt(2*np.pi)*self.pulse_width/10)
+                if self.Sam.len == 1:
+                    abs_flu_per_block.append(self.fluence)
+                else:
+                    abs_flu_per_block.append(np.sum(power_in_block*dz_sam[first_layer:last_layer])*np.sqrt(2*np.pi)*self.pulse_width/10)
                 max_intensity = powers[-1]*pendep_sam[last_layer-1]
                 first_layer = last_layer
                 already_penetrated = 1
-            abs_flu = np.sum(powers*dz_sam) * (np.sqrt(2*np.pi)*self.pulse_width/10)
+            if self.Sam.len == 1:
+                abs_flu = self.fluence
+            else:
+                abs_flu = np.sum(powers*dz_sam) * (np.sqrt(2*np.pi)*self.pulse_width/10)
             trans_flu = self.fluence-abs_flu
             ref_flu = 0
             rel_err = None
@@ -373,10 +380,10 @@ class SimPulse:
         if axis == 't':
             norm = np.amax(self.pulse_map)
             j = 0
-            max = 0.
+            max_int = 0.
             for layer_index in range(self.Sam.len):
-                if self.pulse_map[:, layer_index].any() > max:
-                    max = np.amax(self.pulse_map[:, layer_index])
+                if self.pulse_map[:, layer_index].any() > max_int:
+                    max_int = np.amax(self.pulse_map[:, layer_index])
                     j = layer_index
             plt.plot(self.pulse_time_grid, self.pulse_map[:, j]/norm)
             plt.xlabel(r'delay [ps]', fontsize=16)

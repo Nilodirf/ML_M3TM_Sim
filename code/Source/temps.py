@@ -146,6 +146,7 @@ class SimTemperatures:
             cp_sam_t[ind_list] = cp_sam[i][cp_sam_grid_t]
 
         return cp_sam_t
+
     @staticmethod
     def separate(te_tp_fs_flat, len_sam, len_sam_te, len_sam_tp2):
         # This method separates the electron and phonon temperatures from the 1 dimensional increments of all subsystems

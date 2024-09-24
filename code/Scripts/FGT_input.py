@@ -4,36 +4,34 @@
 # Short documentation of the simulation setup is given before each block here.
 
 # Import classes from other files to set up materials, sample, pulse and the dynamical functions:
-from ..Source.mats import SimMaterials
-from ..Source.sample import SimSample
-from ..Source.pulse import SimPulse
-from ..Source.mainsim import SimDynamics
+from code.Source.mats import SimMaterials
+from code.Source.sample import SimSample
+from code.Source.pulse import SimPulse
+from code.Source.mainsim import SimDynamics
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
-hbn = SimMaterials(name='hBN', tdeb=400, vat=1e-28, ce_gamma=0., cp_max=2.645e6, kappap=5.0,
-                   kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0., cp_method='Debye')
-cgt = SimMaterials(name='CGT', tdeb=200, vat=1e-28, ce_gamma=737.87, cp_max=1.4e6,
-                   kappap=1., kappae=0.0016, gep=15e16, spin=1., tc=60., muat=1., asf=0.1, cp_method='Debye')
-sio2 = SimMaterials(name='SiO2', tdeb=470, vat=1e-28, ce_gamma=0., cp_max=2e6, kappap=1.5,
-                    kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0., cp_method='Debye')
 
-# cgt.add_phonon_subsystem(gpp=1e17, cp2_method='input_data/FGT/FGT_c_p2.txt', cp2_max=None)
+FGT = SimMaterials(name='Fe3GeTe2', cp_max=None, cp_method='input_data/FGT/FGT_c_p1.txt', tdeb=232.,  kappap=0.,
+                   ce_gamma=210., gep=4.3e17,
+                   asf=0.025, spin=2, tc=232., vat=10e-30, muat=1.6)
+
+FGT.add_phonon_subsystem(gpp=1.9e17, cp2_max=None, cp2_method='input_data/FGT/FGT_c_p2.txt')
 
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
-
 sample = SimSample()
-sample.add_layers(material=cgt, layers=1,  dz=2e-9, kappap_int=100., pen_dep=30e-9, n_comp=4.+1.8j)
-# sample.add_layers(material=sio2, layers=10, dz=2e-9, kappap_int=625., pen_dep=1, n_comp=1.45)
+sample.add_layers(material=FGT, layers=1,  dz=1.7e-9, pen_dep=1e-9)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='LB', delay=0.6e-12, fluence=0.5, pulse_width=60e-15)
+# Fluence with pen_dep=1nm; Te:9.8e-3, mag:49e-3, Tp:38e-3
+pulse = SimPulse(sample=sample, method='LB', pulse_width=15e-15, fluence=9.8e-3, delay=1e-12, therm_time=1e-12)
+pulse.visualize(axis='t')
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=1e-11, ini_temp=6., solver='RK23', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=11e-12, ini_temp=100., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='m4tm_test/bla')
+sim.save_data(solution, save_file='FGT/therm_time/try_1')
