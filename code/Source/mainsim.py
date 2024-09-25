@@ -156,7 +156,7 @@ class SimDynamics:
             rest_time_grid = np.arange(start_time_grid[-1] + 1e-15, np.round(self.end_time, 15), 1e-15)
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
         else:
-            ep_time_grid = np.arange(start_time_grid[-1] + 1e-15, 5e-12, 1e-15)
+            ep_time_grid = np.arange(start_time_grid[-1] + 1e-15, start_time_grid[-1]+5e-12, 1e-15)
             rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-14, self.end_time, 1e-14)))
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
 
@@ -411,6 +411,7 @@ class SimDynamics:
             params_file.write('Polarization angle: ' + str(self.Pulse.phi/np.pi) + ' pi' +'\n')
         params_file.write('Sigma = ' + str(self.Pulse.pulse_width) + ' [s]' + '\n')
         params_file.write('Delay = ' + str(self.Pulse.delay) + ' [s]' + '\n')
+        params_file.write('Thermalization time:' + str(self.Pulse.therm_time) + ' [s]' + '\n')
         params_file.write('Incident fluence = ' + str(self.Pulse.fluence) + ' [mJ/cm^2]' + '\n')
         params_file.write('Absorbed fluence = ' + str(self.Pulse.abs_flu) + ' [mJ/cm^2]' + '\n')
         params_file.write('Reflected fluence = ' + str(self.Pulse.ref_flu) + ' [mJ/cm^2]' + '\n')
@@ -421,6 +422,11 @@ class SimDynamics:
         params_file.write('##Interface parameters' + '\n')
         params_file.write('kappa_e_int = ' + str(self.Sam.kappa_e_int/self.Sam.dz_arr[1:]) + ' [MW/m^2/K]' + '\n')
         params_file.write('kappa_p_int = ' + str(self.Sam.kappa_p_int/self.Sam.dz_arr[1:]) + ' [MW/m^2/K]' + '\n')
+        if self.Sam.len_tp2 > 0:
+            params_file.write('##Two phonon systems simulated' + '\n')
+            params_file.write('gpp = ' + str([mat.gpp for mat in mats]) + ' [W/m^3/K]' + '\n')
+            params_file.write('cp2 method = ' + str([mat.cp2_method for mat in mats]) + '\n')
+            params_file.write('cp2_max = ' + str([mat.cp2_max for mat in mats]) + ' [J/m^3/K]' + '\n')
         params_file.close()
 
         return

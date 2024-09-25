@@ -124,6 +124,8 @@ class SimPulse:
             after_pulse_time = np.arange(end_pump_time, end_interaction_time, 1e-16)
             interaction_time_grid = np.append(pump_time_grid, after_pulse_time)
             pump_grid = np.append(pump_grid, np.zeros_like(after_pulse_time))
+            plt.plot(interaction_time_grid, pump_grid)
+            plt.show()
 
             # round time grids:
             np.round(pump_time_grid, 16)
@@ -131,11 +133,14 @@ class SimPulse:
 
             # compute the lag function:
             gaussian_lag = 1-np.exp(-(interaction_time_grid/self.therm_time)**2)
-            gaussian_lag_shifted = np.roll(gaussian_lag, 1)
-            gaussian_lag_shifted[0] = 0.
+            lag_difference = np.diff(gaussian_lag)
+            lag_difference = np.append(np.zeros(1), lag_difference)
 
-            # convolute:  # This needs a BIG FIX, I have written the concept in the Angelika block
-            interaction_grid = np.cumsum(pump_grid*(gaussian_lag-gaussian_lag_shifted))
+            interaction_grid = np.zeros_like(lag_difference)
+
+            for i in range(len(interaction_grid)):
+                interaction_grid[i] = np.sum(pump_grid[:i]*np.flip(lag_difference[:i]))
+                # this needs some minor adjustment here to account for a shift of 1 in one of them...
 
         else:
             interaction_time_grid = pump_time_grid
