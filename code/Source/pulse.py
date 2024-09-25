@@ -134,7 +134,7 @@ class SimPulse:
             gaussian_lag_shifted = np.roll(gaussian_lag, 1)
             gaussian_lag_shifted[0] = 0.
 
-            # convolute:
+            # convolute:  # This needs a BIG FIX, I have written the concept in the Angelika block
             interaction_grid = np.cumsum(pump_grid*(gaussian_lag-gaussian_lag_shifted))
 
         else:
