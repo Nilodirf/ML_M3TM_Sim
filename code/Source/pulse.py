@@ -124,8 +124,6 @@ class SimPulse:
             after_pulse_time = np.arange(end_pump_time, end_interaction_time, 1e-16)
             interaction_time_grid = np.append(pump_time_grid, after_pulse_time)
             pump_grid = np.append(pump_grid, np.zeros_like(after_pulse_time))
-            plt.plot(interaction_time_grid, pump_grid)
-            plt.show()
 
             # round time grids:
             np.round(pump_time_grid, 16)
@@ -422,7 +420,8 @@ class SimPulse:
 
             if save_fig:
 
-                assert save_file is not None, 'If you wish to save, please introduce a name for the file with save_file=\'name\''
+                assert save_file is not None, ('If you wish to save, please introduce a name for the file'
+                                               'with save_file=\'name\'')
 
                 save_path = 'Results/' + str(save_file) + '.pdf'
 
@@ -443,7 +442,8 @@ class SimPulse:
             cbar.set_label(r'absorbed pump power density [W/m$^3$]', rotation=270, labelpad=15)
 
             if save_fig:
-                assert save_file is not None, 'If you wish to save, please introduce a name for the file with save_file=\'name\''
+                assert save_file is not None, ('If you wish to save, please introduce a name for the file'
+                                               'with save_file=\'name\'')
                 plt.savefig('Results/' + save_file + '.png')
 
             plt.show()

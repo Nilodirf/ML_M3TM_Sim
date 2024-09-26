@@ -41,6 +41,13 @@ class SimMaterials:
         # s_up_eig_squared (numpy array/None). Eigenvalues of the creation spin ladder operator for all spin sublevels
         # s_dn_eig_squared (numpy array/None). Eigenvalues of the annihilation spin ladder operator
         # for all spin sublevels
+        # gpp (float). Phonon-phonon coupling parameter for potential second phonon subsystem. Default is 0
+        # cp2_method (String). 'Einstein' for Einstein model, 'Debye' for Debye model, any other string must be a file
+        # location that can be read out with np.loadtxt(). For a potential second phonon system. Default is None
+        # cp2_max (float). Maximal phononic heat capacity in W/m**3/K. For potential second phonon system. Default
+        # is None
+        # cp_T_grid, cp_T (numpy arrays). Arrays of (i) the temperature grid on which the Einstein
+        # heat capacity is computed and (ii) the corresponding cp values. For potential second phonon system
 
         self.name = name
         self.tdeb = tdeb
@@ -59,6 +66,8 @@ class SimMaterials:
         self.tein = 0.75*tdeb
         self.cp_T_grid, self.cp_T = self.create_cp_T(self.cp_method, self.cp_max)
         self.gpp = 0
+        self.cp2_method = None
+        self.cp2_max = None
         self.cp2_T_grid, self.cp2_T = None, None
         if muat == 0:
             self.R = 0
@@ -167,6 +176,8 @@ class SimMaterials:
         # __void function__
 
         self.gpp = gpp
+        self.cp2_method = cp2_method
+        self.cp2_max = cp2_max
         self. cp2_T_grid, self.cp2_T = self.create_cp_T(cp2_method, cp2_max)
 
         return
