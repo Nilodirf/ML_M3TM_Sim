@@ -100,7 +100,8 @@ def plot_tp(file, figure, axs, show_exp=True):
     temp_indices = finderb(tp, temp)
     cp = cp_temp[temp_indices]
     ep = cp*tp[:, 0]
-    axs[2].plot(delay, ep, color='blue')
+    ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * 0.4
+    axs[2].plot(delay, ep_norm, color='blue', alpha=0.3)
 
     if tp2 is not None:
         cp2_dat = np.loadtxt('input_data/FGT/FGT_c_p2.txt')
@@ -109,13 +110,19 @@ def plot_tp(file, figure, axs, show_exp=True):
         temp2_indices = finderb(tp2, temp2)
         cp2 = cp2_temp[temp2_indices]
         ep2 = cp2 * tp2[:, 0]
-        axs[2].plot(delay, ep2, color='blue', ls='dashed')
+        ep2_norm = (ep2-ep2[0]) / ep2[finderb(5, delay)[0]] * 0.6
+
+        ep_tot_norm = ep_norm + ep2_norm/(np.amax(ep_norm+ep2_norm))
+
+        axs[2].plot(delay, ep2_norm, color='blue', ls='dashed', alpha=0.2)
+        axs[2].plot(delay, ep_tot_norm, color='blue')
 
     if show_exp:
         exp_dat = np.loadtxt('input_data/FGT/exp_data/MSD_SEP_24.txt')
-        exp_delay = exp_dat[:, 0]
+        exp_delay = exp_dat[:, 0]-0.7
         exp_msd = exp_dat[:, 1]
-        exp_dmsd = exp_dat[:, 2]
+        exp_msd /= np.amax(exp_msd)
+        exp_dmsd = exp_dat[:, 2]/np.amax(exp_msd)
         axs[2].errorbar(exp_delay, exp_msd, yerr=exp_dmsd, fmt='o', color='blue')
 
     return figure, axs
@@ -136,4 +143,5 @@ fig, axs = create_figure()
 fig, axs = plot_te(file='fits_new/te_tt_15fs', figure=fig, axs=axs)
 fig, axs = plot_tp(file='fits_new/tp_tt_15fs', figure=fig, axs=axs)
 fig, axs = plot_mag(file='fits_new/mag_tt_15fs', figure=fig, axs=axs)
+save_plot(fig, axs, 'bad_fit_to_will.pdf')
 show_plot(fig, axs)
