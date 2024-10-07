@@ -187,11 +187,13 @@ def init_fit():
 
         chi_sq[therm_time_index, gamma_index] = cs_norm
 
-        # if therm_time == 15.0:
-        #     plt.scatter(exp_delay[:max_fit_delay_index], exp_te[:max_fit_delay_index], color='blue')
-        #     plt.scatter(delay[delay_indices], te[delay_indices], color='red', label=str(gamma))
-        #     plt.legend()
-        #     plt.show()
+    min_ind = np.argmin(chi_sq)
+    tt_fit_ind = int((min_ind - (int(min_ind) % len(therm_times))/len(therm_times)))
+    gamma_fit_ind = int(int(min_ind) % len(gammas))
+
+    print('min = ', str(chi_sq[tt_fit_ind, gamma_fit_ind]))
+    print('tt_fit = ', str(therm_times[tt_fit_ind]) + ' fs')
+    print('gamma_fit = ', str(gammas[gamma_fit_ind]) + ' J/m^3/K^2')
 
     therm_times, gammas = np.meshgrid(therm_times, gammas)
 
