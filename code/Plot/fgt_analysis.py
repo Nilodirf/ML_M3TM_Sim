@@ -3,6 +3,7 @@ import os
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from scipy import io
+from scipy.stats import chi2
 
 from ..Source.finderb import finderb
 
@@ -160,13 +161,26 @@ def save_plot(figure, axs, name):
     return
 
 
+def show_fits(save, show):
+    fig, axs = create_figure()
+    fig, axs = plot_te(file='fits_new/te_tt_15fs', figure=fig, axs=axs)
+    fig, axs = plot_tp(file='fits_new/tp_tt_15fs', figure=fig, axs=axs)
+    fig, axs = plot_mag(file='fits_new/mag_tt_15fs', figure=fig, axs=axs)
+    if save:
+        save_plot(fig, axs, 'bad_fit_to_will.pdf')
+    if show:
+        show_plot(fig, axs)
+
+        return
+
+
 def init_fit():
     # Find the optimal parameters for \gamma and therm_time from fitting the initial electron temperature increase
 
     files = os.listdir('Results/FGT/fits_init')
-    gammas = np.arange(180, 241)
+    gammas = np.arange(165, 256)
     therm_times = np.arange(0, 41)
-    chi_sq = np.zeros((41, 61))
+    chi_sq = np.ones((41, 91))*100
     for file in files:
         full_path = 'fits_init/' + file
         therm_time = float(file[:file.find('_')])
@@ -183,40 +197,61 @@ def init_fit():
 
         delay_indices = finderb(fit_delay, delay)
         cs = np.sum(((exp_te[:max_fit_delay_index]-te[delay_indices])/exp_dte[:max_fit_delay_index])**2)
-        cs_norm = cs/len(delay_indices)*np.sum(exp_dte[:max_fit_delay_index]**(-2))
+        cs_norm = cs/len(delay_indices)
+
+        # if therm_time == 16 and gamma == 205:
+        #     plt.figure(figsize=(8, 6))
+        #     plt.plot(delay[:delay_indices[-1]], te[:delay_indices[-1]], color='orange', label='sim')
+        #     plt.scatter(delay[delay_indices], te[delay_indices], color='orange', label='sim points')
+        #     plt.errorbar(exp_delay[:max_fit_delay_index], exp_te[:max_fit_delay_index],
+        #                  yerr=exp_dte[:max_fit_delay_index],
+        #                  fmt='o', color='blue', label='data points')
+        #     plt.legend(fontsize=14)
+        #     plt.xlabel(r'delay [ps]', fontsize=16)
+        #     plt.ylabel(r'$T_e$ [K]', fontsize=16)
+        #     plt.xlim(-0.31, 0.1)
+        #     plt.savefig('Results/FGT/best_init_fit.pdf')
+        #     plt.show()
 
         chi_sq[therm_time_index, gamma_index] = cs_norm
 
+    min = np.amin(chi_sq)
+    p = chi2.ppf(min, df=2)
     min_ind = np.argmin(chi_sq)
-    tt_fit_ind = int((min_ind - (int(min_ind) % len(therm_times))/len(therm_times)))
-    gamma_fit_ind = int(int(min_ind) % len(gammas))
 
-    print('min = ', str(chi_sq[tt_fit_ind, gamma_fit_ind]))
-    print('tt_fit = ', str(therm_times[tt_fit_ind]) + ' fs')
-    print('gamma_fit = ', str(gammas[gamma_fit_ind]) + ' J/m^3/K^2')
+    tt_fit_ind, gamma_fit_ind = np.unravel_index(min_ind, chi_sq.shape)
+    tt_fit = therm_times[tt_fit_ind]
+    gamma_fit = gammas[gamma_fit_ind]
+
+    gamma_konv_ind = finderb(min+p, chi_sq[tt_fit_ind, :])
+    tt_konv_ind = finderb(min+2.33, chi_sq[:, gamma_fit_ind])
+    gamma_konv = gammas[gamma_konv_ind]
+    tt_konv = therm_times[tt_konv_ind]
+    sigma_tt = np.abs(tt_fit-tt_konv)/p
+    sigma_gamma = np.abs(gamma_fit-gamma_konv)/p
+
+    print('confidence: ', p)
+    print('minimum of chi_sq: ', min)
+    print('best tt fit value: ', tt_fit, ' fs')
+    print('best gamma fit value: ', gamma_fit, ' J/m^2/K^2')
+    print('sigma tt: ', sigma_tt, ' fs')
+    print('sigma gamma: ', sigma_gamma, ' J/m^2/K^2')
 
     therm_times, gammas = np.meshgrid(therm_times, gammas)
 
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     surf = ax.plot_surface(therm_times, gammas, chi_sq.T, cmap=cm.coolwarm,
                            linewidth=0, antialiased=False)
-    fig.colorbar(surf, shrink=0.5, aspect=5)
+    fig.colorbar(surf, shrink=0.5, aspect=5, label=r'$\chi^2$')
+    plt.xlabel(r'thermalization time [fs]', fontsize=14)
+    plt.ylabel(r'$\gamma_{el}$ [J/m$^3$/K$^2$]', fontsize=14)
     plt.show()
 
     return
 
 
-def show_fits(save, show):
-    fig, axs = create_figure()
-    fig, axs = plot_te(file='fits_new/te_tt_15fs', figure=fig, axs=axs)
-    fig, axs = plot_tp(file='fits_new/tp_tt_15fs', figure=fig, axs=axs)
-    fig, axs = plot_mag(file='fits_new/mag_tt_15fs', figure=fig, axs=axs)
-    if save:
-        save_plot(fig, axs, 'bad_fit_to_will.pdf')
-    if show:
-        show_plot(fig, axs)
-
-        return
-
+def inter_fit():
+    files_mag = os.listdir('Results/FGT/fits_inter/mag')
+    files_te = os.listdir('Results/FGT/fits_inter/el')
 
 init_fit()

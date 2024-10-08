@@ -428,7 +428,7 @@ class SimPulse:
                 if not os.path.exists('Results'):
                     os.makedirs('Results')
 
-                plt.savefig('Results/' + str(save_file) + '.pdf')
+                plt.savefig(save_path)
 
             plt.show()
 
@@ -462,7 +462,7 @@ class SimPulse:
 
         print('Absorption profile computed with', str(self.method), ' method.')
         if self.method == 'Abeles':
-            print('Incident angle to smaple normal:', str(self.theta/np.pi), ' pi')
+            print('Incident angle to sample normal:', str(self.theta/np.pi), ' pi')
             print('Polarization angle to indicent plane:', str(self.phi/np.pi), ' pi')
         print('F = ', str(self.fluence), ' mJ/cm^2')
         print('F_a_sim =', self.abs_flu, ' mJ/cm^2')
@@ -471,5 +471,6 @@ class SimPulse:
         print('F_a = F - F_r - F_t = ', self.fluence-self.trans_flu-self.ref_flu, ' mJ/cm^2')
         print('F_a_sim per block of different materials: ', self.abs_flu_per_block, ' mJ/cm^2')
         print('Relative error due to finite layer size: ', np.round(100*(self.abs_flu-(self.fluence-self.trans_flu-self.ref_flu))/self.abs_flu, 2), '%')
+        print('Electron thermalization time: ', self.therm_time, ' s')
         print()
         return

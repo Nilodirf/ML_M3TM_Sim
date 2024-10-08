@@ -11,10 +11,10 @@ from code.Source.sample import SimSample
 from code.Source.pulse import SimPulse
 from code.Source.mainsim import SimDynamics
 
-gammas = np.arange(180, 201)
-therm_times = np.arange(0, 41)*1e-15
+gammas = np.append(np.arange(165, 181), np.arange(240, 256))
+therm_times = np.array([16e-15])
 # Fluence with pen_dep=1nm; Te:9.8e-3, mag:49e-3, Tp:38e-3
-# Starting tempratures; Te:100K, mag:25K, Tp:100K
+# Starting temperatures; Te:100K, mag:25K, Tp:100K
 
 for tt in therm_times:
     for g in gammas:
