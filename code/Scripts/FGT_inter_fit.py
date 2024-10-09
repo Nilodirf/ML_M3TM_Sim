@@ -11,8 +11,9 @@ from code.Source.sample import SimSample
 from code.Source.pulse import SimPulse
 from code.Source.mainsim import SimDynamics
 
-geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])
-asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02, 0.021, 0.022, 0.023, 0.024, 0.025])
+# geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])  # 16
+geps = np.array([5.6, 5.7, 5.8, 5.9, 6., 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.])  # 15
+asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02, 0.021, 0.022, 0.023, 0.024, 0.025])  # 16
 # Fluence with pen_dep=1nm; Te:9.8e-3, mag:49e-3, Tp:38e-3
 # Starting temperatures; Te:100K, mag:25K, Tp:100K
 
@@ -25,7 +26,7 @@ for a in asfs:
         for flu, it, subsys in zip(fluences, initemps, subsystems):
 
             FGT = SimMaterials(name='Fe3GeTe2', cp_max=None, cp_method='input_data/FGT/FGT_c_p1.txt', tdeb=232.,  kappap=0.,
-                               ce_gamma=205., gep=g*1e17,
+                               ce_gamma=211., gep=g*1e17,
                                asf=a, spin=2, tc=232., vat=127.76e-30, muat=1.6)
 
             FGT.add_phonon_subsystem(gpp=2.5e17, cp2_max=None, cp2_method='input_data/FGT/FGT_c_p2.txt')
@@ -36,7 +37,7 @@ for a in asfs:
             sample.add_layers(material=FGT, layers=1,  dz=1.7e-9, pen_dep=1e-9)
 
             # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-            pulse = SimPulse(sample=sample, method='LB', pulse_width=15e-15, fluence=flu, delay=1e-12, therm_time=16e-15)
+            pulse = SimPulse(sample=sample, method='LB', pulse_width=15e-15, fluence=flu, delay=1e-12, therm_time=13e-15)
             # pulse.visualize(axis='t')
 
             # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
@@ -47,4 +48,4 @@ for a in asfs:
 
 
             # Save the data in a file with the desired name
-            sim.save_data(solution, save_file='FGT/fits_inter/' + str(subsys) + '/a' + str(a) + 'g' + str(g))
+            sim.save_data(solution, save_file='FGT/fits_inter_2/' + str(subsys) + '/a' + str(a) + 'g' + str(g))
