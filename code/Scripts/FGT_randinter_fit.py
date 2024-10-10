@@ -11,8 +11,16 @@ from code.Source.sample import SimSample
 from code.Source.pulse import SimPulse
 from code.Source.mainsim import SimDynamics
 
-geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])  # 16
-asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02, 0.021, 0.022, 0.023, 0.024, 0.025])  # 16
+geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])*10  # 16
+asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02, 0.021, 0.022, 0.023, 0.024, 0.025])*10  # 16
+# np.random.seed(0)
+# geps_high = 50 * np.random.rand(250) + 7.0
+# geps_low = 0.01 + 400*np.random.rand(250)
+# geps = np.append(geps_low, geps_high)
+# np.random.seed(1)
+# asfs_high = 0.025 + 0.975 * np.random.rand(250)
+# asfs_low = 0.025*np.random.rand(250)
+# asfs = np.append(asfs_low, asfs_high)
 # Fluence with pen_dep=1nm; Te:9.8e-3, mag:49e-3, Tp:38e-3
 # Starting temperatures; Te:100K, mag:25K, Tp:100K
 

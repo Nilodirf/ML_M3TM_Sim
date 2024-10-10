@@ -255,7 +255,7 @@ def init_fit():
     return
 
 
-def inter_fit():
+def inter_fit(show_fit=False, show_asf=0, show_gep=0):
     files_te = os.listdir('Results/FGT/fits_inter_2/el')
     files_mag = os.listdir('Results/FGT/fits_inter_2/mag')
     folder_str = ['el/', 'mag/']
@@ -277,36 +277,39 @@ def inter_fit():
             if f_str == 'el/':
                 delay, dat, bla = get_data(full_path, 'te')
                 exp_delay, exp_dat, exp_dd = get_te_exp()
-                dd_inv_sq_el = np.sum((exp_dat/exp_dd**2))
+                dd_sq_el = np.sum((exp_dd/exp_dat)**2)
                 n_el = len(exp_dat)
+                n = n_el
             else:
                 delay, dat, bla = get_data(full_path, 'mag')
                 dat = 2/3 + 1/3*dat
                 exp_delay, exp_dat, exp_dd = get_mag_exp()
-                dd_inv_sq_mag = np.sum((exp_dat / exp_dd) ** 2)
+                dd_sq_mag = np.sum((exp_dd / exp_dat) ** 2)
                 n_mag = len(exp_dat)
+                n = n_mag
 
             delay_indices = finderb(exp_delay, delay)
-            cs_norm = np.sum(((exp_dat - dat[delay_indices]) / exp_dd) ** 2)/ len(delay_indices)
+            cs_norm = np.sum(((exp_dat - dat[delay_indices]) / exp_dd) ** 2)/ len(delay_indices-2)
             cs[asf_index, gep_index] = cs_norm
 
-            if gep == 5.5 and asf == 0.016:
-                plt.figure(figsize=(8, 6))
-                plt.plot(delay[:delay_indices[-1]], dat[:delay_indices[-1]], color='orange', label='sim')
-                plt.scatter(delay[delay_indices], dat[delay_indices], color='orange', label='sim points')
-                plt.errorbar(exp_delay, exp_dat,
-                             yerr=exp_dd,
-                             fmt='o', color='blue', label='data points')
-                plt.legend(fontsize=14)
-                plt.xlabel(r'delay [ps]', fontsize=16)
-                plt.ylabel(r'Observable', fontsize=16)
-                plt.xlim(delay[delay_indices[0]], delay[delay_indices[-1]])
-                # plt.savefig('Results/FGT/best_init_fit.pdf')
-                plt.show()
+            if show_fit:
+                if gep == show_gep and asf == show_asf:
+                    plt.figure(figsize=(8, 6))
+                    plt.plot(delay[:delay_indices[-1]], dat[:delay_indices[-1]], color='orange', label='sim')
+                    plt.scatter(delay[delay_indices], dat[delay_indices], color='orange', label='sim points')
+                    plt.errorbar(exp_delay, exp_dat,
+                                 yerr=exp_dd,
+                                 fmt='o', color='blue', label='data points')
+                    plt.legend(fontsize=14)
+                    plt.xlabel(r'delay [ps]', fontsize=16)
+                    plt.ylabel(r'Observable', fontsize=16)
+                    plt.xlim(delay[delay_indices[0]], delay[delay_indices[-1]])
+                    # plt.savefig('Results/FGT/best_init_fit.pdf')
+                    plt.show()
 
         min = np.amin(cs)
-        conf = chi2.ppf(min, df=2)
-        p = chi2.ppf(0.68, df=2)
+        conf = chi2.cdf(min, df=n-2)
+        p = chi2.ppf(0.68, df=n-2)
         min_ind = np.argmin(cs)
 
         asf_fit_ind, gep_fit_ind = np.unravel_index(min_ind, cs.shape)
@@ -324,6 +327,7 @@ def inter_fit():
         print('inter_fit')
         print('subssystem: ', f_str)
         print('confidence: ', conf)
+        print('within 0.68 probability: ', p)
         print('minimum of chi_sq: ', min)
         print('best asf fit value: ', asf_fit)
         print('best gep fit value: ', gep_fit, ' W/m^3/K')
@@ -343,20 +347,23 @@ def inter_fit():
         plt.title(f_str, fontsize=16)
         plt.show()
 
-    chi_sq_te_norm = chi_sq_te/np.amin(chi_sq_te) * n_el * dd_inv_sq_el
-    chi_sq_mag_norm = chi_sq_mag/np.amin(chi_sq_mag) * n_mag * dd_inv_sq_mag
-    chi_sq_tot = (chi_sq_te_norm + chi_sq_mag_norm)/(1/np.amin(chi_sq_te)+1/np.amin(chi_sq_mag))
-    chi_sq_tot /= (n_el+n_mag)*(dd_inv_sq_el+dd_inv_sq_mag)
+    # determine and normalize the overall fit quality of two subsystems:
+    chi_sq_te_weighted = chi_sq_te * (n_el-2)
+    chi_sq_mag_weighted = chi_sq_mag * (n_mag-2)
+    chi_sq_tot = (chi_sq_te_weighted + chi_sq_mag_weighted) / (n_el+n_mag-4)
 
+    # find the minimum and confidence of the fit, and the confidence radius of sigma:
     min = np.amin(chi_sq_tot)
-    conf = chi2.ppf(min, df=2)
-    p = chi2.ppf(0.68, df=2)
+    conf = chi2.cdf(min, df=n_el+n_mag-4)
+    p = chi2.ppf(0.68, df=n_el+n_mag-4)
     min_ind = np.argmin(chi_sq_tot)
 
+    # find the corresponding fit parameter values for the best fit:
     asf_fit_ind, gep_fit_ind = np.unravel_index(min_ind, chi_sq_tot.shape)
     asf_fit = asfs[asf_fit_ind]
     gep_fit = geps[gep_fit_ind]
 
+    # find the short and long axis of the ellipsis (not guaranteed that this is right!):
     asf_konv_ind = finderb(min + p, chi_sq_tot[:, gep_fit_ind])
     gep_konv_ind = finderb(min + p, chi_sq_tot[asf_fit_ind, :])
     asf_konv = asfs[asf_konv_ind]
@@ -364,10 +371,26 @@ def inter_fit():
     sigma_asf = np.abs(asf_fit - asf_konv) / p
     sigma_gep = np.abs(gep_fit - gep_konv) / p
 
+    # find the proper ellipsis:
+    conv_int_mask = np.abs(chi_sq_tot-np.amin(chi_sq_tot)-p) <= 5e-1
+    conv_intervall = chi_sq_tot[conv_int_mask]
+    conv_int_int = conv_int_mask.astype(int)
+
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    surf = ax.plot_surface(asfs_mesh, geps_mesh, conv_int_int.T, cmap=cm.coolwarm,
+                           linewidth=0, antialiased=False)
+    fig.colorbar(surf, shrink=0.5, aspect=5, label=r'$\chi^2$')
+    plt.xlabel(r'$a_{sf}$', fontsize=14)
+    plt.ylabel(r'$g_{ep}$ [W/m$^3$/K]', fontsize=14)
+    plt.title('conv_rad', fontsize=16)
+    plt.show()
+
+
     print('++++++++++++++++++++++++++++++++')
     print('inter_fit')
     print('subssystem: both')
-    print('confidence: ', conf)
+    print('commulative porbability of fit quality: ', conf)
+    print('chi2 within 0.68 probability: ', p)
     print('minimum of chi_sq: ', min)
     print('best asf fit value: ', asf_fit)
     print('best gep fit value: ', gep_fit, ' W/m^3/K')
