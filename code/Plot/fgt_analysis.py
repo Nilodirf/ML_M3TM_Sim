@@ -413,6 +413,9 @@ def inter_fit(show_fit=False, show_asf=0, show_gep=0):
 
     return
 
+def glob_rand_fit():
+    files_te = os.listdir('Results/FGT/')
+
 
 # init_fit()
 inter_fit()
