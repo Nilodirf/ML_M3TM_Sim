@@ -262,8 +262,8 @@ def inter_fit(show_fit=False, show_asf=0, show_gep=0):
     asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02, 0.021, 0.022, 0.023, 0.024, 0.025])
     geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4,
                      5.5, 5.6, 5.7, 5.8, 5.9, 6., 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.])
-    chi_sq_te = np.ones((16, 31))*5
-    chi_sq_mag = np.ones((16, 31))*5
+    chi_sq_te = np.zeros((16, 31))
+    chi_sq_mag = np.zeros((16, 31))
 
     for folder, f_str, cs in zip([files_te, files_mag], folder_str, [chi_sq_te, chi_sq_mag]):
         for file in folder:
@@ -417,5 +417,5 @@ def glob_rand_fit():
     files_te = os.listdir('Results/FGT/')
 
 
-# init_fit()
-inter_fit()
+init_fit()
+# inter_fit()
