@@ -11,11 +11,11 @@ from ..Source.mainsim import SimDynamics
 
 # Create the necessary materials. For documentation of the parameters see mats.sim_materials class:
 hbn = SimMaterials(name='hBN', tdeb=400, vat=1e-28, ce_gamma=0., cp_max=2.645e6, kappap=5.0,
-                   kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0., cp_method='Debye')
+                   kappae=0., gep=0., spin=0., tc=0., muat=0., asf=0., cp_method='Einstein')
 cgt = SimMaterials(name='CGT', tdeb=200, vat=1e-28, ce_gamma=737.87, cp_max=1.4e6,
-                   kappap=1., kappae=0.0016, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05, cp_method='Debye')
+                   kappap=1., kappae=0.0016, gep=15e16, spin=1.5, tc=65., muat=4., asf=0.05, cp_method='Einstein')
 sio2 = SimMaterials(name='SiO2', tdeb=470, vat=1e-28, ce_gamma=0., cp_max=2e6, kappap=1.5,
-                    kappae=0., gep=0, spin=0, tc=0., muat=0., asf=0., cp_method='Debye')
+                    kappae=0., gep=0, spin=0, tc=0., muat=0., asf=0., cp_method='Einstein')
 # fgt = SimMaterials(name='FGT', tdeb=190, vat=1.7e-29, ce_gamma=1561., cp_max=2e6,
 #                    kappap=0.5, kappae=0.25, gep=1e18, spin=2, tc=220., muat=1.5, asf=0.06, cp_method='Debye')
 # cri3 = SimMaterials(name='CrI3', tdeb=134, vat=1.35e-28, ce_gamma=550., cp_max=1.23e6,
@@ -37,10 +37,10 @@ pulse = SimPulse(sample=sample, method='Abeles', pulse_width=60e-15, fluence=0.5
 pulse.visualize(axis='z')
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=2e-9, ini_temp=6., solver='RK23', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=2e-12, ini_temp=6., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
 
 # Save the data in a file with the desired name
-sim.save_data(solution, save_file='CGT Paper/sharp_angle')
+sim.save_data(solution, save_file='bla_2')

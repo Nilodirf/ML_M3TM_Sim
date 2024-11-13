@@ -347,8 +347,8 @@ class SimPulse:
             first_layer = 0
             for i, last_layer in enumerate(self.Sam.mat_blocks):
                 last_layer += first_layer
-                abs_flu_per_block.append(np.sum(q_prop[first_layer: last_layer] * F_z[first_layer: last_layer]
-                                                * dz_sam[first_layer: last_layer])*self.fluence)
+                abs_flu_per_block.append(float(np.sum(q_prop[first_layer: last_layer] * F_z[first_layer: last_layer]
+                                                * dz_sam[first_layer: last_layer])*self.fluence))
                 first_layer = last_layer
 
             # and finally the absorbed power densities:
