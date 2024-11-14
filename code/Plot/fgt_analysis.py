@@ -124,7 +124,7 @@ def plot_tp(file, figure, axs, show_exp=True):
     cp_temp = cp_dat[:, 1]
     temp_indices = finderb(tp, temp)
     cp = cp_temp[temp_indices]
-    ep = cp*tp[:, 0]
+    ep = cp*tp
     ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * 0.4
     axs[2].plot(delay, ep_norm, color='blue', alpha=0.3)
 
@@ -134,7 +134,7 @@ def plot_tp(file, figure, axs, show_exp=True):
         cp2_temp = cp2_dat[:, 1]
         temp2_indices = finderb(tp2, temp2)
         cp2 = cp2_temp[temp2_indices]
-        ep2 = cp2 * tp2[:, 0]
+        ep2 = cp2 * tp2
         ep2_norm = (ep2-ep2[0]) / ep2[finderb(5, delay)[0]] * 0.6
 
         ep_tot_norm = ep_norm + ep2_norm/(np.amax(ep_norm+ep2_norm))
@@ -167,11 +167,14 @@ def show_fits(save, show):
     fig, axs = plot_tp(file='fits_new/tp_tt_15fs', figure=fig, axs=axs)
     fig, axs = plot_mag(file='fits_new/mag_tt_15fs', figure=fig, axs=axs)
     if save:
-        save_plot(fig, axs, 'bad_fit_to_will.pdf')
+        save_plot(fig, axs, 'bad_fit_to_show.pdf')
     if show:
         show_plot(fig, axs)
 
         return
+
+
+show_fits(save=True, show=True)
 
 
 def init_fit():
@@ -410,12 +413,4 @@ def inter_fit(show_fit=False, show_asf=0, show_gep=0):
     plt.title(r'both', fontsize=16)
     plt.show()
 
-
     return
-
-def glob_rand_fit():
-    files_te = os.listdir('Results/FGT/')
-
-
-init_fit()
-# inter_fit()
