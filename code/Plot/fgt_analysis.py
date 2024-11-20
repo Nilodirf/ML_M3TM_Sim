@@ -414,3 +414,31 @@ def inter_fit(show_fit=False, show_asf=0, show_gep=0):
     plt.show()
 
     return
+
+def global_manual_fit():
+    files_te = os.listdir('Results/FGT/fits_global/el')
+    files_mag = os.listdir('Results/FGT/fits_global/mag')
+    files_tp = os.listdir('Results/FGT/fits_global/tp')
+    folder_str = ['el/', 'mag/', 'tp/']
+
+    gammas = np.arange(205, 226).astype(float)  # 20
+    t0_el = np.arange(20)  # 20
+    geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])  # 16
+    asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02])  # 11
+    gpps = np.array([2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0])  # 16
+
+    chi_sq_te = np.zeros((20, 20, 16, 11, 16))  # gamma, t0, gep, asf, gpp
+    chi_sq_mag = np.zeros((20, 20, 16, 11, 16))  # gamma, t0, gep, asf, gpp
+    chi_sq_tp = np.zeros((20, 20, 16, 11, 16))  # gamma, t0, gep, asf, gpp
+
+    for folder, f_str, cs in zip([files_te, files_mag], folder_str, [chi_sq_te, chi_sq_mag]):
+        for file in folder:
+            full_path = 'fits_inter_2/' + f_str + file
+            asf = float(file[1:file.find('g')])
+            gep = float(file[file.find('g') + 1:])
+
+            asf_index = finderb(asf, asfs)[0]
+            gep_index = finderb(gep, geps)[0]
+
+
+
