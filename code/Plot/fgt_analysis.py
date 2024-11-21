@@ -415,6 +415,7 @@ def inter_fit(show_fit=False, show_asf=0, show_gep=0):
 
     return
 
+
 def global_manual_fit():
     files_te = os.listdir('Results/FGT/fits_global/el')
     files_mag = os.listdir('Results/FGT/fits_global/mag')
@@ -426,19 +427,91 @@ def global_manual_fit():
     geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])  # 16
     asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02])  # 11
     gpps = np.array([2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0])  # 16
+    k_ep = np.arange(5, 25)*2e-2  # 20
 
-    chi_sq_te = np.zeros((20, 20, 16, 11, 16))  # gamma, t0, gep, asf, gpp
-    chi_sq_mag = np.zeros((20, 20, 16, 11, 16))  # gamma, t0, gep, asf, gpp
-    chi_sq_tp = np.zeros((20, 20, 16, 11, 16))  # gamma, t0, gep, asf, gpp
+    chi_sq = np.zeros((20, 20, 16, 11, 16, 20))  # gamma, t0, gep, asf, gpp
 
-    for folder, f_str, cs in zip([files_te, files_mag], folder_str, [chi_sq_te, chi_sq_mag]):
+    # load the phonon heat capacities to use later in the fits:
+    cp_dat = np.loadtxt('input_data/FGT/FGT_c_p1.txt')
+    temp = cp_dat[:, 0]
+    cp_temp = cp_dat[:, 1]
+    cp2_dat = np.loadtxt('input_data/FGT/FGT_c_p2.txt')
+    temp2 = cp2_dat[:, 0]
+    cp2_temp = cp2_dat[:, 1]
+
+    # load the experimental data:
+    exp_delay_mag, exp_dat_mag, exp_dd_mag = get_mag_exp()
+    sigma_rel_mag = np.sum(exp_dd_mag / exp_dat_mag)
+
+    exp_delay_te, exp_dat_te, exp_dd_te = get_te_exp()
+    sigma_rel_te = np.sum(exp_dd_te / exp_dat_te)
+
+    exp_delay_tp, exp_dat_tp, exp_dd_tp = get_msd_exp()
+    sigma_rel_tp = np.sum(exp_dd_tp / exp_dat_tp)
+
+    # first loop for all three subsystems CHANGE THIS TO ADD TO ONLY ONE GLOBAL FIT QUALITY MATRIX!
+    for folder, f_str in zip([files_te, files_mag, files_tp], folder_str):
+        # for all simulations in each subsystem:
         for file in folder:
+            # find the parameters from the files in the above defined arrays:
             full_path = 'fits_inter_2/' + f_str + file
-            asf = float(file[1:file.find('g')])
-            gep = float(file[file.find('g') + 1:])
+            asf = float(file[file.find('a')+1: file.find("gep")])
+            gep = float(file[file.find('gep') + 3: file.find("gpp")])
+            gpp = float(file[file.find("gpp") + 3: file.find("gamma")])
+            gamma = float(file[file.find("gamma") + 5:])
 
             asf_index = finderb(asf, asfs)[0]
             gep_index = finderb(gep, geps)[0]
+            gpp_index = finderb(gpp, gpps)[0]
+            gamma_index = finderb(gamma, gammas)[0]
 
+            # this for loop is definitely not optimal for computation time, but I don't care for now:
+            for t0_index, t0_shift in enumerate(t0_el):
+                for k_index, k in enumerate(k_ep):
+                    # load the simulation data
+                    if f_str == 'el/':
+                        delay, dat, bla = get_data(full_path, 'te')
+                        delay += t0_shift*1e-13
+                        exp_delay, exp_dat, exp_dd = exp_delay_te, exp_dat_te, exp_dd_te
+                        sigma_rel = sigma_rel_te
+                    elif f_str == 'mag/':
+                        delay, dat, bla = get_data(full_path, 'mag')
+                        dat = 2/3 + 1/3*dat
+                        exp_delay, exp_dat, exp_dd = exp_delay_mag, exp_dat_mag, exp_dd_mag
+                        sigma_rel = sigma_rel_mag
+                    else:
+                        delay, tp, tp2 = get_data(full_path, 'tp')
+                        exp_delay, exp_dat, exp_dd = exp_delay_tp, exp_dat_tp, exp_dd_tp
+                        sigma_rel = sigma_rel_tp
 
+                        temp_indices = finderb(tp, temp)
+                        cp = cp_temp[temp_indices]
+                        ep = cp * tp
 
+                        temp2_indices = finderb(tp2, temp2)
+                        cp2 = cp2_temp[temp2_indices]
+                        ep2 = cp2 * tp2
+
+                        ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * k
+                        ep2_norm = (ep2 - ep2[0]) / ep2[finderb(5, delay)[0]] * (1-k)
+
+                        dat = ep_norm + ep2_norm / (np.amax(ep_norm + ep2_norm))
+
+                    # compute the fit quality and put it into the respective array:
+                    delay_indices = finderb(exp_delay, delay)
+                    cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2) / len(delay_indices)
+                    chi_sq[gamma_index, t0_index, gep_index, asf_index, gpp_index, k_index] += cs_norm
+
+            # find the minimum and confidence of the fit, and the confidence radius of sigma:
+            min_ind = np.argmin(chi_sq)
+
+            # find the corresponding fit parameter values for the best fit:
+            gamma_fit_index, t0_fit_index, gep_fit_index, asf_fit_index, gpp_fit_index, k_fit_index =\
+                np.unravel_index(min_ind, chi_sq.shape)
+
+            gamma_fit = gammas[gamma_fit_index]
+            asf_fit = asfs[asf_fit_index]
+            gep_fit = geps[gep_fit_index]
+            t0_fit = t0_el[t0_fit_index]
+            gpp_fit = gpps[gpp_fit_index]
+            k_fit = k_ep[k_fit_index]
