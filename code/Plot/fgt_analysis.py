@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 from scipy import io
 from scipy.stats import chi2
+import time
 
 from ..Source.finderb import finderb
 
@@ -417,19 +418,21 @@ def inter_fit(show_fit=False, show_asf=0, show_gep=0):
 
 
 def global_manual_fit():
+
+    start = time.time()
     files_te = os.listdir('Results/FGT/fits_global/el')
     files_mag = os.listdir('Results/FGT/fits_global/mag')
     files_tp = os.listdir('Results/FGT/fits_global/tp')
     folder_str = ['el/', 'mag/', 'tp/']
 
-    gammas = np.arange(205, 226).astype(float)  # 20
+    gammas = np.arange(205, 226).astype(float)  # 21
     t0_el = np.arange(20)  # 20
     geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])  # 16
     asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02])  # 11
     gpps = np.array([2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0])  # 16
     k_ep = np.arange(5, 25)*2e-2  # 20
 
-    chi_sq = np.zeros((20, 20, 16, 11, 16, 20))  # gamma, t0, gep, asf, gpp
+    chi_sq = np.zeros((21, 20, 16, 11, 16, 20))  # gamma, t0, gep, asf, gpp
 
     # load the phonon heat capacities to use later in the fits:
     cp_dat = np.loadtxt('input_data/FGT/FGT_c_p1.txt')
@@ -454,7 +457,7 @@ def global_manual_fit():
         # for all simulations in each subsystem:
         for file in folder:
             # find the parameters from the files in the above defined arrays:
-            full_path = 'fits_inter_2/' + f_str + file
+            full_path = 'fits_global/' + f_str + file
             asf = float(file[file.find('a')+1: file.find("gep")])
             gep = float(file[file.find('gep') + 3: file.find("gpp")])
             gpp = float(file[file.find("gpp") + 3: file.find("gamma")])
@@ -502,16 +505,39 @@ def global_manual_fit():
                     cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2) / len(delay_indices)
                     chi_sq[gamma_index, t0_index, gep_index, asf_index, gpp_index, k_index] += cs_norm
 
-            # find the minimum and confidence of the fit, and the confidence radius of sigma:
-            min_ind = np.argmin(chi_sq)
+    # find the minimum and confidence of the fit, and the confidence radius of sigma:
+    min_ind = np.argmin(chi_sq)
 
-            # find the corresponding fit parameter values for the best fit:
-            gamma_fit_index, t0_fit_index, gep_fit_index, asf_fit_index, gpp_fit_index, k_fit_index =\
-                np.unravel_index(min_ind, chi_sq.shape)
+    # find the corresponding fit parameter values for the best fit:
+    gamma_fit_index, t0_fit_index, gep_fit_index, asf_fit_index, gpp_fit_index, k_fit_index =\
+        np.unravel_index(min_ind, chi_sq.shape)
 
-            gamma_fit = gammas[gamma_fit_index]
-            asf_fit = asfs[asf_fit_index]
-            gep_fit = geps[gep_fit_index]
-            t0_fit = t0_el[t0_fit_index]
-            gpp_fit = gpps[gpp_fit_index]
-            k_fit = k_ep[k_fit_index]
+    gamma_fit = gammas[gamma_fit_index]
+    asf_fit = asfs[asf_fit_index]
+    gep_fit = geps[gep_fit_index]
+    t0_fit = t0_el[t0_fit_index]
+    gpp_fit = gpps[gpp_fit_index]
+    k_fit = k_ep[k_fit_index]
+
+    print(f"gamma: {gamma_fit}")
+    print(f"asf: {asf_fit}")
+    print(f"gep: {gep_fit}")
+    print(f"gpp: {gpp_fit}")
+    print(f"t0: {t0_fit}")
+    print(f"k: {k_fit}")
+
+    end = time.time()
+    runtime = end-start
+
+    with open("fit_values.dat", 'w+') as file:
+        file.write(f"gamma: {gamma_fit}" + "\n")
+        file.write(f"asf: {asf_fit}" + "\n")
+        file.write(f"gep: {gep_fit}" + "\n")
+        file.write(f"gpp: {gpp_fit}" + "\n")
+        file.write(f"t0: {t0_fit}" + "\n")
+        file.write(f"k: {k_fit}" + "\n")
+        file.write(f"time spent: {runtime}")
+
+    return
+
+global_manual_fit()
