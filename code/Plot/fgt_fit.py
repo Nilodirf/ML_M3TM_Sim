@@ -5,7 +5,6 @@ from scipy.stats import chi2
 import time
 import multiprocessing as mp
 
-
 def finderb(key, array):
 
     key = np.array(key, ndmin=1)
@@ -15,7 +14,6 @@ def finderb(key, array):
     for m in range(n):
         i[m] = finderb_nest(key[m], array)
     return i
-
 
 def finderb_nest(key, array):
 
