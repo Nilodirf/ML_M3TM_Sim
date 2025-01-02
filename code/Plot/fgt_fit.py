@@ -101,8 +101,7 @@ def get_msd_exp():
 
 
 def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, folder_str, t0_el, geps, asfs, gpps, k_ep, cp_data, cp2_data, exp_data):
-    best_chi_sq = float('inf')
-    best_params = None
+    chi_sq_loc = np.zeros(20, 16, 11, 16, 20)  # t0, gep, asf, gpp, k
 
     # Load experimental and simulation data
     temp, cp_temp = cp_data
@@ -111,7 +110,7 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
      exp_delay_te, exp_dat_te, sigma_rel_te,
      exp_delay_tp, exp_dat_tp, sigma_rel_tp) = exp_data
 
-    # Iterate through subsystems
+    # Loop through subsystems
     for folder, f_str in zip([files_te, files_mag, files_tp], folder_str):
         for file in folder:
         
@@ -127,46 +126,68 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
             gep_index = finderb(gep, geps)[0]
             gpp_index = finderb(gpp, gpps)[0]
 
-            for t0_index, t0_shift in enumerate(t0_el):
-                for k_index, k in enumerate(k_ep):
-                    full_path = f'fits_global/{f_str}{file}'
+            full_path = f'fits_global/{f_str}{file}'
 
-                    # Load and preprocess simulation data
-                    if f_str == 'el/':
-                        delay, dat, _ = get_data(full_path, 'te')
-                        delay += t0_shift * 1e-13
-                        exp_delay, exp_dat, sigma_rel = exp_delay_te, exp_dat_te, sigma_rel_te
-                    elif f_str == 'mag/':
-                        delay, dat, _ = get_data(full_path, 'mag')
-                        dat = 2 / 3 + 1 / 3 * dat
-                        exp_delay, exp_dat, sigma_rel = exp_delay_mag, exp_dat_mag, sigma_rel_mag
-                    else:
-                        delay, tp, tp2 = get_data(full_path, 'tp')
-                        exp_delay, exp_dat, sigma_rel = exp_delay_tp, exp_dat_tp, sigma_rel_tp
+            # depending on the subsystem, the fit will be done differently, for te and tp one needs extra loops:
+            if f_str == 'mag/':
+                delay, dat, _ = get_data(full_path, 'mag')
+                dat = 2 / 3 + 1 / 3 * dat
+                exp_delay, exp_dat, sigma_rel = exp_delay_mag, exp_dat_mag, sigma_rel_mag
 
-                        temp_indices = finderb(tp, temp)
-                        cp = cp_temp[temp_indices]
-                        ep = cp * tp
+                delay_indices = finderb(exp_delay, delay)
+                cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2)
+                chi_sq_loc[:, gep_index, asf_index, gpp_index, :] += cs_norm
 
-                        temp2_indices = finderb(tp2, temp2)
-                        cp2 = cp2_temp[temp2_indices]
-                        ep2 = cp2 * tp2
+            elif f_str == 'el/':
+                delay, dat, _ = get_data(full_path, 'te')
+                exp_delay, exp_dat, sigma_rel = exp_delay_te, exp_dat_te, sigma_rel_te
 
-                        ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * k
-                        ep2_norm = (ep2 - ep2[0]) / ep2[finderb(5, delay)[0]] * (1 - k)
-
-                        dat = ep_norm + ep2_norm / np.amax(ep_norm + ep2_norm)
-
-                    # Compute chi-square fit quality
+                for t0_index, t0_shift in enumerate(t0_el):
+                    delay += t0_shift * 1e-13
                     delay_indices = finderb(exp_delay, delay)
-                    cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2) / len(delay_indices)
+                    cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2)
+                    chi_sq_loc[t0_index, gep_index, asf_index, gpp_index, :] += cs_norm
 
-                    # Update best chi-square and parameters if current one is better
-                    if cs_norm < best_chi_sq:
-                        best_chi_sq = cs_norm
-                        best_params = (t0_index, gep_index, asf_index, gpp_index, k_index)
+            elif f_str == 'tp/':
+                delay, tp, tp2 = get_data(full_path, 'tp')
+                exp_delay, exp_dat, sigma_rel = exp_delay_tp, exp_dat_tp, sigma_rel_tp
 
-    return best_chi_sq, best_params
+                temp_indices = finderb(tp, temp)
+                cp = cp_temp[temp_indices]
+                ep = cp * tp
+
+                temp2_indices = finderb(tp2, temp2)
+                cp2 = cp2_temp[temp2_indices]
+                ep2 = cp2 * tp2
+
+                delay_indices = finderb(exp_delay, delay)
+
+                for k_index, k in enumerate(k_ep):
+                    # set maximum at 10 ps (a little arbitrary I must confess)
+                    ep_norm = (ep - ep[0]) / ep[finderb(10, delay)[0]] * k
+                    ep2_norm = (ep2 - ep2[0]) / ep2[finderb(10, delay)[0]] * (1 - k)
+
+                    dat = ep_norm + ep2_norm / np.amax(ep_norm + ep2_norm)
+
+                    cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2)
+                    chi_sq_loc[:, gep_index, asf_index, gpp_index, k_index] += cs_norm
+
+            else:
+                print(f"File could not be assigned to subsystem: {f_str}{file}")
+
+    # find the best local fit for each gamma and return:
+    best_chi_sq_loc = np.amin(chi_sq_loc)
+    min_ind = np.argmin(chi_sq_loc)
+    t0_id_loc, gep_id_loc, asf_id_loc, gpp_id_loc, k_id_loc = np.unravel_index(min_ind, chi_sq_loc.shape)
+
+    gamma_loc = gamma
+    t0_loc = t0_el[t0_id_loc]
+    gep_loc = geps[gep_id_loc]
+    asf_loc = asfs[asf_id_loc]
+    gpp_loc = gpps[gpp_id_loc]
+
+    best_params = (gamma_loc, t0_loc, gep_loc, asf_loc, gpp_loc)
+    return best_chi_sq_loc, best_params
 
 
 def global_manual_fit_parallel():
@@ -214,19 +235,18 @@ def global_manual_fit_parallel():
             best_params = params
 
     # Extract best-fit parameters from indices
-    t0_fit_index, gep_fit_index, asf_fit_index, gpp_fit_index, k_fit_index = best_params
-    gamma_fit = gammas[best_params[0]]
+    gamma_fit, t0_fit, gep_fit, asf_fit, gpp_fit, k_fit = best_params
 
     runtime = time.time() - start
 
     # Save results
     with open("fit_values.dat", 'w+') as file:
         file.write(f"gamma: {gamma_fit}\n")
-        file.write(f"t0: {t0_el[t0_fit_index]}\n")
-        file.write(f"gep: {geps[gep_fit_index]}\n")
-        file.write(f"asf: {asfs[asf_fit_index]}\n")
-        file.write(f"gpp: {gpps[gpp_fit_index]}\n")
-        file.write(f"k: {k_ep[k_fit_index]}\n")
+        file.write(f"t0: {t0_fit}\n")
+        file.write(f"gep: {gep_fit}\n")
+        file.write(f"asf: {asf_fit}\n")
+        file.write(f"gpp: {gpp_fit}\n")
+        file.write(f"k: {k_fit}\n")
         file.write(f"time spent: {runtime}\n")
 
     return
