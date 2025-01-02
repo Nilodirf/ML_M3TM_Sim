@@ -101,7 +101,7 @@ def get_msd_exp():
 
 
 def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, folder_str, t0_el, geps, asfs, gpps, k_ep, cp_data, cp2_data, exp_data):
-    chi_sq_loc = np.zeros(20, 16, 11, 16, 20)  # t0, gep, asf, gpp, k
+    chi_sq_loc = np.zeros((20, 16, 11, 16, 20), dtype=float)  # t0, gep, asf, gpp, k
 
     # Load experimental and simulation data
     temp, cp_temp = cp_data
@@ -114,7 +114,7 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
     for folder, f_str in zip([files_te, files_mag, files_tp], folder_str):
         for file in folder:
         
-            if not file.startswith("a") or gamma != float(file[file.find("gamma") + 5:]):
+            if not file.startswith("a") or gamma != float(file[file.find("gamma")]):
                 continue
 
             # Extract parameters from the filename

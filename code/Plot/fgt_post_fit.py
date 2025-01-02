@@ -1,9 +1,6 @@
 import numpy as np
 import os
-from scipy import io
 from scipy.stats import chi2
-import time
-import multiprocessing as mp
 
 from ..Source.finderb import finderb
 
@@ -69,7 +66,8 @@ def get_msd_exp():
 
     return exp_delay, exp_msd, exp_dmsd
 
-def read_fit_file():
+
+def read_fit_file() -> dict:
     # reads the file with the best fit parameters
 
     fit_dict = {}
@@ -93,5 +91,61 @@ def read_fit_file():
 
     return fit_dict
 
-def find_neighbouring_files():
-     
+
+def find_neighbouring_params(fit_dict: dict, param:str, smaller_or_bigger: str) -> dict:
+    # find the "neighbouring" parameters to the optimal fit from the simulation files
+
+    gammas = np.arange(205, 226).astype(float)  # 21 values
+    t0_el = np.arange(20)  # 20 values
+    geps = np.arange(4.0, 5.6, 0.1)  # 16 values
+    asfs = np.arange(0.01, 0.021, 0.001)  # 11 values
+    gpps = np.arange(2.5, 4.1, 0.1)  # 16 values
+    k_ep = np.arange(5, 25) * 2e-2  # 20 values
+
+    if smaller_or_bigger == "bigger":
+        index_shift = 1
+    elif smaller_or_bigger == "smaller":
+        index_shift = -1
+    else:
+        print(f"{smaller_or_bigger} is not a proper input for smaller_or_bigger")
+        exit()
+
+    shifted_dict = fit_dict.copy()
+
+    if param == "gamma":
+        shifted_index = list(gammas).index(fit_dict["gamma"]) + index_shift
+        shifted_dict["gamma"] = gammas[shifted_index]
+    elif param == "asf":
+        shifted_index = list(asfs).index(fit_dict["asf"]) + index_shift
+        shifted_dict["asf"] = asfs[shifted_index]
+    elif param == "gep":
+        shifted_index = list(geps).index(fit_dict["gep"]) + index_shift
+        shifted_dict["gep"] = geps[shifted_index]
+    elif param == "gpp":
+        shifted_index = list(gpps).index(fit_dict["gpp"]) + index_shift
+        shifted_dict["gpp"] = gpps[shifted_index]
+    elif param == "t0":
+        shifted_index = list(t0_el).index(fit_dict["t0"]) + index_shift
+        shifted_dict["t0"] = t0_el[shifted_index]
+    elif param == "k":
+        shifted_index = list(k_ep).index(fit_dict["k"]) + index_shift
+        shifted_dict["k"] = k_ep[shifted_index]
+    else:
+        print(f"{param} is not a valid input for param")
+
+    return shifted_dict
+
+
+def get_filename_from_params(param_dict: dict) -> str:
+    # find simulation file name corresponding to parameters from dictionary
+
+    file_name = f"a{param_dict["asf"]}gep{param_dict["gep"]}gpp{param_dict["gpp"]}gamma{param_dict["gamma"]}"
+
+    return file_name
+
+
+def get_standard_deviations():
+
+    opt_fit_params = read_fit_file()
+    opt_fit_file = get_filename_from_params(opt_fit_params)
+
