@@ -114,9 +114,13 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
     # Loop through subsystems
     for folder, f_str in zip([files_te, files_mag, files_tp], folder_str):
         for file in folder:
-            file_gamma = np.round(float(file[file.find("gamma")+5:]), 0)
         
-            if not file.startswith("a") or file_gamma != task_gamma:
+            if not file.startswith("a"):
+                continue
+
+            file_gamma = np.round(float(file[file.find("gamma") + 5:file.find("gamma") + 9]), 0)
+
+            if file_gamma != task_gamma:
                 continue
 
             # Extract parameters from the filename

@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from numpy.typing import NDArray
+from scipy import io
 
 from ..Source.finderb import finderb
 
@@ -76,17 +77,17 @@ def read_fit_file() -> dict:
 
         for line in content:
             if line.startswith("gamma:"):
-                fit_dict["gamma"] = float(line[line.find("gamma:" + 6):])
+                fit_dict["gamma"] = float(line[line.find("gamma:") + 6:])
             if line.startswith("gep:"):
-                fit_dict["gep"] = float(line[line.find("gep:" + 4):])
+                fit_dict["gep"] = float(line[line.find("gep:") + 4:])
             if line.startswith("asf:"):
-                fit_dict["asf"] = float(line[line.find("asf:" + 4):])
+                fit_dict["asf"] = float(line[line.find("asf:") + 4:])
             if line.startswith("gpp:"):
-                fit_dict["gpp"] = float(line[line.find("gpp:" + 4):])
+                fit_dict["gpp"] = float(line[line.find("gpp:") + 4:])
             if line.startswith("t0:"):
-                fit_dict["t0"] = float(line[line.find("t0:" + 3):])
+                fit_dict["t0"] = float(line[line.find("t0:") + 3:])
             if line.startswith("k:"):
-                fit_dict["k"] = float(line[line.find("k:" + 2):])
+                fit_dict["k"] = float(line[line.find("k:") + 2:])
 
     return fit_dict
 
@@ -138,12 +139,12 @@ def find_neighbouring_params(fit_dict: dict, param:str, smaller_or_bigger: str) 
 def get_filename_from_params(param_dict: dict) -> str:
     # find simulation file name corresponding to parameters from dictionary
 
-    file_name = f"a{param_dict["asf"]}gep{param_dict["gep"]}gpp{param_dict["gpp"]}gamma{param_dict["gamma"]}"
+    file_name = f"a{param_dict['asf']}gep{param_dict['gep']}gpp{param_dict['gpp']}gamma{param_dict['gamma']}"
 
     return file_name
 
 
-def get_all_func_vals(all_subsys: tuple, all_exp: dict, file: str) -> NDArray:
+def get_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file: str) -> NDArray:
     cp_temp, cp_dat = (np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 1])
     cp2_temp, cp2_dat = (np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 1])
     all_func_vals = []
@@ -151,21 +152,21 @@ def get_all_func_vals(all_subsys: tuple, all_exp: dict, file: str) -> NDArray:
         delay, sys_1, sys_2 = get_data(file=file, subsys=subsys)
 
         if subsys == "te":
-            delay += opt_fit_dict["t0"] * 1e-13
+            delay += fit_dict["t0"] * 1e-13
             delay_indices = finderb(subsys_exp[0], delay)
             all_func_vals += sys_1[delay_indices]
         elif subsys == "tp":
             delay_indices = finderb(subsys_exp[0], delay)
-            temp_indices = finderb(tp, cp_temp)
+            temp_indices = finderb(sys_1, cp_temp)
             cp = cp_dat[temp_indices]
             ep = cp * sys_1
 
-            temp2_indices = finderb(tp2, cp2_temp)
+            temp2_indices = finderb(sys_2, cp2_temp)
             cp2 = cp2_dat[temp2_indices]
             ep2 = cp2 * sys_2
 
-            ep_norm = (ep - ep[0]) / ep[finderb(10, delay)[0]] * opt_fit_dict["k"]
-            ep2_norm = (ep2 - ep2[0]) / ep2[finderb(10, delay)[0]] * (1 - opt_fit_dict["k"])
+            ep_norm = (ep - ep[0]) / ep[finderb(10, delay)[0]] * fit_dict["k"]
+            ep2_norm = (ep2 - ep2[0]) / ep2[finderb(10, delay)[0]] * (1 - fit_dict["k"])
             dat = ep_norm + ep2_norm / np.amax(ep_norm + ep2_norm)
 
             all_func_vals += dat[delay_indices]
@@ -189,18 +190,17 @@ def get_standard_deviations(smaller_or_bigger):
     opt_fit_file = get_filename_from_params(opt_fit_dict)
 
     # get function values of optimal fit:
-    fit_func_vals = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, file=opt_fit_file)
+    fit_func_vals = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict= opt_fit_dict, file=opt_fit_file)
 
     # vary the M parameters and store the M func values in a dictionary:
     var_func_vals = {}
     for param in opt_fit_dict.keys():
         this_shift_dict = find_neighbouring_params(fit_dict=opt_fit_dict, param=param, smaller_or_bigger=smaller_or_bigger)
         this_shift_file = get_filename_from_params(this_shift_dict)
-        var_func_vals[param] = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, file=this_shift_file)
+        var_func_vals[param] = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict, file=this_shift_file)
 
 
-    # Als naechstes muessen die Funktionswerte an den Messwertpunkten tau fuer alle Subsysteme gefunden werden.
-    # An diesen die Ableitung nach alllen Parametern bestimmen df(x, p)/dp|_x.
-    # Also:
-    # - alle Funktionswerte in einem 1d-array speichern (dim N Datenpunkte)
-    # - alle variierten Funktionswerte in 1d-arrays speichern (dim NxM Datenpunkte x Parameter)
+    # Als naechstes muss die Variation fuer jeden Parameter im dict berechnet werden.
+    #  - einmalig global fit quality berechnen
+    #  - in die Formel einsetzen (2 Formeln fehlen glaube ich)
+    #  - das sollte es sein
