@@ -102,6 +102,7 @@ def get_msd_exp():
 
 def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, folder_str, t0_el, geps, asfs, gpps, k_ep, cp_data, cp2_data, exp_data):
     chi_sq_loc = np.zeros((20, 16, 11, 16, 20), dtype=float)  # t0, gep, asf, gpp, k
+    task_gamma = np.round(gamma, 0)
 
     # Load experimental and simulation data
     temp, cp_temp = cp_data
@@ -113,8 +114,9 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
     # Loop through subsystems
     for folder, f_str in zip([files_te, files_mag, files_tp], folder_str):
         for file in folder:
+            file_gamma = np.round(float(file[file.find("gamma")+5:]), 0)
         
-            if not file.startswith("a") or gamma != float(file[file.find("gamma")+5:]):
+            if not file.startswith("a") or file_gamma != task_gamma:
                 continue
 
             # Extract parameters from the filename
@@ -180,13 +182,14 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
     min_ind = np.argmin(chi_sq_loc)
     t0_id_loc, gep_id_loc, asf_id_loc, gpp_id_loc, k_id_loc = np.unravel_index(min_ind, chi_sq_loc.shape)
 
-    gamma_loc = gamma
+    gamma_loc = task_gamma
     t0_loc = t0_el[t0_id_loc]
     gep_loc = geps[gep_id_loc]
     asf_loc = asfs[asf_id_loc]
     gpp_loc = gpps[gpp_id_loc]
+    k_loc = k_ep[k_id_loc]
 
-    best_params = (gamma_loc, t0_loc, gep_loc, asf_loc, gpp_loc)
+    best_params = (gamma_loc, t0_loc, gep_loc, asf_loc, gpp_loc, k_loc)
     return best_chi_sq_loc, best_params
 
 
