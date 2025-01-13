@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from scipy.stats import chi2
+from numpy.typing import NDArray
 
 from ..Source.finderb import finderb
 
@@ -25,7 +25,6 @@ def get_data(file, subsys):
         return
 
     return delay * 1e12 - 1, val_1, val_2
-
 
 def get_te_exp():
     f = io.loadmat('input_data/FGT/exp_data/Temperatures.mat')
@@ -144,8 +143,64 @@ def get_filename_from_params(param_dict: dict) -> str:
     return file_name
 
 
-def get_standard_deviations():
+def get_all_func_vals(all_subsys: tuple, all_exp: dict, file: str) -> NDArray:
+    cp_temp, cp_dat = (np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 1])
+    cp2_temp, cp2_dat = (np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 1])
+    all_func_vals = []
+    for subsys, subsys_exp in zip(all_subsys, all_exp):
+        delay, sys_1, sys_2 = get_data(file=file, subsys=subsys)
 
-    opt_fit_params = read_fit_file()
-    opt_fit_file = get_filename_from_params(opt_fit_params)
+        if subsys == "te":
+            delay += opt_fit_dict["t0"] * 1e-13
+            delay_indices = finderb(subsys_exp[0], delay)
+            all_func_vals += sys_1[delay_indices]
+        elif subsys == "tp":
+            delay_indices = finderb(subsys_exp[0], delay)
+            temp_indices = finderb(tp, cp_temp)
+            cp = cp_dat[temp_indices]
+            ep = cp * sys_1
 
+            temp2_indices = finderb(tp2, cp2_temp)
+            cp2 = cp2_dat[temp2_indices]
+            ep2 = cp2 * sys_2
+
+            ep_norm = (ep - ep[0]) / ep[finderb(10, delay)[0]] * opt_fit_dict["k"]
+            ep2_norm = (ep2 - ep2[0]) / ep2[finderb(10, delay)[0]] * (1 - opt_fit_dict["k"])
+            dat = ep_norm + ep2_norm / np.amax(ep_norm + ep2_norm)
+
+            all_func_vals += dat[delay_indices]
+        elif subsys == "mag":
+            delay_indices = finderb(subsys_exp[0], delay)
+            dat = 2 / 3 + 1 / 3 * sys_1
+            all_func_vals += dat[delay_indices]
+
+    all_func_vals = np.array(all_func_vals)
+    return all_func_vals
+
+
+def get_standard_deviations(smaller_or_bigger):
+
+    # static variables:
+    all_subsys = ("te", "tp", "mag")
+    all_exp = {"te": get_te_exp(), "tp": get_msd_exp(), "mag": get_mag_exp()}
+
+    # get optimal fit parameters and the corresponding file:
+    opt_fit_dict = read_fit_file()
+    opt_fit_file = get_filename_from_params(opt_fit_dict)
+
+    # get function values of optimal fit:
+    fit_func_vals = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, file=opt_fit_file)
+
+    # vary the M parameters and store the M func values in a dictionary:
+    var_func_vals = {}
+    for param in opt_fit_dict.keys():
+        this_shift_dict = find_neighbouring_params(fit_dict=opt_fit_dict, param=param, smaller_or_bigger=smaller_or_bigger)
+        this_shift_file = get_filename_from_params(this_shift_dict)
+        var_func_vals[param] = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, file=this_shift_file)
+
+
+    # Als naechstes muessen die Funktionswerte an den Messwertpunkten tau fuer alle Subsysteme gefunden werden.
+    # An diesen die Ableitung nach alllen Parametern bestimmen df(x, p)/dp|_x.
+    # Also:
+    # - alle Funktionswerte in einem 1d-array speichern (dim N Datenpunkte)
+    # - alle variierten Funktionswerte in 1d-arrays speichern (dim NxM Datenpunkte x Parameter)

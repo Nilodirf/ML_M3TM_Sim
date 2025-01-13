@@ -114,7 +114,7 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
     for folder, f_str in zip([files_te, files_mag, files_tp], folder_str):
         for file in folder:
         
-            if not file.startswith("a") or gamma != float(file[file.find("gamma")]):
+            if not file.startswith("a") or gamma != float(file[file.find("gamma")+5:]):
                 continue
 
             # Extract parameters from the filename
