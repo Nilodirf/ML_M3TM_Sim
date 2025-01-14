@@ -3,21 +3,51 @@ import os
 from numpy.typing import NDArray
 from scipy import io
 
-from ..Source.finderb import finderb
+
+def finderb(key, array):
+
+    key = np.array(key, ndmin=1)
+    n = len(key)
+    i = np.zeros([n], dtype=int)
+
+    for m in range(n):
+        i[m] = finderb_nest(key[m], array)
+    return i
+
+def finderb_nest(key, array):
+
+    a = 0  # start of intervall
+    b = len(array)  # end of intervall
+
+    # if the key is smaller than the first element of the
+    # vector we return 1
+    if key < array[0]:
+        return 0
+
+    while (b-a) > 1:  # loop until the intervall is larger than 1
+        c = int(np.floor((a+b)/2))  # center of intervall
+        if key < array[c]:
+            # the key is in the left half-intervall
+            b = c
+        else:
+            # the key is in the right half-intervall
+            a = c
+
+    return a
 
 def get_data(file, subsys):
     sim_files_folder = 'Results/FGT/' + file + '/'
     delay = np.load(sim_files_folder + 'delay.npy')
-    if subsys == 'te':
+    if subsys == "el":
         val_1 = np.load(sim_files_folder + 'tes.npy')[:, 0]
         val_2 = None
-    elif subsys == 'tp':
+    elif subsys == "tp":
         val_1 = np.load(sim_files_folder + 'tps.npy')[:, 0]
         if os.path.isfile(sim_files_folder + 'tp2s.npy'):
             val_2 = np.load(sim_files_folder + 'tp2s.npy')[:, 0]
         else:
             val_2 = None
-    elif subsys == 'mag':
+    elif subsys == "mag":
         val_1 = np.load(sim_files_folder + 'ms.npy')[:, 0]
         val_1 = val_1 / val_1[0]
         val_2 = None
@@ -160,7 +190,7 @@ def get_filename_from_params(param_dict: dict) -> str:
 
     return file_name
 
-def get_param_index(param: str) -> int:
+def assign_index_to(param: str) -> int:
     # returns a unique index for each parameter string
     index = None
     if param == "asf":
@@ -181,7 +211,7 @@ def get_param_index(param: str) -> int:
 
     return index
 
-def get_index_param(index: int) -> str:
+def assign_param_to(index: int) -> str:
     # inverse function to get_param_index()
     param = None
     if index == 0:
@@ -203,22 +233,22 @@ def get_index_param(index: int) -> str:
     return param
 
 
-def get_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file: str) -> NDArray:
+def collect_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file: str) -> NDArray:
     # returns the function values of the simulation data at the data points of experimental delays, appending all
     # datasets to one list
 
     cp_temp, cp_dat = (np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 1])
     cp2_temp, cp2_dat = (np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 1])
     all_func_vals = []
-    for subsys, subsys_exp in zip(all_subsys, all_exp):
-        delay, sys_1, sys_2 = get_data(file=file, subsys=subsys)
+    for subsys in all_subsys:
+        delay, sys_1, sys_2 = get_data(file=f"fits_global/{subsys}/{file}", subsys=subsys)
 
-        if subsys == "te":
+        if subsys == "el":
             delay += fit_dict["t0"] * 1e-13
-            delay_indices = finderb(subsys_exp[0], delay)
-            all_func_vals += sys_1[delay_indices]
+            delay_indices = finderb(all_exp["el"][0], delay)
+            all_func_vals += list(sys_1[delay_indices])
         elif subsys == "tp":
-            delay_indices = finderb(subsys_exp[0], delay)
+            delay_indices = finderb(all_exp["tp"][0], delay)
             temp_indices = finderb(sys_1, cp_temp)
             cp = cp_dat[temp_indices]
             ep = cp * sys_1
@@ -231,56 +261,62 @@ def get_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file: st
             ep2_norm = (ep2 - ep2[0]) / ep2[finderb(10, delay)[0]] * (1 - fit_dict["k"])
             dat = ep_norm + ep2_norm / np.amax(ep_norm + ep2_norm)
 
-            all_func_vals += dat[delay_indices]
+            all_func_vals += list(dat[delay_indices])
         elif subsys == "mag":
-            delay_indices = finderb(subsys_exp[0], delay)
+            delay_indices = finderb(all_exp["mag"][0], delay)
             dat = 2 / 3 + 1 / 3 * sys_1
-            all_func_vals += dat[delay_indices]
+            all_func_vals += list(dat[delay_indices])
 
     all_func_vals = np.array(all_func_vals)
     return all_func_vals
 
 
-def get_standard_deviations(smaller_or_bigger):
+def calculate_standard_deviations(smaller_or_bigger: str) -> None:
     # main function
 
     # static variables:
-    all_subsys = ("te", "tp", "mag")
-    all_exp = {"te": get_te_exp(), "tp": get_msd_exp(), "mag": get_mag_exp()}
+    all_subsys = ("el", "tp", "mag")
+    all_exp = {"el": get_te_exp(), "tp": get_msd_exp(), "mag": get_mag_exp()}
 
-    # get M optimal fit parameters and the corresponding file:
+    # get M optimal fit parameters, the corresponding file and value of chi_sq:
     opt_fit_dict = read_fit_file()
     opt_fit_file = get_filename_from_params(opt_fit_dict)
     opt_chi_sq = get_chi_sq_fit()
     M = len(opt_fit_dict)
 
-    # get N function values of optimal fit:
-    fit_func_vals = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict= opt_fit_dict, file=opt_fit_file)
+    # get N function values of optimal fit at the N datapoints in experimental data:
+    fit_func_vals = collect_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict= opt_fit_dict, file=opt_fit_file)
     N = len(fit_func_vals)
 
-    # vary the M parameters and create the Jacobi matrix of dimensions NxM:
+    # create Jacobi matrix of dimension NxM:
     J_ij = np.zeros((N, M))
     for param in opt_fit_dict.keys():
-        j = get_param_index(param)
+        j = assign_index_to(param)
 
+        # vary parameters and get the corresponding N datapoints
         this_shift_dict = find_neighbouring_params(fit_dict=opt_fit_dict, param=param, smaller_or_bigger=smaller_or_bigger)
         this_shift_file = get_filename_from_params(this_shift_dict)
-        var_func_vals = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict, file=this_shift_file)
+        var_func_vals = collect_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict, file=this_shift_file)
 
-        function_diff = var_func_vals - fit_func_vals[param]
+        # calculate the derivative df/dp by linear approximation
+        function_diff = var_func_vals - fit_func_vals
         param_diff = this_shift_dict[param] - opt_fit_dict[param]
         J_ij[:, j] = function_diff/param_diff
+    print(np.sum(J_ij[:, 0])) #CHECK WHEATHER I NEED TO NORMALIZE OR UN-NORMALIZE SOME DIFFERENCES!
 
     # create the covariance matrix of dimension MxM:
-    P_cov = opt_chi_sq/(N-M) * np.matmul(J_ij.T, J_ij)
+    P_cov = opt_chi_sq/(N-M) * np.dot(J_ij.T, J_ij)
 
     # determine the standard deviation for each parameter and store in dictionary:
     sigmas = {}
     for j in range(len(P_cov)):
-        param = get_index_param(j)
+        param = assign_param_to(j)
         sigmas[param] = np.sqrt(P_cov[j, j])
 
+    # print out results:
     print(f"Parameters: {opt_fit_dict} \n Sigmas: {sigmas}")
 
+    return
+
 if __name__ == "__main__":
-    get_standard_deviations(bigger)
+    calculate_standard_deviations(smaller_or_bigger="bigger")
