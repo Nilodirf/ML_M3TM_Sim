@@ -182,6 +182,7 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
                 print(f"File could not be assigned to subsystem: {f_str}{file}")
 
     # find the best local fit for each gamma and return:
+    chi_sq_loc[chi_sq_loc == 0] = np.inf
     best_chi_sq_loc = np.amin(chi_sq_loc)
     min_ind = np.argmin(chi_sq_loc)
     t0_id_loc, gep_id_loc, asf_id_loc, gpp_id_loc, k_id_loc = np.unravel_index(min_ind, chi_sq_loc.shape)
@@ -248,6 +249,7 @@ def global_manual_fit_parallel():
 
     # Save results
     with open("fit_values.dat", 'w+') as file:
+        file.write(f"chi_sq: {best_chi_sq}\n")
         file.write(f"gamma: {gamma_fit}\n")
         file.write(f"t0: {t0_fit}\n")
         file.write(f"gep: {gep_fit}\n")

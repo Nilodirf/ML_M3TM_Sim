@@ -22,7 +22,7 @@ def get_data(file, subsys):
         val_1 = val_1 / val_1[0]
         val_2 = None
     else:
-        print('Idiot, put te ot tp or mag for subsys')
+        print('Input te ot tp or mag for subsys')
         return
 
     return delay * 1e12 - 1, val_1, val_2
@@ -77,19 +77,32 @@ def read_fit_file() -> dict:
 
         for line in content:
             if line.startswith("gamma:"):
-                fit_dict["gamma"] = float(line[line.find("gamma:") + 6:])
+                fit_dict["gamma"] = float(line[line.find("gamma: ") + 7:])
             if line.startswith("gep:"):
-                fit_dict["gep"] = float(line[line.find("gep:") + 4:])
+                fit_dict["gep"] = float(line[line.find("gep: ") + 5:])
             if line.startswith("asf:"):
-                fit_dict["asf"] = float(line[line.find("asf:") + 4:])
+                fit_dict["asf"] = float(line[line.find("asf: ") + 5:])
             if line.startswith("gpp:"):
-                fit_dict["gpp"] = float(line[line.find("gpp:") + 4:])
+                fit_dict["gpp"] = float(line[line.find("gpp: ") + 5:])
             if line.startswith("t0:"):
-                fit_dict["t0"] = float(line[line.find("t0:") + 3:])
+                fit_dict["t0"] = float(line[line.find("t0: ") + 4:])
             if line.startswith("k:"):
-                fit_dict["k"] = float(line[line.find("k:") + 2:])
+                fit_dict["k"] = float(line[line.find("k: ") + 3:])
 
     return fit_dict
+
+def get_chi_sq_fit() -> float:
+    # retrieves the chi_sq value of the optimal fit from the fit file:
+
+    chi_sq = None
+    with open("fit_values.dat", 'r') as file:
+        content = file.readlines()
+
+        for line in content:
+            if line.startswith("chi_sq:"):
+                chi_sq = float(line[line.find("chi_sq: ") + 8:])
+
+    return chi_sq
 
 
 def find_neighbouring_params(fit_dict: dict, param:str, smaller_or_bigger: str) -> dict:
@@ -138,13 +151,62 @@ def find_neighbouring_params(fit_dict: dict, param:str, smaller_or_bigger: str) 
 
 def get_filename_from_params(param_dict: dict) -> str:
     # find simulation file name corresponding to parameters from dictionary
+    asf = np.round(param_dict['asf'], 3)
+    gep = np.round(param_dict['gep'], 1)
+    gpp = np.round(param_dict['gpp'], 1)
+    gamma = np.round(param_dict['gamma'], 1)
 
-    file_name = f"a{param_dict['asf']}gep{param_dict['gep']}gpp{param_dict['gpp']}gamma{param_dict['gamma']}"
+    file_name = f"a{asf}gep{gep}gpp{gpp}gamma{gamma}"
 
     return file_name
 
+def get_param_index(param: str) -> int:
+    # returns a unique index for each parameter string
+    index = None
+    if param == "asf":
+        index = 0
+    elif param == "gep":
+        index = 1
+    elif param == "gpp":
+        index = 2
+    elif param == "gamma":
+        index = 3
+    elif param == "t0":
+        index = 4
+    elif param == "k":
+        index = 5
+    else:
+        print(f"Param {param} not found in dict.")
+        exit()
+
+    return index
+
+def get_index_param(index: int) -> str:
+    # inverse function to get_param_index()
+    param = None
+    if index == 0:
+        param = "asf"
+    elif index == 1:
+        param = "gep"
+    elif index == 2:
+        param = "gpp"
+    elif index == 3:
+        param = "gamma"
+    elif index == 4:
+        param = "t0"
+    elif index == 5:
+        param = "k"
+    else:
+        print(f"Index {index} not found in list")
+        exit()
+
+    return param
+
 
 def get_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file: str) -> NDArray:
+    # returns the function values of the simulation data at the data points of experimental delays, appending all
+    # datasets to one list
+
     cp_temp, cp_dat = (np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p1.txt')[:, 1])
     cp2_temp, cp2_dat = (np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 0], np.loadtxt('input_data/FGT/FGT_c_p2.txt')[:, 1])
     all_func_vals = []
@@ -180,27 +242,45 @@ def get_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file: st
 
 
 def get_standard_deviations(smaller_or_bigger):
+    # main function
 
     # static variables:
     all_subsys = ("te", "tp", "mag")
     all_exp = {"te": get_te_exp(), "tp": get_msd_exp(), "mag": get_mag_exp()}
 
-    # get optimal fit parameters and the corresponding file:
+    # get M optimal fit parameters and the corresponding file:
     opt_fit_dict = read_fit_file()
     opt_fit_file = get_filename_from_params(opt_fit_dict)
+    opt_chi_sq = get_chi_sq_fit()
+    M = len(opt_fit_dict)
 
-    # get function values of optimal fit:
+    # get N function values of optimal fit:
     fit_func_vals = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict= opt_fit_dict, file=opt_fit_file)
+    N = len(fit_func_vals)
 
-    # vary the M parameters and store the M func values in a dictionary:
-    var_func_vals = {}
+    # vary the M parameters and create the Jacobi matrix of dimensions NxM:
+    J_ij = np.zeros((N, M))
     for param in opt_fit_dict.keys():
+        j = get_param_index(param)
+
         this_shift_dict = find_neighbouring_params(fit_dict=opt_fit_dict, param=param, smaller_or_bigger=smaller_or_bigger)
         this_shift_file = get_filename_from_params(this_shift_dict)
-        var_func_vals[param] = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict, file=this_shift_file)
+        var_func_vals = get_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict, file=this_shift_file)
 
+        function_diff = var_func_vals - fit_func_vals[param]
+        param_diff = this_shift_dict[param] - opt_fit_dict[param]
+        J_ij[:, j] = function_diff/param_diff
 
-    # Als naechstes muss die Variation fuer jeden Parameter im dict berechnet werden.
-    #  - einmalig global fit quality berechnen
-    #  - in die Formel einsetzen (2 Formeln fehlen glaube ich)
-    #  - das sollte es sein
+    # create the covariance matrix of dimension MxM:
+    P_cov = opt_chi_sq/(N-M) * np.matmul(J_ij.T, J_ij)
+
+    # determine the standard deviation for each parameter and store in dictionary:
+    sigmas = {}
+    for j in range(len(P_cov)):
+        param = get_index_param(j)
+        sigmas[param] = np.sqrt(P_cov[j, j])
+
+    print(f"Parameters: {opt_fit_dict} \n Sigmas: {sigmas}")
+
+if __name__ == "__main__":
+    get_standard_deviations(bigger)
