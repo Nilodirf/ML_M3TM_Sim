@@ -1,10 +1,7 @@
 import numpy as np
 import os
 from matplotlib import pyplot as plt
-from matplotlib import cm
 from scipy import io
-from scipy.stats import chi2
-import time
 
 
 def finderb(key, array):
