@@ -6,12 +6,43 @@ from scipy import io
 from scipy.stats import chi2
 import time
 
-from ..Source.finderb import finderb
+
+def finderb(key, array):
+
+    key = np.array(key, ndmin=1)
+    n = len(key)
+    i = np.zeros([n], dtype=int)
+
+    for m in range(n):
+        i[m] = finderb_nest(key[m], array)
+    return i
+
+
+def finderb_nest(key, array):
+
+    a = 0  # start of intervall
+    b = len(array)  # end of intervall
+
+    # if the key is smaller than the first element of the
+    # vector we return 1
+    if key < array[0]:
+        return 0
+
+    while (b-a) > 1:  # loop until the intervall is larger than 1
+        c = int(np.floor((a+b)/2))  # center of intervall
+        if key < array[c]:
+            # the key is in the left half-intervall
+            b = c
+        else:
+            # the key is in the right half-intervall
+            a = c
+
+    return a
 
 
 def get_data(file, subsys):
 
-    sim_files_folder = 'Results/FGT/' + file + '/'
+    sim_files_folder = file + '/'
     delay = np.load(sim_files_folder + 'delay.npy')
     if subsys == 'te':
         val_1 = np.load(sim_files_folder + 'tes.npy')[:, 0]
@@ -96,6 +127,7 @@ def create_figure():
 
 def plot_te(file, figure, axs, show_exp=True):
     delay, te, bla = get_data(file, 'te')
+    delay += 0.1
     axs[0].plot(delay, te, color='orange')
 
     if show_exp:
@@ -126,7 +158,7 @@ def plot_tp(file, figure, axs, show_exp=True):
     temp_indices = finderb(tp, temp)
     cp = cp_temp[temp_indices]
     ep = cp*tp
-    ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * 0.4
+    ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * 0.3
     axs[2].plot(delay, ep_norm, color='blue', alpha=0.3)
 
     if tp2 is not None:
@@ -136,7 +168,7 @@ def plot_tp(file, figure, axs, show_exp=True):
         temp2_indices = finderb(tp2, temp2)
         cp2 = cp2_temp[temp2_indices]
         ep2 = cp2 * tp2
-        ep2_norm = (ep2-ep2[0]) / ep2[finderb(5, delay)[0]] * 0.6
+        ep2_norm = (ep2-ep2[0]) / ep2[finderb(5, delay)[0]] * 0.7
 
         ep_tot_norm = ep_norm + ep2_norm/(np.amax(ep_norm+ep2_norm))
 
@@ -164,380 +196,15 @@ def save_plot(figure, axs, name):
 
 def show_fits(save, show):
     fig, axs = create_figure()
-    fig, axs = plot_te(file='fits_new/te_tt_15fs', figure=fig, axs=axs)
-    fig, axs = plot_tp(file='fits_new/tp_tt_15fs', figure=fig, axs=axs)
-    fig, axs = plot_mag(file='fits_new/mag_tt_15fs', figure=fig, axs=axs)
+    fig, axs = plot_te(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', figure=fig, axs=axs)
+    fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_tp', figure=fig, axs=axs)
+    fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_mag', figure=fig, axs=axs)
     if save:
-        save_plot(fig, axs, 'bad_fit_to_show.pdf')
+        save_plot(fig, axs, 'new_fit_to_show.pdf')
     if show:
         show_plot(fig, axs)
 
         return
 
-
-show_fits(save=True, show=True)
-
-
-def init_fit():
-    # Find the optimal parameters for \gamma and therm_time from fitting the initial electron temperature increase
-
-    files = os.listdir('Results/FGT/fits_init')
-    gammas = np.arange(165, 256)
-    therm_times = np.arange(0, 41)
-    chi_sq = np.ones((41, 91))*100
-    for file in files:
-        full_path = 'fits_init/' + file
-        therm_time = float(file[:file.find('_')])
-        gamma = int(file[file.find('_')+1:])
-
-        therm_time_index = finderb(therm_time, therm_times)[0]
-        gamma_index = finderb(gamma, gammas)[0]
-
-        delay, te, bla = get_data(full_path, 'te')
-        exp_delay, exp_te, exp_dte = get_te_exp()
-
-        max_fit_delay_index = finderb(20, exp_delay)[0]
-        fit_delay = exp_delay[:max_fit_delay_index]
-
-        delay_indices = finderb(fit_delay, delay)
-        cs = np.sum(((exp_te[:max_fit_delay_index]-te[delay_indices])/exp_dte[:max_fit_delay_index])**2)
-        cs_norm = cs/len(delay_indices)
-
-        # if therm_time == 13 and gamma == 211:
-        #     plt.figure(figsize=(8, 6))
-        #     plt.plot(delay[:delay_indices[-1]], te[:delay_indices[-1]], color='orange', label='sim')
-        #     plt.scatter(delay[delay_indices], te[delay_indices], color='orange', label='sim points')
-        #     plt.errorbar(exp_delay[:max_fit_delay_index], exp_te[:max_fit_delay_index],
-        #                  yerr=exp_dte[:max_fit_delay_index],
-        #                  fmt='o', color='blue', label='data points')
-        #     plt.legend(fontsize=14)
-        #     plt.xlabel(r'delay [ps]', fontsize=16)
-        #     plt.ylabel(r'$T_e$ [K]', fontsize=16)
-        #     plt.xlim(delay[delay_indices[0]], delay[delay_indices[-1]])
-        #     plt.savefig('Results/FGT/best_init_fit.pdf')
-        #     plt.show()
-
-        chi_sq[therm_time_index, gamma_index] = cs_norm
-
-    min = np.amin(chi_sq)
-    conf = chi2.ppf(min, df=2)
-    p = chi2.ppf(0.68, df=2)
-    min_ind = np.argmin(chi_sq)
-
-    tt_fit_ind, gamma_fit_ind = np.unravel_index(min_ind, chi_sq.shape)
-    tt_fit = therm_times[tt_fit_ind]
-    gamma_fit = gammas[gamma_fit_ind]
-
-    gamma_konv_ind = finderb(min+p, chi_sq[tt_fit_ind, :])
-    tt_konv_ind = finderb(min+p, chi_sq[:, gamma_fit_ind])
-    gamma_konv = gammas[gamma_konv_ind]
-    tt_konv = therm_times[tt_konv_ind]
-    sigma_tt = np.abs(tt_fit-tt_konv)/p
-    sigma_gamma = np.abs(gamma_fit-gamma_konv)/p
-
-    print('++++++++++++++++++++++++++++++++')
-    print('init_fit')
-    print('confidence: ', conf)
-    print('minimum of chi_sq: ', min)
-    print('best tt fit value: ', tt_fit, ' fs')
-    print('best gamma fit value: ', gamma_fit, ' J/m^3/K^2')
-    print('sigma tt: ', sigma_tt, ' fs')
-    print('sigma gamma: ', sigma_gamma, ' J/m^3/K^2')
-    print('++++++++++++++++++++++++++++++++')
-    print()
-
-    therm_times, gammas = np.meshgrid(therm_times, gammas)
-
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    surf = ax.plot_surface(therm_times, gammas, chi_sq.T, cmap=cm.coolwarm,
-                           linewidth=0, antialiased=False)
-    fig.colorbar(surf, shrink=0.5, aspect=5, label=r'$\chi^2$')
-    plt.xlabel(r'thermalization time [fs]', fontsize=14)
-    plt.ylabel(r'$\gamma_{el}$ [J/m$^3$/K$^2$]', fontsize=14)
-    plt.show()
-
-    return
-
-
-def inter_fit(show_fit=False, show_asf=0, show_gep=0):
-    files_te = os.listdir('Results/FGT/fits_inter_2/el')
-    files_mag = os.listdir('Results/FGT/fits_inter_2/mag')
-    folder_str = ['el/', 'mag/']
-    asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02, 0.021, 0.022, 0.023, 0.024, 0.025])
-    geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4,
-                     5.5, 5.6, 5.7, 5.8, 5.9, 6., 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.])
-    chi_sq_te = np.zeros((16, 31))
-    chi_sq_mag = np.zeros((16, 31))
-
-    for folder, f_str, cs in zip([files_te, files_mag], folder_str, [chi_sq_te, chi_sq_mag]):
-        for file in folder:
-            full_path = 'fits_inter_2/' + f_str + file
-            asf = float(file[1:file.find('g')])
-            gep = float(file[file.find('g') + 1:])
-
-            asf_index = finderb(asf, asfs)[0]
-            gep_index = finderb(gep, geps)[0]
-
-            if f_str == 'el/':
-                delay, dat, bla = get_data(full_path, 'te')
-                exp_delay, exp_dat, exp_dd = get_te_exp()
-                dd_sq_el = np.sum((exp_dd/exp_dat)**2)
-                n_el = len(exp_dat)
-                n = n_el
-            else:
-                delay, dat, bla = get_data(full_path, 'mag')
-                dat = 2/3 + 1/3*dat
-                exp_delay, exp_dat, exp_dd = get_mag_exp()
-                dd_sq_mag = np.sum((exp_dd / exp_dat) ** 2)
-                n_mag = len(exp_dat)
-                n = n_mag
-
-            delay_indices = finderb(exp_delay, delay)
-            cs_norm = np.sum(((exp_dat - dat[delay_indices]) / exp_dd) ** 2)/ len(delay_indices-2)
-            cs[asf_index, gep_index] = cs_norm
-
-            if show_fit:
-                if gep == show_gep and asf == show_asf:
-                    plt.figure(figsize=(8, 6))
-                    plt.plot(delay[:delay_indices[-1]], dat[:delay_indices[-1]], color='orange', label='sim')
-                    plt.scatter(delay[delay_indices], dat[delay_indices], color='orange', label='sim points')
-                    plt.errorbar(exp_delay, exp_dat,
-                                 yerr=exp_dd,
-                                 fmt='o', color='blue', label='data points')
-                    plt.legend(fontsize=14)
-                    plt.xlabel(r'delay [ps]', fontsize=16)
-                    plt.ylabel(r'Observable', fontsize=16)
-                    plt.xlim(delay[delay_indices[0]], delay[delay_indices[-1]])
-                    # plt.savefig('Results/FGT/best_init_fit.pdf')
-                    plt.show()
-
-        min = np.amin(cs)
-        conf = chi2.cdf(min, df=n-2)
-        p = chi2.ppf(0.68, df=n-2)
-        min_ind = np.argmin(cs)
-
-        asf_fit_ind, gep_fit_ind = np.unravel_index(min_ind, cs.shape)
-        asf_fit = asfs[asf_fit_ind]
-        gep_fit = geps[gep_fit_ind]
-
-        asf_konv_ind = finderb(min + p, cs[:, gep_fit_ind])
-        gep_konv_ind = finderb(min + p, cs[asf_fit_ind, :])
-        asf_konv = asfs[asf_konv_ind]
-        gep_konv = geps[gep_konv_ind]
-        sigma_asf = np.abs(asf_fit - asf_konv) / p
-        sigma_gep = np.abs(gep_fit - gep_konv) / p
-
-        print('++++++++++++++++++++++++++++++++')
-        print('inter_fit')
-        print('subssystem: ', f_str)
-        print('confidence: ', conf)
-        print('within 0.68 probability: ', p)
-        print('minimum of chi_sq: ', min)
-        print('best asf fit value: ', asf_fit)
-        print('best gep fit value: ', gep_fit, ' W/m^3/K')
-        print('sigma asf: ', sigma_asf)
-        print('sigma gep: ', sigma_gep, ' W/m^3/K')
-        print('++++++++++++++++++++++++++++++++')
-        print()
-
-        asfs_mesh, geps_mesh = np.meshgrid(asfs, geps)
-
-        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-        surf = ax.plot_surface(asfs_mesh, geps_mesh, cs.T, cmap=cm.coolwarm,
-                               linewidth=0, antialiased=False)
-        fig.colorbar(surf, shrink=0.5, aspect=5, label=r'$\chi^2$')
-        plt.xlabel(r'$a_{sf}$', fontsize=14)
-        plt.ylabel(r'$g_{ep}$ [W/m$^3$/K]', fontsize=14)
-        plt.title(f_str, fontsize=16)
-        plt.show()
-
-    # determine and normalize the overall fit quality of two subsystems:
-    chi_sq_te_weighted = chi_sq_te * (n_el-2)
-    chi_sq_mag_weighted = chi_sq_mag * (n_mag-2)
-    chi_sq_tot = (chi_sq_te_weighted + chi_sq_mag_weighted) / (n_el+n_mag-4)
-
-    # find the minimum and confidence of the fit, and the confidence radius of sigma:
-    min = np.amin(chi_sq_tot)
-    conf = chi2.cdf(min, df=n_el+n_mag-4)
-    p = chi2.ppf(0.68, df=n_el+n_mag-4)
-    min_ind = np.argmin(chi_sq_tot)
-
-    # find the corresponding fit parameter values for the best fit:
-    asf_fit_ind, gep_fit_ind = np.unravel_index(min_ind, chi_sq_tot.shape)
-    asf_fit = asfs[asf_fit_ind]
-    gep_fit = geps[gep_fit_ind]
-
-    # find the short and long axis of the ellipsis (not guaranteed that this is right!):
-    asf_konv_ind = finderb(min + p, chi_sq_tot[:, gep_fit_ind])
-    gep_konv_ind = finderb(min + p, chi_sq_tot[asf_fit_ind, :])
-    asf_konv = asfs[asf_konv_ind]
-    gep_konv = geps[gep_konv_ind]
-    sigma_asf = np.abs(asf_fit - asf_konv) / p
-    sigma_gep = np.abs(gep_fit - gep_konv) / p
-
-    # find the proper ellipsis:
-    conv_int_mask = np.abs(chi_sq_tot-np.amin(chi_sq_tot)-p) <= 5e-1
-    conv_intervall = chi_sq_tot[conv_int_mask]
-    conv_int_int = conv_int_mask.astype(int)
-
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    surf = ax.plot_surface(asfs_mesh, geps_mesh, conv_int_int.T, cmap=cm.coolwarm,
-                           linewidth=0, antialiased=False)
-    fig.colorbar(surf, shrink=0.5, aspect=5, label=r'$\chi^2$')
-    plt.xlabel(r'$a_{sf}$', fontsize=14)
-    plt.ylabel(r'$g_{ep}$ [W/m$^3$/K]', fontsize=14)
-    plt.title('conv_rad', fontsize=16)
-    plt.show()
-
-
-    print('++++++++++++++++++++++++++++++++')
-    print('inter_fit')
-    print('subssystem: both')
-    print('commulative porbability of fit quality: ', conf)
-    print('chi2 within 0.68 probability: ', p)
-    print('minimum of chi_sq: ', min)
-    print('best asf fit value: ', asf_fit)
-    print('best gep fit value: ', gep_fit, ' W/m^3/K')
-    print('sigma asf: ', sigma_asf)
-    print('sigma gep: ', sigma_gep, ' W/m^3/K')
-    print('++++++++++++++++++++++++++++++++')
-    print()
-
-    asfs_mesh, geps_mesh = np.meshgrid(asfs, geps)
-
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    surf = ax.plot_surface(asfs_mesh, geps_mesh, chi_sq_tot.T, cmap=cm.coolwarm,
-                           linewidth=0, antialiased=False)
-    fig.colorbar(surf, shrink=0.5, aspect=5, label=r'$\chi^2$')
-    plt.xlabel(r'$a_{sf}$', fontsize=14)
-    plt.ylabel(r'$g_{ep}$ [W/m$^3$/K]', fontsize=14)
-    plt.title(r'both', fontsize=16)
-    plt.show()
-
-    return
-
-
-def global_manual_fit():
-
-    start = time.time()
-    files_te = os.listdir('Results/FGT/fits_global/el')
-    files_mag = os.listdir('Results/FGT/fits_global/mag')
-    files_tp = os.listdir('Results/FGT/fits_global/tp')
-    folder_str = ['el/', 'mag/', 'tp/']
-
-    gammas = np.arange(205, 226).astype(float)  # 21
-    t0_el = np.arange(20)  # 20
-    geps = np.array([4.0, 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 5.0, 5.1, 5.2, 5.3, 5.4, 5.5])  # 16
-    asfs = np.array([0.01, 0.011, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018, 0.019, 0.02])  # 11
-    gpps = np.array([2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 4.0])  # 16
-    k_ep = np.arange(5, 25)*2e-2  # 20
-
-    chi_sq = np.zeros((21, 20, 16, 11, 16, 20))  # gamma, t0, gep, asf, gpp
-
-    # load the phonon heat capacities to use later in the fits:
-    cp_dat = np.loadtxt('input_data/FGT/FGT_c_p1.txt')
-    temp = cp_dat[:, 0]
-    cp_temp = cp_dat[:, 1]
-    cp2_dat = np.loadtxt('input_data/FGT/FGT_c_p2.txt')
-    temp2 = cp2_dat[:, 0]
-    cp2_temp = cp2_dat[:, 1]
-
-    # load the experimental data:
-    exp_delay_mag, exp_dat_mag, exp_dd_mag = get_mag_exp()
-    sigma_rel_mag = np.sum(exp_dd_mag / exp_dat_mag)
-
-    exp_delay_te, exp_dat_te, exp_dd_te = get_te_exp()
-    sigma_rel_te = np.sum(exp_dd_te / exp_dat_te)
-
-    exp_delay_tp, exp_dat_tp, exp_dd_tp = get_msd_exp()
-    sigma_rel_tp = np.sum(exp_dd_tp / exp_dat_tp)
-
-    # first loop for all three subsystems CHANGE THIS TO ADD TO ONLY ONE GLOBAL FIT QUALITY MATRIX!
-    for folder, f_str in zip([files_te, files_mag, files_tp], folder_str):
-        # for all simulations in each subsystem:
-        for file in folder:
-            # find the parameters from the files in the above defined arrays:
-            full_path = 'fits_global/' + f_str + file
-            asf = float(file[file.find('a')+1: file.find("gep")])
-            gep = float(file[file.find('gep') + 3: file.find("gpp")])
-            gpp = float(file[file.find("gpp") + 3: file.find("gamma")])
-            gamma = float(file[file.find("gamma") + 5:])
-
-            asf_index = finderb(asf, asfs)[0]
-            gep_index = finderb(gep, geps)[0]
-            gpp_index = finderb(gpp, gpps)[0]
-            gamma_index = finderb(gamma, gammas)[0]
-
-            # this for loop is definitely not optimal for computation time, but I don't care for now:
-            for t0_index, t0_shift in enumerate(t0_el):
-                for k_index, k in enumerate(k_ep):
-                    # load the simulation data
-                    if f_str == 'el/':
-                        delay, dat, bla = get_data(full_path, 'te')
-                        delay += t0_shift*1e-13
-                        exp_delay, exp_dat, exp_dd = exp_delay_te, exp_dat_te, exp_dd_te
-                        sigma_rel = sigma_rel_te
-                    elif f_str == 'mag/':
-                        delay, dat, bla = get_data(full_path, 'mag')
-                        dat = 2/3 + 1/3*dat
-                        exp_delay, exp_dat, exp_dd = exp_delay_mag, exp_dat_mag, exp_dd_mag
-                        sigma_rel = sigma_rel_mag
-                    else:
-                        delay, tp, tp2 = get_data(full_path, 'tp')
-                        exp_delay, exp_dat, exp_dd = exp_delay_tp, exp_dat_tp, exp_dd_tp
-                        sigma_rel = sigma_rel_tp
-
-                        temp_indices = finderb(tp, temp)
-                        cp = cp_temp[temp_indices]
-                        ep = cp * tp
-
-                        temp2_indices = finderb(tp2, temp2)
-                        cp2 = cp2_temp[temp2_indices]
-                        ep2 = cp2 * tp2
-
-                        ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * k
-                        ep2_norm = (ep2 - ep2[0]) / ep2[finderb(5, delay)[0]] * (1-k)
-
-                        dat = ep_norm + ep2_norm / (np.amax(ep_norm + ep2_norm))
-
-                    # compute the fit quality and put it into the respective array:
-                    delay_indices = finderb(exp_delay, delay)
-                    cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2) / len(delay_indices)
-                    chi_sq[gamma_index, t0_index, gep_index, asf_index, gpp_index, k_index] += cs_norm
-
-    # find the minimum and confidence of the fit, and the confidence radius of sigma:
-    min_ind = np.argmin(chi_sq)
-
-    # find the corresponding fit parameter values for the best fit:
-    gamma_fit_index, t0_fit_index, gep_fit_index, asf_fit_index, gpp_fit_index, k_fit_index =\
-        np.unravel_index(min_ind, chi_sq.shape)
-
-    gamma_fit = gammas[gamma_fit_index]
-    asf_fit = asfs[asf_fit_index]
-    gep_fit = geps[gep_fit_index]
-    t0_fit = t0_el[t0_fit_index]
-    gpp_fit = gpps[gpp_fit_index]
-    k_fit = k_ep[k_fit_index]
-
-    print(f"gamma: {gamma_fit}")
-    print(f"asf: {asf_fit}")
-    print(f"gep: {gep_fit}")
-    print(f"gpp: {gpp_fit}")
-    print(f"t0: {t0_fit}")
-    print(f"k: {k_fit}")
-
-    end = time.time()
-    runtime = end-start
-
-    with open("fit_values.dat", 'w+') as file:
-        file.write(f"gamma: {gamma_fit}" + "\n")
-        file.write(f"asf: {asf_fit}" + "\n")
-        file.write(f"gep: {gep_fit}" + "\n")
-        file.write(f"gpp: {gpp_fit}" + "\n")
-        file.write(f"t0: {t0_fit}" + "\n")
-        file.write(f"k: {k_fit}" + "\n")
-        file.write(f"time spent: {runtime}")
-
-    return
-
-global_manual_fit()
+if __name__ == "__main__":
+    show_fits(True, True)

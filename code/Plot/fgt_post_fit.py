@@ -102,7 +102,7 @@ def read_fit_file() -> dict:
 
     fit_dict = {}
 
-    with open("fit_values.dat", 'r') as file:
+    with open("fit_values_t0_fs.dat", 'r') as file:
         content = file.readlines()
 
         for line in content:
@@ -244,7 +244,7 @@ def collect_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file
         delay, sys_1, sys_2 = get_data(file=f"fits_global/{subsys}/{file}", subsys=subsys)
 
         if subsys == "el":
-            delay += fit_dict["t0"] * 1e-13
+            delay += fit_dict["t0"] * 1e-3
             delay_indices = finderb(all_exp["el"][0], delay)
             all_func_vals += list(sys_1[delay_indices])
         elif subsys == "tp":
@@ -271,7 +271,7 @@ def collect_all_func_vals(all_subsys: tuple, all_exp: dict, fit_dict: dict, file
     return all_func_vals
 
 
-def calculate_standard_deviations(smaller_or_bigger: str) -> None:
+def calculate_standard_deviations() -> None:
     # main function
 
     # static variables:
@@ -294,18 +294,22 @@ def calculate_standard_deviations(smaller_or_bigger: str) -> None:
         j = assign_index_to(param)
 
         # vary parameters and get the corresponding N datapoints
-        this_shift_dict = find_neighbouring_params(fit_dict=opt_fit_dict, param=param, smaller_or_bigger=smaller_or_bigger)
-        this_shift_file = get_filename_from_params(this_shift_dict)
-        var_func_vals = collect_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict, file=this_shift_file)
+        this_shift_dict_smaller = find_neighbouring_params(fit_dict=opt_fit_dict, param=param, smaller_or_bigger="smaller")
+        this_shift_dict_bigger = find_neighbouring_params(fit_dict=opt_fit_dict, param=param, smaller_or_bigger="bigger")
+        this_shift_file_smaller = get_filename_from_params(this_shift_dict_smaller)
+        this_shift_file_bigger = get_filename_from_params(this_shift_dict_bigger)
+        
+        var_func_vals_smaller = collect_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict_smaller, file=this_shift_file_smaller)
+        var_func_vals_bigger = collect_all_func_vals(all_subsys=all_subsys, all_exp=all_exp, fit_dict=this_shift_dict_bigger, file=this_shift_file_bigger)
 
         # calculate the derivative df/dp by linear approximation
-        function_diff = var_func_vals - fit_func_vals
-        param_diff = this_shift_dict[param] - opt_fit_dict[param]
+        function_diff = var_func_vals_bigger - var_func_vals_smaller
+        param_diff = this_shift_dict_bigger[param] - this_shift_dict_smaller[param]
         J_ij[:, j] = function_diff/param_diff
-    print(np.sum(J_ij[:, 0])) #CHECK WHEATHER I NEED TO NORMALIZE OR UN-NORMALIZE SOME DIFFERENCES!
-
+  
+    print(opt_chi_sq/(N-M))
     # create the covariance matrix of dimension MxM:
-    P_cov = opt_chi_sq/(N-M) * np.dot(J_ij.T, J_ij)
+    P_cov = opt_chi_sq/(N-M) * np.linalg.inv(np.matmul(J_ij.T, J_ij))
 
     # determine the standard deviation for each parameter and store in dictionary:
     sigmas = {}
@@ -319,4 +323,4 @@ def calculate_standard_deviations(smaller_or_bigger: str) -> None:
     return
 
 if __name__ == "__main__":
-    calculate_standard_deviations(smaller_or_bigger="bigger")
+    calculate_standard_deviations()

@@ -101,7 +101,7 @@ def get_msd_exp():
 
 
 def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, folder_str, t0_el, geps, asfs, gpps, k_ep, cp_data, cp2_data, exp_data):
-    chi_sq_loc = np.zeros((20, 16, 11, 16, 20), dtype=float)  # t0, gep, asf, gpp, k
+    chi_sq_loc = np.zeros((20, 16, 11, 16, 20), dtype=float) # t0, gep, asf, gpp, k
     task_gamma = np.round(gamma, 0)
 
     # Load experimental and simulation data
@@ -149,7 +149,7 @@ def compute_chi_sq_for_gamma(gamma_index, gamma, files_te, files_mag, files_tp, 
                 exp_delay, exp_dat, sigma_rel = exp_delay_te, exp_dat_te, sigma_rel_te
 
                 for t0_index, t0_shift in enumerate(t0_el):
-                    delay += t0_shift * 1e-13
+                    delay -= t0_shift * 1e-3
                     delay_indices = finderb(exp_delay, delay)
                     cs_norm = np.sum(((exp_dat - dat[delay_indices]) / sigma_rel) ** 2)
                     chi_sq_loc[t0_index, gep_index, asf_index, gpp_index, :] += cs_norm
@@ -248,7 +248,7 @@ def global_manual_fit_parallel():
     runtime = time.time() - start
 
     # Save results
-    with open("fit_values.dat", 'w+') as file:
+    with open("fit_values_minus_t0_fs.dat", 'w+') as file:
         file.write(f"chi_sq: {best_chi_sq}\n")
         file.write(f"gamma: {gamma_fit}\n")
         file.write(f"t0: {t0_fit}\n")
