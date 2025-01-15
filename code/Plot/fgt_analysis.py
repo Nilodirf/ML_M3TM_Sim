@@ -115,8 +115,8 @@ def create_figure():
     axs[2].set_ylabel(r'MSD', fontsize=16)
 
     axs[0].set_xlim(-0.05, 0.5)
-    axs[1].set_xlim(-0.1, 10)
-    axs[2].set_xlim(-0.1, 10)
+    axs[1].set_xlim(-0.1, 5)
+    axs[2].set_xlim(-0.1, 5)
 
     axs[1].set_ylim(0.5, 1.05)
 
@@ -127,7 +127,7 @@ def create_figure():
 
 def plot_te(file, figure, axs, show_exp=True):
     delay, te, bla = get_data(file, 'te')
-    delay += 0.1
+    delay += 0.001
     axs[0].plot(delay, te, color='orange')
 
     if show_exp:
