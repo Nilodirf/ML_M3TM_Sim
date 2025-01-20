@@ -108,8 +108,8 @@ def create_figure():
     axs[2].set_xlabel(r'delay [ps]', fontsize=16)
 
     axs[0].set_ylabel(r'$T_e$', fontsize=16)
-    axs[1].set_ylabel(r'$m/m_0$', fontsize=16)
-    axs[2].set_ylabel(r'MSD', fontsize=16)
+    axs[1].set_ylabel(r'$m_{tot}/m_0$', fontsize=16)
+    axs[2].set_ylabel(r'$\Delta \widetilde{MSD}$', fontsize=16)
 
     axs[0].set_xlim(-0.05, 0.5)
     axs[1].set_xlim(-0.1, 5)
