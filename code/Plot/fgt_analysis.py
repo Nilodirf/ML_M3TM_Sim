@@ -191,6 +191,8 @@ def create_figure_te(show, save):
     if show:
         plt.show()
 
+    return
+
 
 def plot_te(file, figure, axs, show_exp=True):
     delay, te, bla = get_data(file, 'te')
@@ -225,8 +227,7 @@ def plot_tp(file, figure, axs, show_exp=True):
     temp_indices = finderb(tp, temp)
     cp = cp_temp[temp_indices]
     ep = cp*tp
-    ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]] * 0.3
-    axs[2].plot(delay, ep_norm, color='blue', alpha=0.3)
+    ep_norm = (ep - ep[0]) / ep[finderb(5, delay)[0]]
 
     if tp2 is not None:
         cp2_dat = np.loadtxt('input_data/FGT/FGT_c_p2.txt')
@@ -237,10 +238,13 @@ def plot_tp(file, figure, axs, show_exp=True):
         ep2 = cp2 * tp2
         ep2_norm = (ep2-ep2[0]) / ep2[finderb(5, delay)[0]] * 0.7
 
+        ep_norm = ep_norm * 0.3
         ep_tot_norm = ep_norm + ep2_norm/(np.amax(ep_norm+ep2_norm))
 
         axs[2].plot(delay, ep2_norm, color='blue', ls='dashed', alpha=0.2)
         axs[2].plot(delay, ep_tot_norm, color='blue')
+
+    axs[2].plot(delay, ep_norm, color='blue', alpha=0.3)
 
     if show_exp:
         exp_delay, exp_msd, exp_dmsd = get_msd_exp()
@@ -265,6 +269,7 @@ def show_fits(show, save):
     fig, axs = create_figure()
     fig, axs = plot_te(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', figure=fig, axs=axs)
     fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_tp', figure=fig, axs=axs)
+    fig, axs = plot_tp(file='Results/FGT/M3TM_tp', figure=fig, axs=axs, show_exp=False)
     fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_mag', figure=fig, axs=axs)
     if save:
         save_plot(fig, axs, 'new_fit_to_show.pdf')
@@ -274,5 +279,5 @@ def show_fits(show, save):
         return
 
 if __name__ == "__main__":
-    create_figure_te(True, True)
-    # show_fits(True, True)
+    # create_figure_te(True, False)
+    show_fits(True, True)
