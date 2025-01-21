@@ -107,7 +107,7 @@ def create_figure():
 
     axs[2].set_xlabel(r'delay [ps]', fontsize=16)
 
-    axs[0].set_ylabel(r'$T_e$', fontsize=16)
+    axs[0].set_ylabel(r'$T_e$ [K]', fontsize=16)
     axs[1].set_ylabel(r'$m_{tot}/m_0$', fontsize=16)
     axs[2].set_ylabel(r'$\Delta \widetilde{MSD}$', fontsize=16)
 
@@ -120,6 +120,76 @@ def create_figure():
     fig.tight_layout()
 
     return fig, axs
+
+def create_figure_te(show, save):
+
+    # create figure:
+    plt.figure(figsize=(7, 6))
+    ax1 = plt.subplot(2,2,1)
+    ax2 = plt.subplot(2,2,3)
+    ax3 = plt.subplot(1,2,2)
+
+    # boundaries:
+    ax1.set_xlim(-0.5, 2)
+    ax2.set_xlim(-0.5, 2)
+    ax3.set_xlim(-0.5, 2)
+
+    ax1.set_ylim(80, 920)
+    ax2.set_ylim(80, 920)
+    ax3.set_ylim(80, 920)
+
+    # a, b, c labels:
+    ax1.text(1, 600, r"a)", fontsize=20)
+    ax2.text(1, 600, r"b)", fontsize=20)
+    ax3.text(1, 600, r"c)", fontsize=20)
+
+    # axes label adjustment:
+    ax3.yaxis.tick_right()
+    ax3.yaxis.set_label_position("right")
+    ax3.set_xlabel(r"delay [ps]" , fontsize=18)
+    ax3.set_ylabel(r"$T_e$ [K]", fontsize=18)
+    ax1.set_xticklabels([])
+
+    # experimental te data:
+    exp_delay, f1, df1 = get_te_exp()
+
+    # sim data of optimal fit:
+    delay_fit, te_fit, _ = get_data(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', subsys='te')
+    delay_fit_tp, tp_fit, tp2_fit = get_data(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', subsys='tp')
+
+    # sim data of high gamma:
+    delay_gamma, te_gamma, _ = get_data(file='Results/FGT/fits_new/te_gamma_high', subsys='te')
+    delay_gamma_tp, tp_gamma, tp2_gamma = get_data(file='Results/FGT/fits_new/te_gamma_high', subsys='tp')
+
+    # sim data of high fluence:
+    delay_flu, te_flu, _ = get_data(file='Results/FGT/fits_new/te_flu_high', subsys='te')
+    delay_flu, tp_flu, tp2_flu = get_data(file='Results/FGT/fits_new/te_flu_high', subsys='tp')
+
+    # high gamma plot:
+    ax1.plot(delay_gamma, te_gamma, lw=2.0, color='orange')
+    ax1.plot(delay_gamma, tp_gamma, lw=2.0, ls ='dashed', color='blue')
+    ax1.plot(delay_gamma, tp2_gamma, lw=2.0, ls ='dashed', color='lightblue')
+    ax1.errorbar(exp_delay, f1, yerr=df1, fmt='o', color='orange')
+
+    # high fluence plot:
+    ax2.plot(delay_flu, te_flu, lw=2.0, color='orange')
+    ax2.plot(delay_flu, tp_flu, lw=2.0, ls ='dashed', color='blue')
+    ax2.plot(delay_flu, tp2_flu, lw=2.0, ls ='dashed', color='lightblue')
+    ax2.errorbar(exp_delay, f1, yerr=df1, fmt='o', color='orange')
+
+    # high gamma plot:
+    ax3.plot(delay_fit, te_fit, lw=2.0, color='orange')
+    ax3.plot(delay_fit_tp, tp_fit, lw=2.0, ls ='dashed', color='blue')
+    ax3.plot(delay_fit_tp, tp2_fit, lw=2.0, ls ='dashed', color='lightblue')
+    ax3.errorbar(exp_delay, f1, yerr=df1, fmt='o', color='orange')
+
+    # labels in ax3:
+    ax3.legend([r'$T_e$', r'$T_{p,o}$', r'$T_{p, a}$'], fontsize=16, loc='upper right')
+
+    if save:
+        plt.savefig('new_te_figure.pdf')
+    if show:
+        plt.show()
 
 
 def plot_te(file, figure, axs, show_exp=True):
@@ -191,7 +261,7 @@ def save_plot(figure, axs, name):
     return
 
 
-def show_fits(save, show):
+def show_fits(show, save):
     fig, axs = create_figure()
     fig, axs = plot_te(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', figure=fig, axs=axs)
     fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_tp', figure=fig, axs=axs)
@@ -204,4 +274,5 @@ def show_fits(save, show):
         return
 
 if __name__ == "__main__":
-    show_fits(True, True)
+    create_figure_te(True, True)
+    # show_fits(True, True)
