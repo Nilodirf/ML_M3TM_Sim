@@ -94,9 +94,8 @@ class SimPulse:
         # This method computes the time dependence of the pulse excitation, including the effect of finite
         # thermalization time of the pump pulse according to Eq. 4 in
         # International Journal of Heat and Mass Transfer 47 (2004) 2261–2268
-        # The pulse is confined to nonzero values in the range of [start_pump_time, end_pump_time]
-        # to save computation time. After this time, there follows one entry defining zero pump power
-        # for all later times.
+        # The pulse is confined to zero outside the range of [start_pump_time, end_pump_time]
+        # to save computation time.
 
         # Input:
         # self (reference). The pulse object in use

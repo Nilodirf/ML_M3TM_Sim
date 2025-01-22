@@ -208,7 +208,7 @@ def plot_te(file, figure, axs, show_exp=True):
 
 def plot_mag(file, figure, axs, show_exp=True):
     delay, mag, bla = get_data(file, 'mag')
-    mag = 2/3 + mag/3
+    mag = 0.73 + mag*0.27
     axs[1].plot(delay, mag, color='green')
 
     if show_exp:
@@ -267,10 +267,14 @@ def save_plot(figure, axs, name):
 
 def show_fits(show, save):
     fig, axs = create_figure()
-    fig, axs = plot_te(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', figure=fig, axs=axs)
-    fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_tp', figure=fig, axs=axs)
-    fig, axs = plot_tp(file='Results/FGT/M3TM_tp', figure=fig, axs=axs, show_exp=False)
-    fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_mag', figure=fig, axs=axs)
+    # fig, axs = plot_te(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', figure=fig, axs=axs)
+    # fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_tp', figure=fig, axs=axs)
+    # fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_mag', figure=fig, axs=axs)
+
+    fig, axs = plot_te(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_el', figure=fig, axs=axs)
+    fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_tp', figure=fig, axs=axs)
+    fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_mag', figure=fig, axs=axs)
+
     if save:
         save_plot(fig, axs, 'new_fit_to_show.pdf')
     if show:
@@ -278,6 +282,7 @@ def show_fits(show, save):
 
         return
 
+
 if __name__ == "__main__":
     # create_figure_te(True, False)
-    show_fits(True, True)
+    show_fits(True, False)
