@@ -87,7 +87,6 @@ def get_mag_exp():
     time_zero_index = finderb(0, exp_delay)[0]
     exp_mag = exp_mag / exp_mag[time_zero_index]
     exp_dmag = exp_dat[:, 2] / exp_dat[time_zero_index, 1]
-
     return exp_delay, exp_mag, exp_dmag
 
 
@@ -267,13 +266,13 @@ def save_plot(figure, axs, name):
 
 def show_fits(show, save):
     fig, axs = create_figure()
-    # fig, axs = plot_te(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', figure=fig, axs=axs)
-    # fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_tp', figure=fig, axs=axs)
-    # fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_mag', figure=fig, axs=axs)
+    fig, axs = plot_te(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_el', figure=fig, axs=axs)
+    fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_tp', figure=fig, axs=axs)
+    fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.017gep5.1gpp3.9gamma215.0_mag', figure=fig, axs=axs)
 
-    fig, axs = plot_te(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_el', figure=fig, axs=axs)
-    fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_tp', figure=fig, axs=axs)
-    fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_mag', figure=fig, axs=axs)
+    # fig, axs = plot_te(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_el', figure=fig, axs=axs)
+    # fig, axs = plot_tp(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_tp', figure=fig, axs=axs)
+    # fig, axs = plot_mag(file='input_data/FGT/fit_results/a0.02gep5.1gpp3.9gamma213.0_mag', figure=fig, axs=axs)
 
     if save:
         save_plot(fig, axs, 'new_fit_to_show.pdf')
