@@ -137,7 +137,6 @@ class SimPulse:
 
             for i in range(len(interaction_grid)):
                 interaction_grid[i] = np.sum(pump_grid[:i]*np.flip(lag_difference[:i]))
-                # this needs some minor adjustment here to account for a shift of 1 in one of them...
 
         else:
             interaction_time_grid = pump_time_grid
