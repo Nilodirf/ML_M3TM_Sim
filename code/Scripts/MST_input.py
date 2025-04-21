@@ -11,8 +11,13 @@ from code.Source.sample import SimSample
 from code.Source.pulse import SimPulse
 from code.Source.mainsim import SimDynamics
 
+therm_time_test = 100e-15
+gep_test = 4e17
+# thermalization time -> fit quality of tau_1
+# gep -> fit quality of tau_2
+
 MST = SimMaterials(name='Mn3Si2Te6', cp_max=1.47e6, cp_method='Debye', tdeb=155.,  kappap=0.,
-                   ce_gamma=619, gep=4.7e17)
+                   ce_gamma=619, gep=gep_test)
 
 # MST.add_phonon_subsystem(gpp=2.5e17, cp2_max=None, cp2_method='input_data/FGT/FGT_c_p2.txt')
 
@@ -22,8 +27,7 @@ sample = SimSample()
 sample.add_layers(material=MST, layers=1,  dz=1.7e-9, pen_dep=1e-9)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='LB', pulse_width=25.5e-15, fluence=9.8e-3, delay=1e-12, therm_time=100e-15)
-# pulse.visualize(axis='t')
+pulse = SimPulse(sample=sample, method='LB', pulse_width=25.5e-15, fluence=9.8e-3, delay=1e-12, therm_time=therm_time_test)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
 sim = SimDynamics(sample=sample, pulse=pulse, end_time=6e-12, ini_temp=100., solver='RK45', max_step=1e-13)
