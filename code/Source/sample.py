@@ -177,6 +177,8 @@ class SimSample:
             return kappa_p_sam
         elif param == 'cp2_T':
             return [mat.cp2_T_grid for mat in self.mats], [mat.cp2_T for mat in self.mats]
+        elif param == 'ce_gamma':
+            return [mat.ce_T_grid for mat in self.mats], [mat.ce_T for mat in self.mats]
         else:
             return np.array([mat.__dict__[param] for mat in self.mat_arr])
 

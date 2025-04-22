@@ -17,9 +17,9 @@ gep_test = 4e17
 # gep -> fit quality of tau_2
 
 MST = SimMaterials(name='Mn3Si2Te6', cp_max=1.47e6, cp_method='Debye', tdeb=155.,  kappap=0.,
-                   ce_gamma=619, gep=gep_test)
+                   ce_gamma='input_data/MST/MST_cmag.dat', gep=gep_test)
 
-# MST.add_phonon_subsystem(gpp=2.5e17, cp2_max=None, cp2_method='input_data/FGT/FGT_c_p2.txt')
+# MST.add_phonon_subsystem(gpp=2.5e17, cp2_max=0.2e6, cp2_method='Debye')
 
 # Create a sample, then add desired layers of the materials you want to simulate.
 # The first material to be added will be closest to the laser pulse and so on.
@@ -30,7 +30,7 @@ sample.add_layers(material=MST, layers=1,  dz=1.7e-9, pen_dep=1e-9)
 pulse = SimPulse(sample=sample, method='LB', pulse_width=25.5e-15, fluence=9.8e-3, delay=1e-12, therm_time=therm_time_test)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=6e-12, ini_temp=100., solver='RK45', max_step=1e-13)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=12e-12, ini_temp=100., solver='RK45', max_step=1e-13)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()

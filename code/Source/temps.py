@@ -111,18 +111,16 @@ class SimTemperatures:
         return dtp1_dt, dtp2_dt
 
     @staticmethod
-    def get_ce_t(te, ce_sam):
-        # This method computes the electronic heat capacity of all layers of the sample. For now, only the linear
-        # Sommerfeld approximation is implemented.
+    def get_ce_t(te, ce_T_sam_grid, ce_T_sam, index_list):
 
-        # Input:
-        # te (numpy array). 1d array of the electron temperatures of all relevant layers
-        # ce_sam (numpy array). 1d array of the Sommerfeld coefficients of all relevant layers
+        ce_sam_t = np.zeros_like(te)
+        for i, ind_list in enumerate(index_list):
+            ce_sam_grid_t = finderb(te[ind_list], ce_T_sam_grid[i])
+            ce_sam_t[ind_list] = ce_T_sam[i][ce_sam_grid_t]
 
-        # Returns:
-        # ce_sam*te (numpy array). 1d array of the Sommerfeld heat capacities of all relevant layers
+        ce_sam_t += 619*te
 
-        return ce_sam*te
+        return ce_sam_t
 
     @staticmethod
     def get_cp_t(tp, cp_sam_grid, cp_sam, index_list):

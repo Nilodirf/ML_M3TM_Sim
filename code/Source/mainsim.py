@@ -70,7 +70,7 @@ class SimDynamics:
         mag_mask = self.Sam.mag_mask
         tp2_mask = self.Sam.tp2_mask
         el_mag_mask = self.Sam.el_mag_mask
-        ce_gamma_sam = self.Sam.get_params('ce_gamma')[el_mask]
+        ce_T_sam_grid, ce_T_sam = self.Sam.get_params('ce_gamma')[el_mask]
         mats, mat_ind = self.Sam.mats, self.Sam.mat_ind
         cp_sam_grid, cp_sam = self.Sam.get_params('cp_T')
         cp_sam = [np.array(i) for i in cp_sam]
@@ -122,7 +122,7 @@ class SimDynamics:
         all_sol = solve_ivp(lambda t, all_baths: SimDynamics.get_t_m_increments(t, all_baths, tem_mod, mag_mod,
                                                                                 len_sam, len_sam_te, len_sam_tp2,
                                                                                 mat_ind, el_mag_mask,
-                                                                                mag_mask, el_mask, ce_gamma_sam,
+                                                                                mag_mask, el_mask, ce_T_sam_grid, ce_T_sam,
                                                                                 cp_sam_grid, cp_sam,
                                                                                 gep_sam, pulse_map,
                                                                                 pulse_time_grid, kappa_e_dz_pref,
@@ -248,7 +248,7 @@ class SimDynamics:
 
     @staticmethod
     def get_t_m_increments(timestep, te_tp_fs_flat, tem_mod, mag_mod, len_sam, len_sam_te, len_sam_tp2,
-                           mat_ind, el_mag_mask, mag_mask, el_mask, ce_gamma_sam,
+                           mat_ind, el_mag_mask, mag_mask, el_mask, ce_T_sam_grid, ce_T_sam,
                            cp_sam_grid, cp_sam, gep_sam, pulse_map, pulse_time_grid, kappa_e_dz_pref,
                            kappa_p_dz_pref, j_sam, spin_sam, arbsc_sam, s_up_eig_sq_sam, s_dn_eig_sq_sam,
                            ms_sam, mag_num, vat_sam, cp2_sam_grid, cp2_sam, gpp_sam, tp2_mask, mat_tp2_ind):
@@ -276,7 +276,7 @@ class SimDynamics:
         dfs_dt_flat = dfs_dt.flatten()
 
         # get temperature dependent parameters for temperature dynamics:
-        ce_sam_t = tem_mod.get_ce_t(te, ce_gamma_sam)
+        ce_sam_t = tem_mod.get_ce_t(te, ce_T_sam_grid, ce_T_sam)
         cp_sam_t = tem_mod.get_cp_t(tp[:len_sam], cp_sam_grid, cp_sam, mat_ind)
         cp2_sam_t = tem_mod.get_cp_t(tp[len_sam:], cp2_sam_grid, cp2_sam, mat_tp2_ind)
         pulse_time = finderb(timestep, pulse_time_grid)[0]
