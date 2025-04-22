@@ -64,18 +64,18 @@ class SimDynamics:
         mag_mod = self.select_mag_dynamics()  # here as well!
 
         len_sam = self.Sam.len
+        mats, mat_ind = self.Sam.mats, self.Sam.mat_ind
         len_sam_te = self.Sam.len_te
         len_sam_tp2 = self.Sam.len_tp2
         el_mask = self.Sam.el_mask
         mag_mask = self.Sam.mag_mask
         tp2_mask = self.Sam.tp2_mask
         el_mag_mask = self.Sam.el_mag_mask
-        ce_T_sam_grid, ce_T_sam = self.Sam.get_params('ce_gamma')[el_mask]
-        mats, mat_ind = self.Sam.mats, self.Sam.mat_ind
         cp_sam_grid, cp_sam = self.Sam.get_params('cp_T')
         cp_sam = [np.array(i) for i in cp_sam]
         cp2_sam_grid, cp2_sam = self.Sam.get_params('cp2_T')
         cp2_sam = [np.array(i) for i in cp2_sam]
+        ce_T_sam_grid, ce_T_sam = self.Sam.get_params('ce_gamma')
         gep_sam = self.Sam.get_params('gep')[el_mask]
         pulse_time_grid, pulse_map = self.Pulse.pulse_time_grid, self.Pulse.pulse_map
         dz_sam = self.Sam.get_params_from_blocks('dz')
@@ -276,7 +276,7 @@ class SimDynamics:
         dfs_dt_flat = dfs_dt.flatten()
 
         # get temperature dependent parameters for temperature dynamics:
-        ce_sam_t = tem_mod.get_ce_t(te, ce_T_sam_grid, ce_T_sam)
+        ce_sam_t = tem_mod.get_ce_t(te, ce_T_sam_grid, ce_T_sam, mat_ind)
         cp_sam_t = tem_mod.get_cp_t(tp[:len_sam], cp_sam_grid, cp_sam, mat_ind)
         cp2_sam_t = tem_mod.get_cp_t(tp[len_sam:], cp2_sam_grid, cp2_sam, mat_tp2_ind)
         pulse_time = finderb(timestep, pulse_time_grid)[0]
@@ -393,7 +393,7 @@ class SimDynamics:
         params_file.write('a_sf = ' + str([mat.asf for mat in mats]) + '\n')
         params_file.write('R = ' + str([mat.R*1e-12 for mat in mats]) + ' [1/ps]' + '\n')
         params_file.write('g_ep = ' + str([mat.gep for mat in mats]) + ' [W/m^3/K]' + '\n')
-        params_file.write('gamma_el = ' + str([mat.ce_gamma for mat in mats]) + ' [J/m^3/K^2]' + '\n')
+        params_file.write('gamma_el = ' + '[1.]' + ' [J/m^3/K^2]' + '\n')
         params_file.write('cv_ph_max = ' + str([mat.cp_max for mat in mats]) + ' [J/m^3/K]' + '\n')
         params_file.write('kappa_el = ' + str([mat.kappae for mat in mats]) + ' [W/mK]' + '\n')
         params_file.write('kappa_ph = ' + str([mat.kappap for mat in mats]) + ' [W/mK]' + '\n')

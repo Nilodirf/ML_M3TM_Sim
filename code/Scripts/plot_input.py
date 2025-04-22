@@ -5,7 +5,7 @@ from ..Plot.plot import SimComparePlot
 
 
 # Initialize the plot class with the simulation results folder denoted 'file':
-plotter = SimPlot(file='high_kapitza')
+plotter = SimPlot(file='MST_test')
 
 # plotter.convert_to_dat()
 
@@ -19,8 +19,8 @@ plotter = SimPlot(file='high_kapitza')
 
 # Plot the dynamics of one subsystem for some layers in line-plots to see the dynamics, save if you want to:
 # plotter.line_plot(key='tp', average=False, save_fig=False)
-plotter.line_plot(key='te', min_layer=0, max_layer=7, average=False, save_fig=False, norm=False)
-plotter.line_plot(key='tp', min_layer=0, max_layer=15, average=False, save_fig=False, norm=False)
+plotter.line_plot(key='te', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
+plotter.line_plot(key='tp', min_layer=0, max_layer=1, average=False, save_fig=False, norm=False)
 plotter.line_plot(key='mag', average=False, save_fig=False, norm=False)
 
 # plotter.te_tp_plot(max_time=6.5, average=False, save_fig=False,  filename='te_tp_thick', tp_layers=[2, 12], color_scales=['Greens_r', 'Blues_r'])  #8,84 for thick, 8,

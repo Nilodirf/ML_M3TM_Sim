@@ -117,9 +117,7 @@ class SimTemperatures:
         for i, ind_list in enumerate(index_list):
             ce_sam_grid_t = finderb(te[ind_list], ce_T_sam_grid[i])
             ce_sam_t[ind_list] = ce_T_sam[i][ce_sam_grid_t]
-
         ce_sam_t += 619*te
-
         return ce_sam_t
 
     @staticmethod

@@ -62,7 +62,6 @@ class SimMaterials:
         self.ce_T_grid, self.ce_T = SimMaterials.create_ce(ce_gamma)
         self.cp_max = cp_max
         self.cp_method = cp_method
-
         self.tein = 0.75*tdeb
         self.cp_T_grid, self.cp_T = self.create_cp_T(self.cp_method, self.cp_max)
         self.gpp = 0
@@ -86,11 +85,10 @@ class SimMaterials:
 
     @staticmethod
     def create_ce(ce_gamma):
-
         file = np.loadtxt(ce_gamma)
         t_grid = file[:, 0]
         ce_T_grid = file[:, 1]
-        return t_grid, list(ce_T_grid)
+        return t_grid, ce_T_grid
 
     def create_cp_T(self, cp_method, cp_max):
         # This method constructs a temperature grid (fine-grained until tdeb, course-grained until 3*tdeb).

@@ -28,13 +28,13 @@ class SimSample:
         # n_comp_arr (numpy array). 1d-array of the complex refractive indices of the sample constituents (blocks)
         # pen_dep_arr (numpy array). 1d-array of the penetration depths of sample consituents (blocks)
 
+        self.mats, self.mat_ind = np.array([]), np.array([])
         self.mat_arr = np.array([])
         self.len = self.get_len()
         self.mat_blocks = self.get_material_changes()
         self.el_mask = self.get_free_electron_mask()
         self.mag_mask = self.get_magdyn_mask()
         self.tp2_mask = self.get_tp2_mask()
-        self.mats, self.mat_ind = np.array([]), np.array([])
         self.mag_num = self.get_num_mag_mat()
         self.kappa_p_int = np.array([])
         self.kappa_e_int = np.array([])
@@ -87,10 +87,10 @@ class SimSample:
         self.mat_arr = np.append(self.mat_arr, np.array([material for _ in range(layers)]))
         self.len = self.get_len()
         self.mat_blocks = self.get_material_changes()
+        self.mats, self.mat_ind = self.get_mat_positions()
         self.el_mask = self.get_free_electron_mask()
         self.mag_mask = self.get_magdyn_mask()
         self.tp2_mask = self.get_tp2_mask()
-        self.mats, self.mat_ind = self.get_mat_positions()
         self.mag_num = self.get_num_mag_mat()
         self.len_te = int(np.sum(np.ones(self.len)[self.el_mask]))
         self.len_tp2 = int(np.sum(np.ones(self.len)[self.tp2_mask]))
@@ -228,7 +228,7 @@ class SimSample:
         # Returns:
         # free_electron_mask (boolean array). 1d-array holding True for all layers where gamma_e!=0
 
-        free_electron_mask = self.get_params('ce_gamma') != 0
+        free_electron_mask = np.array([True for mat in self.mat_arr], dtype=bool)
 
         return free_electron_mask
 
