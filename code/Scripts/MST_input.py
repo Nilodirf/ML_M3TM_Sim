@@ -15,7 +15,7 @@ from code.Source.mainsim import SimDynamics
 from code.Source.finderb import finderb
 
 ####### Define temperature and pulse for simulations:
-temp_0 = 75.
+temp_0 = 25.
 fluence = 9.8e-3
 
 ####### Load exp data:
@@ -30,12 +30,12 @@ exp_te = exp_data[:, 1]
 
 ###### set initial fit values:
 lower_bounds = [100e-15, 0.1e17, 0.0085]
-upper_bounds = [800e-15, 0.25e17, 0.01]
+upper_bounds = [1300e-15, 0.35e17, 0.01]
 
 bounds = (lower_bounds, upper_bounds)
 
 therm_time_initial = (upper_bounds[0]+lower_bounds[0])/2
-gep_initial = 25e15 #(upper_bounds[1]+lower_bounds[1])/2
+gep_initial = (upper_bounds[1]+lower_bounds[1])/2
 te_scaling_initial = (upper_bounds[2]+lower_bounds[2])/2
 
 p0 = [therm_time_initial, gep_initial, te_scaling_initial]
@@ -81,7 +81,7 @@ def fit_te_to_exp(exp_delay, therm_time_test, gep_test, te_scaling_test):
     return sim_te_exp
 
 ####### Fit:
-p_opt, p_cov = curve_fit(fit_te_to_exp, exp_delay, exp_te, p0=p0, bounds=bounds, method='trf')
+p_opt, p_cov = curve_fit(fit_te_to_exp, exp_delay, exp_te, p0=p0)
 # popt, pcov = curve_fit(fit_te_to_exp, dbex_delay, dbex_te, p0, bounds, method)
 print(p_opt, p_cov)
 

@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-file = 'T_tt_gep_scale_1.txt'
+file = 'second_try/T_tt_gep_scale.txt'
 
 content = np.loadtxt(file)
 
