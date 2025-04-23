@@ -14,21 +14,31 @@ from code.Source.pulse import SimPulse
 from code.Source.mainsim import SimDynamics
 from code.Source.finderb import finderb
 
+####### Define temperature and pulse for simulations:
+temp_0 = 75.
+fluence = 9.8e-3
+
 ####### Load exp data:
-exp_data = np.loadtxt('input_data/MST/exp_data/new_experi_75k.dat')
+exp_data = np.loadtxt(f'input_data/MST/exp_data/new_experi_{int(temp_0)}k.dat')
 exp_delay = exp_data[:, 0]
 exp_te = exp_data[:, 1]
 
+
+# Define the double exponential, give the fit parameters of the doub. exp.
+# dbex_delay= ..
+# dbex_te=...
+
 ###### set initial fit values:
-therm_time_initial = 0.5e-12
-gep_initial = 2.5e17
-te_scaling_initial = 0.009
+lower_bounds = [100e-15, 0.1e17, 0.0085]
+upper_bounds = [800e-15, 0.25e17, 0.01]
+
+bounds = (lower_bounds, upper_bounds)
+
+therm_time_initial = (upper_bounds[0]+lower_bounds[0])/2
+gep_initial = 25e15 #(upper_bounds[1]+lower_bounds[1])/2
+te_scaling_initial = (upper_bounds[2]+lower_bounds[2])/2
 
 p0 = [therm_time_initial, gep_initial, te_scaling_initial]
-
-lower_bounds = [100e-15, 2e17, 0.006]
-upper_bounds = [2e-12, 4e17, 0.01]
-bounds = (lower_bounds, upper_bounds)
 
 ####### Simulation to fit:
 def fit_te_to_exp(exp_delay, therm_time_test, gep_test, te_scaling_test):
@@ -44,10 +54,10 @@ def fit_te_to_exp(exp_delay, therm_time_test, gep_test, te_scaling_test):
     sample.add_layers(material=MST, layers=1,  dz=1e-9, pen_dep=1e-9)
 
     # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-    pulse = SimPulse(sample=sample, method='LB', pulse_width=25.5e-15, fluence=9.8e-3, delay=1e-12, therm_time=therm_time_test)
+    pulse = SimPulse(sample=sample, method='LB', pulse_width=25.5e-15, fluence=fluence, delay=1e-12, therm_time=therm_time_test)
 
     # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-    sim = SimDynamics(sample=sample, pulse=pulse, end_time=13e-12, ini_temp=75., solver='Radau', max_step=1e-14)
+    sim = SimDynamics(sample=sample, pulse=pulse, end_time=13e-12, ini_temp=temp_0, solver='Radau', max_step=1e-12)
 
     # Run the simulation by calling the function that creates the map of all three baths
     solution = sim.get_t_m_maps()
@@ -71,7 +81,8 @@ def fit_te_to_exp(exp_delay, therm_time_test, gep_test, te_scaling_test):
     return sim_te_exp
 
 ####### Fit:
-p_opt, p_cov = curve_fit(fit_te_to_exp, exp_delay, exp_te, p0=p0, bounds=bounds)
+p_opt, p_cov = curve_fit(fit_te_to_exp, exp_delay, exp_te, p0=p0, bounds=bounds, method='trf')
+# popt, pcov = curve_fit(fit_te_to_exp, dbex_delay, dbex_te, p0, bounds, method)
 print(p_opt, p_cov)
 
 
@@ -92,10 +103,10 @@ sample = SimSample()
 sample.add_layers(material=MST, layers=1,  dz=1e-9, pen_dep=1e-9)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='LB', pulse_width=25.5e-15, fluence=9.8e-3, delay=1e-12, therm_time=therm_time_fit)
+pulse = SimPulse(sample=sample, method='LB', pulse_width=25.5e-15, fluence=fluence, delay=1e-12, therm_time=therm_time_fit)
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
-sim = SimDynamics(sample=sample, pulse=pulse, end_time=13e-12, ini_temp=25., solver='Radau', max_step=1e-14)
+sim = SimDynamics(sample=sample, pulse=pulse, end_time=13e-12, ini_temp=temp_0, solver='Radau', max_step=1e-14)
 
 # Run the simulation by calling the function that creates the map of all three baths
 solution = sim.get_t_m_maps()
@@ -112,8 +123,17 @@ sim_te_exp -= sim_te[0]
 sim_te_exp /= np.amax(sim_te_exp)
 sim_te_exp *= te_scaling_fit
 
-plt.plot(exp_delay, sim_te_exp)
-plt.scatter(exp_delay, exp_te)
+tt_label = np.round(p_opt[0]*1e15, 1)
+gep_label = np.round(p_opt[1]*1e-15, 2)
+te_scale_label = np.round(p_opt[2], 4)
+
+plt.scatter(exp_delay, exp_te, color='blue', label=r'experimental data')
+# plt.plot(dbex_delay, dbex_te, color='green', label=r'double exponential')
+plt.plot(exp_delay, sim_te_exp, color='red', label=f'tt = {tt_label} fs \ngep={gep_label} [PW/m^3K]\nscale={te_scale_label}')
+plt.xlabel(r'delay [ps]', fontsize=16)
+plt.ylabel(r'Differential reflectivity [a.u.]', fontsize=16)
+plt.title(f'{int(temp_0)} K', fontsize=18)
+plt.legend(fontsize=14)
 plt.show()
 
 
