@@ -86,7 +86,6 @@ p_opt, p_cov = curve_fit(fit_te_to_exp, exp_delay, exp_te, p0=p0)
 print(p_opt, p_cov)
 
 
-
 ######## Reproduce fit:
 therm_time_fit = p_opt[0]
 gep_fit = p_opt[1]
