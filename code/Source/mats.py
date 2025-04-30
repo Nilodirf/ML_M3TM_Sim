@@ -141,7 +141,7 @@ class SimMaterials:
             return 0
 
         x = np.linspace(1e-5, t_red, num_points)
-        integrand = x ** 3 / (np.exp(x) - 1)
+        integrand = x ** 4 * np.exp(x) / (np.exp(x) - 1)**2
         integral_approx = np.trapz(integrand, x)
 
         return integral_approx
