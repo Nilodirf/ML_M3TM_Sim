@@ -68,7 +68,7 @@ ce = c_e(temp_grid)*1e-6
 cm = c_m(temp_grid)*1e-6
 cp = c_p(temp_grid)*1e-6
 ctot = ce + cm + cp
-ctot_exp = c_tot(temp_grid)*1e-6
+# ctot_exp = c_tot(temp_grid)*1e-6
 
 # ctot = c_tot(temp_grid)*1e-6
 # cp = c_p(temp_grid)*1e-6
@@ -78,11 +78,11 @@ ctot_exp = c_tot(temp_grid)*1e-6
 plt.figure(figsize=(8, 6))
 
 plt.plot(temp_grid, ctot, ls='dashed', lw=2.0, label=r'total', color='black')
-plt.plot(temp_grid, ctot_exp, ls='dotted', lw=2.0, label=r'total exp', color='black')
+# plt.plot(temp_grid, ctot_exp, ls='dotted', lw=2.0, label=r'total exp', color='black')
 plt.plot(temp_grid, cp, lw=2.0, label=r'lattice', color='blue')
 plt.plot(temp_grid, cm, lw=2.0, label=r'spins', color='green')
-plt.plot(temp_grid, ce, lw=2.0, color='orange', label=r'electrons')
-# plt.plot(temp_grid, ce + cm, lw=2.0, color='purple', label=r'spins+electrons')
+plt.plot(temp_grid, ce + cm, lw=2.0, color='purple', label=r'spins+electrons')
+plt.plot(temp_grid, ce, lw=4.0, color='orange', label=r'electrons', ls='dotted')
 
 plt.xlim(temp_grid[0], temp_grid[-1])
 plt.ylim(0, 1.7)
