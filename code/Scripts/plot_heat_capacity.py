@@ -92,5 +92,5 @@ plt.ylabel(r'C [MJ/m$^3$K]', fontsize=16)
 
 plt.legend(fontsize=14)
 
-plt.savefig('MST_heat_capac.pdf')
+plt.savefig('MST_heat_capac.png')
 plt.show()
