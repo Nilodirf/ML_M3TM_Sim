@@ -62,12 +62,28 @@ def debye_integral(t_red, num_points=1000):
     return integral_approx
 
 
-temp_grid = np.arange(0, 300, 1e-2)
+temp_grid = np.round(np.arange(0, 300, 1e-1), 1)
 
 ce = c_e(temp_grid)*1e-6
 cm = c_m(temp_grid)*1e-6
 cp = c_p(temp_grid)*1e-6
 ctot = ce + cm + cp
+
+# with open("MST_ce.dat", 'w+') as ce_file:
+#     ce_file.write("T [K]\tC_e [J/m^3/K]\n")
+#     for t, c_e in zip(temp_grid, ce):
+#         ce_file.write(f"{t}\t{c_e}\n")
+#
+# with open("MST_cp.dat", 'w+') as cp_file:
+#     cp_file.write("T [K]\tC_p [J/m^3/K]\n")
+#     for t, c_p in zip(temp_grid, cp):
+#         cp_file.write(f"{t}\t{c_p}\n")
+#
+# with open("MST_cm.dat", 'w+') as cm_file:
+#     cm_file.write("T [K]\tC_m [J/m^3/K]\n")
+#     for t, c_m in zip(temp_grid, cm):
+#         cm_file.write(f"{t}\t{c_m}\n")
+
 # ctot_exp = c_tot(temp_grid)*1e-6
 
 # ctot = c_tot(temp_grid)*1e-6
@@ -92,5 +108,5 @@ plt.ylabel(r'C [MJ/m$^3$K]', fontsize=16)
 
 plt.legend(fontsize=14)
 
-plt.savefig('MST_heat_capac.png')
+# plt.savefig('MST_heat_capac.png')
 plt.show()
