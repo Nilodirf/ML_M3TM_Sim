@@ -56,9 +56,9 @@ class SimSample:
         # dz (float). Layer thickness of the material in m. Important only for resolution of heat diffusion
         # layers (int). Number of layers with depth material.dz to be added to the sample
         # kappap_int (float/string). Phononic thermal interface conductance at the interface
-        # to the previously added material in W/m^2/K
+        # to the previously added material in MW/m^2/K
         # kappae_int (float/string). Electronic thermal interface conductance at the interface
-        # to the previously added material in W/m^2/K
+        # to the previously added material in MW/m^2/K
         # n_comp (complex float). Complex refractive index of the material. Use syntax 'n_r'+'n_i'j to initiate.
 
         # Returns:

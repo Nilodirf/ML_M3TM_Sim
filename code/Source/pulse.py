@@ -87,7 +87,6 @@ class SimPulse:
 
         pump_time_grid, interaction_grid = self.time_profile()
         pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block = self.depth_profile(interaction_grid)
-
         return pump_time_grid, pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
 
     def time_profile(self):
@@ -230,6 +229,7 @@ class SimPulse:
             theta_arr = np.empty(N + 2, dtype=complex)
             theta_arr[0] = self.theta
             theta_arr[1:] = np.arcsin(n_comp_arr[0] / n_comp_arr[1:] * np.sin(theta_arr[0]))
+            print(theta_arr)
 
             # fresnel equations at N+1 interfaces:
             n_last = n_comp_arr[:-1]
@@ -264,6 +264,10 @@ class SimPulse:
 
             # N phases for the N blocks of the sample
             all_phases = 1j * 2 * np.pi / wave_length * n_comp_arr[1:-1] * cos_theta_last[1:] * block_thicknesses
+            phase_real = np.real(all_phases)
+            phase_imag = np.imag(all_phases) % (2 * np.pi)
+            phase_real = np.clip(phase_real, -50, 50)  # prevent overflow
+            all_phases = phase_real + 1j*phase_imag
 
             for i in range(1, len(all_C_s_mat)):
                 # starts at i=1, so after the first sample block, C_s(p)_2
@@ -356,7 +360,7 @@ class SimPulse:
             trans_flu = self.fluence * (e_p0 ** 2 * t_p_tot + e_s0 ** 2 * t_s_tot)
             rel_err = np.round(100*(abs_flu-(self.fluence-trans_flu-ref_flu))/abs_flu, 2)
 
-            excitation_map = np.multiply(pump_grid[..., np.newaxis], powers)
+            excitation_map = np.round(np.multiply(pump_grid[..., np.newaxis], powers), 30)
 
         return excitation_map.astype(float), abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
 

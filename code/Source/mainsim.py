@@ -21,7 +21,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 class SimDynamics:
     # This is the main Simulation class that holds the main function and unites all simulation steps
-    def __init__(self, sample, pulse, end_time, ini_temp, solver, max_step, atol=1e-6, rtol=1e-3):
+    def __init__(self, sample, pulse, end_time, ini_temp, solver, max_step, load_sim=None, atol=1e-6, rtol=1e-3):
         # Input:
         # sample (object). The sample in use
         # pulse (object). The pulse excitation in use
@@ -47,6 +47,7 @@ class SimDynamics:
         self.max_step = max_step
         self.atol = atol
         self.rtol = rtol
+        self.load_sim = load_sim
 
     def get_t_m_maps(self):
         # This method initiates all parameters needed for the dynamical simulation
@@ -157,7 +158,8 @@ class SimDynamics:
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
         else:
             ep_time_grid = np.arange(start_time_grid[-1] + 1e-15, start_time_grid[-1]+5e-12, 1e-15)
-            rest_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-14, self.end_time, 1e-14)))
+            interm_time_grid = np.concatenate((ep_time_grid, np.arange(ep_time_grid[-1] + 1e-13, ep_time_grid[-1]+100e-12, 1e-13)))
+            rest_time_grid = np.concatenate((interm_time_grid, np.arange(interm_time_grid[-1] + 1e-9, self.end_time, 1e-9)))
             time_grid = np.concatenate((start_time_grid, rest_time_grid))
 
         return time_grid
@@ -215,10 +217,16 @@ class SimDynamics:
         # Returns:
         # te_arr (numpy array). 1d-array of the starting electron temperatures
         # tp_arr (numpy array). 1d-array of the starting phonon temperatures
-
-        te_arr = np.ones_like(self.Sam.mat_arr[self.Sam.el_mask])*self.ini_temp
-        tp_arr = np.ones(self.Sam.len+self.Sam.len_tp2)*self.ini_temp
-
+        if self.load_sim is None:
+            te_arr = np.ones_like(self.Sam.mat_arr[self.Sam.el_mask])*self.ini_temp
+            tp_arr = np.ones(self.Sam.len+self.Sam.len_tp2)*self.ini_temp
+        else:
+            te_arr = np.load(f'./Results/{self.load_sim}/tes.npy')[-1]
+            tp_arr = np.load(f'./Results/{self.load_sim}/tps.npy')[-1]
+            assert te_arr.shape == np.ones_like(self.Sam.mat_arr[self.Sam.el_mask]).shape, ('Initial te profile not valid for '
+                                                                                'sample setup')
+            assert tp_arr.shape == np.ones(self.Sam.len+self.Sam.len_tp2).shape, ('Initial tp profile not valid for '
+                                                                                'sample setup')
         return te_arr, tp_arr
 
     def initialize_spin_configuration(self):
