@@ -2,6 +2,7 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 from scipy import constants as sp
+import scipy
 
 from ..Source.finderb import finderb
 
@@ -87,6 +88,8 @@ class SimPulse:
 
         pump_time_grid, interaction_grid = self.time_profile()
         pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block = self.depth_profile(interaction_grid)
+
+        print(np.amax(pump_map))
 
         return pump_time_grid, pump_map, abs_flu, ref_flu, trans_flu, rel_err, abs_flu_per_block
 
@@ -392,11 +395,18 @@ class SimPulse:
             plt.show()
 
         elif axis == 'z':
+
+            def LB_exp(z, pendep):
+                return np.exp(-z/pendep)
+
             dz_sam = self.Sam.get_params_from_blocks('dz')
             norm = np.amax(self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :])
             # norm = 1
             sample_depth = np.cumsum(dz_sam) - dz_sam[0]
             powers_to_plot = self.pulse_map[finderb(self.delay, self.pulse_time_grid)[0], :]/norm
+            popt, pcov = scipy.optimize.curve_fit(LB_exp, sample_depth*1e9, powers_to_plot, p0=30)
+            print(popt, pcov)
+            # plt.plot(sample_depth*1e9, np.exp(-sample_depth*1e9/popt), color='magenta', ls='dashed', lw=2.0)
             plt.plot(sample_depth*1e9, powers_to_plot, color='black', lw=2.0)
             plt.ylim(0, np.amax(powers_to_plot))
             plt.xlim(0, sample_depth[-1]*1e9)
