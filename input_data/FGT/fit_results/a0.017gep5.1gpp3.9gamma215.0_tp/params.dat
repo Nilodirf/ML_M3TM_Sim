@@ -1,0 +1,44 @@
+##Simulation parameters
+Time of finalization: 2024-11-17 13:35:05.743741 GMT
+Integration method: RK45
+Relative tolerance of solver: 0.001
+Absolute tolerance of solver: 1e-06
+Maximum timestep of integration: 1e-13 s
+Initial temperature: 100.0 [K]
+Simulation time span: 0.006 [ns]
+##Sample parameters
+Materials: ['Fe3GeTe2']
+Constituents: ['Fe3GeTe2']
+Material positions at layer in sample: [array([0])]
+Layer depth of constituents = [1.7e-09] [m]
+Atomic volumes = [1.2776e-28] [m^3]
+Effective spin = [2]
+mu_at = [1.6] [mu_Bohr]
+a_sf = [0.017]
+R = [0.4011443893415343] [1/ps]
+g_ep = [5.0999999999999994e+17] [W/m^3/K]
+gamma_el = [215.0] [J/m^3/K^2]
+cv_ph_max = [None] [J/m^3/K]
+kappa_el = [0.0] [W/mK]
+kappa_ph = [0.0] [W/mK]
+T_C = [232.0] [K]
+T_Deb = [232.0] [K]
+##Pulse parameters
+Absorption profile computed with Lambert-Beer-Law
+Penetration depths: [1.] nm
+Sigma = 1.5e-14 [s]
+Delay = 1e-12 [s]
+Thermalization time:1.3e-14 [s]
+Incident fluence = 0.038 [mJ/cm^2]
+Absorbed fluence = 0.038 [mJ/cm^2]
+Reflected fluence = 0 [mJ/cm^2]
+Transmitted fluence = 0.0 [mJ/cm^2]
+Absorbed fluence per block of different materials: [0.038] [mJ/cm^2]
+Relative error due to finite layer size: None %
+##Interface parameters
+kappa_e_int = [] [MW/m^2/K]
+kappa_p_int = [] [MW/m^2/K]
+##Two phonon systems simulated
+gpp = [3.9e+17] [W/m^3/K]
+cp2 method = ['input_data/FGT/FGT_c_p2.txt']
+cp2_max = [None] [J/m^3/K]
