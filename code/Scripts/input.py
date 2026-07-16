@@ -28,11 +28,12 @@ sio2 = SimMaterials(name='SiO2', tdeb=470, vat=1e-28, ce_gamma=0., cp_max=2e6, k
 
 sample = SimSample()
 sample.add_layers(material=hbn, layers=7, dz=2e-9, pen_dep=1, n_comp=2.1+0j)
-sample.add_layers(material=cgt, layers=70,  dz=2e-9, kappap_int=100., pen_dep=30e-9, n_comp=4.+1.8j)
+sample.add_layers(material=cgt, layers=8,  dz=2e-9, kappap_int=100., pen_dep=30e-9, n_comp=4.+1.8j)
 sample.add_layers(material=sio2, layers=150, dz=2e-9, kappap_int=6000., pen_dep=1, n_comp=1.45)
 
 # Create a laser pulse with the desired parameters. (Fluence in mJ/cm^2)
-pulse = SimPulse(sample=sample, method='LB', pulse_width=60e-15, fluence=0.5, delay=1e-12)
+pulse = SimPulse(sample=sample, method='Abeles', pulse_width=60e-15, fluence=0.5, delay=1e-12, photon_energy_ev=1.5, theta=0., phi=0.)
+pulse.visualize(axis='z')
 
 # Initialize the simulation with starting temperature and final time, the solver to be used and the maximum timestep:
 sim = SimDynamics(sample=sample, pulse=pulse, end_time=3e-9, ini_temp=6., solver='RK45', max_step=1e-13)
