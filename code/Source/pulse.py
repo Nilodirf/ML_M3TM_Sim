@@ -223,7 +223,7 @@ class SimPulse:
             e_s0 = np.sin(self.phi)
 
             # set up array of refraction indices, first layer and last layer considered vacuum before/after sample:
-            n_comp_arr = np.append(np.append(np.ones(1, dtype=complex), self.Sam.n_comp_arr), np.array([self.Sam.n_comp_arr[-1]]))
+            n_comp_arr = np.append(np.append(np.ones(1, dtype=complex), self.Sam.n_comp_arr), np.ones(1, dtype=complex))
 
             # compute the penetration angle theta in every sample constituent from Snell's law:
             theta_arr = np.empty(N + 2, dtype=complex)
